@@ -1,5 +1,6 @@
 # ML Examples
-This repostory contains source code for tutorials and examples used in [Arm's Machine Learning developer space](https://developer.arm.com/technologies/machine-learning-on-arm/developer-material).
+
+Source code for machine learning tutorials and examples used in [Arm's ML developer space](https://developer.arm.com/technologies/machine-learning-on-arm/developer-material).
 
 ## Projects and tutorials
 
