@@ -3,7 +3,7 @@ This repostory contains source code for tutorials and examples used in [Arm's Ma
 
 ## Projects and tutorials
 
-###Yeah, World###
+### Yeah, World
 Explore gesture recognition with TensorFlow and transfer learning on the Raspberry Pi and Pi Zero.
 
 * [Tutorial on Arm's developer site](https://developer.arm.com/technologies/machine-learning-on-arm/developer-material/how-to-guides/teach-your-raspberry-pi-yeah-world)
