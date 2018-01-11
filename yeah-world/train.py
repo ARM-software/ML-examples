@@ -9,6 +9,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Train a classifier to distinguish between several sets of images. This
+uses a pretrained feature extractor (PiNet) to convert images to features
+then trains a very simple Keras classifier on those features.
+"""
 
 from sys import argv, exit, stdout
 from cPickle import load
@@ -20,7 +25,9 @@ import numpy as np
 
 def main():
     if len(argv) < 4:
-        print('Usage: train.py MODEL RECORDING_FILES...\nSave a MODEL after training a classifier for 10 iterations to distinguish between 2 or more RECORDING_FILES.')
+        print("""Usage: train.py MODEL RECORDING_FILES...
+Saves a MODEL after training a classifier for 10 iterations to distinguish between
+two or more RECORDING_FILES (see record.py to create these).""")
         exit(1)
 
     model_file = argv[1]
@@ -44,11 +51,11 @@ def main():
         stdout.flush()
         with open(filename, 'rb') as f:
             x = load(f)
-            features = [ feature_extractor.features(f) for f in x]
+            features = [feature_extractor.features(f) for f in x]
             label = np.zeros((len(recording_files),))
-            label[i] = 1.            # Make a label with a 1 in the column for the file this frame came from
-            xs += features           # Add the features for the frames loaded from this file
-            ys += [ label ] * len(x) # Add a label for each frame in the file
+            label[i] = 1.          # Make a label with a 1 in the column for the file for this frame
+            xs += features         # Add the features for the frames loaded from this file
+            ys += [label] * len(x) # Add a label for each frame in the file
             class_count[i] = len(x)
     stdout.write('\n')
 
@@ -62,18 +69,18 @@ def main():
     classifier.save(model_file)
 
     print("All done, model saved in %s" % model_file)
-    
+
 
 def make_classifier(input_shape, num_classes):
     """ Make a very simple classifier
         Layers:
             GaussianNoise: Add random noise to prevent our classifier memorizing specific examples.
-            Flatten: The input may come from a layer with shape (e.g. x, y, depth). Flatten it to 1D.
+            Flatten: The input may come from a layer with shape (x, y, depth); flatten it to 1D.
             Dense: Provide one output per class scaled to sum to 1 (softmax) """
 
     # Define a simple neural network
     net_input = keras.layers.Input(input_shape)
-    
+
     noise = keras.layers.GaussianNoise(0.3)(net_input)
     flat = keras.layers.Flatten()(noise)
     net_output = keras.layers.Dense(num_classes, activation='softmax')(flat)
@@ -83,10 +90,11 @@ def make_classifier(input_shape, num_classes):
     # Compile a model before use. The loss should match the output activation function, e.g.
     # binary_crossentropy for sigmoid, categorical_crossentropy for softmax, mse for linear.
     # Adam is a solid default optimizer, we can leave the learning rate at the default.
-    net.compile(optimizer=keras.optimizers.Adam(), loss='categorical_crossentropy', metrics=['accuracy'])
+    net.compile(optimizer=keras.optimizers.Adam(),
+                loss='categorical_crossentropy',
+                metrics=['accuracy'])
     return net
 
 
 if __name__ == '__main__':
     main()
-
