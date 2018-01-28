@@ -10,7 +10,7 @@
 #include <memory>
 #include <array>
 #include <algorithm>
-#include "armnn/armnn.hpp"
+#include "armnn/ArmNN.hpp"
 #include "armnn/Exceptions.hpp"
 #include "armnn/Tensor.hpp"
 #include "armnn/INetwork.hpp"
@@ -55,7 +55,7 @@ int main(int argc, char** argv)
     armnnCaffeParser::BindingPointInfo outputBindingInfo = parser->GetNetworkOutputBindingInfo("prob");
 
     // Create a context and optimize the network for a specific compute device, e.g. CpuAcc, GpuAcc
-    armnn::IGraphContextPtr context = armnn::IGraphContext::Create(armnn::Compute::CpuAcc);
+    armnn::IRuntimePtr context = armnn::IRuntime::Create(armnn::Compute::CpuAcc);
     armnn::IOptimizedNetworkPtr optNet = armnn::Optimize(*network, context->GetDeviceSpec());
 
     // Load the optimized network onto the device

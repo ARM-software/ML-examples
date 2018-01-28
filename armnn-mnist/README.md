@@ -33,6 +33,6 @@ You can change the image used by modifying this line in mnist.cpp and/or mnist_c
 
     int testImageIndex = 0;
 
-To run on an Arm Mali GPU, change CpuAcc to GpuAcc when creating the IGraphContext:
+To run on an Arm Mali GPU, change CpuAcc to GpuAcc when creating the IRuntime:
 
-    armnn::IGraphContextPtr context = armnn::IGraphContext::Create(armnn::Compute::GpuAcc);
+    armnn::IRuntimePtr context = armnn::IRuntime::Create(armnn::Compute::GpuAcc);

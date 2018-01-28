@@ -10,7 +10,7 @@
 #include <memory>
 #include <array>
 #include <algorithm>
-#include "armnn/armnn.hpp"
+#include "armnn/ArmNN.hpp"
 #include "armnn/Exceptions.hpp"
 #include "armnn/Tensor.hpp"
 #include "armnn/INetwork.hpp"
@@ -46,9 +46,8 @@ int main(int argc, char** argv)
 
     // Import the TensorFlow model. Note: use CreateNetworkFromBinaryFile for .pb files.
     armnnTfParser::ITfParserPtr parser = armnnTfParser::ITfParser::Create();
-    armnn::TensorInfo inputTensorInfo({ 1, 784, 1, 1 }, armnn::DataType::Float32);
     armnn::INetworkPtr network = parser->CreateNetworkFromTextFile("model/simple_mnist_tf.prototxt",
-                                                                   { {"Placeholder", inputTensorInfo} },
+                                                                   { {"Placeholder", {1, 784, 1, 1}} },
                                                                    { "Softmax" });
 
     // Find the binding points for the input and output nodes
@@ -56,7 +55,7 @@ int main(int argc, char** argv)
     armnnTfParser::BindingPointInfo outputBindingInfo = parser->GetNetworkOutputBindingInfo("Softmax");
 
     // Create a context and optimize the network for a specific compute device, e.g. CpuAcc, GpuAcc
-    armnn::IGraphContextPtr context = armnn::IGraphContext::Create(armnn::Compute::CpuAcc);
+    armnn::IRuntimePtr context = armnn::IRuntime::Create(armnn::Compute::CpuAcc);
     armnn::IOptimizedNetworkPtr optNet = armnn::Optimize(*network, context->GetDeviceSpec());
 
     // Load the optimized network onto the device
