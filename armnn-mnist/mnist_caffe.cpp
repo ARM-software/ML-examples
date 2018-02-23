@@ -46,10 +46,9 @@ int main(int argc, char** argv)
 
     // Import the Caffe model. Note: use CreateNetworkFromTextFile for text files.
     armnnCaffeParser::ICaffeParserPtr parser = armnnCaffeParser::ICaffeParser::Create();
-    armnn::TensorInfo inputTensorInfo({ 1, 784, 1, 1 }, armnn::DataType::Float32);
     armnn::INetworkPtr network = parser->CreateNetworkFromBinaryFile("model/lenet_iter_9000.caffemodel",
-                                                                   { },
-                                                                   { "prob" });
+                                                                   { }, // input taken from file if empty
+                                                                   { "prob" }); // output node
 
     // Find the binding points for the input and output nodes
     armnnCaffeParser::BindingPointInfo inputBindingInfo = parser->GetNetworkInputBindingInfo("data");
