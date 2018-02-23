@@ -4,10 +4,10 @@ ARMNN_INC = ${HOME}/devenv/armnn/include
 all: mnist mnist_caffe
 
 mnist: mnist.cpp mnist_loader.hpp
-	g++ -O0 -g -std=c++11 -I$(ARMNN_INC) mnist.cpp -o mnist -L$(ARMNN_LIB) -larmnn -larmnnTfParser
+	g++ --g -std=c++11 -I$(ARMNN_INC) mnist.cpp -o mnist -L$(ARMNN_LIB) -larmnn -larmnnTfParser
 
 mnist_caffe: mnist_caffe.cpp mnist_loader.hpp
-	g++ -O0 -g -std=c++11 -I$(ARMNN_INC) mnist_caffe.cpp -o mnist_caffe -L$(ARMNN_LIB) -larmnn -larmnnCaffeParser
+	g++ --g -std=c++11 -I$(ARMNN_INC) mnist_caffe.cpp -o mnist_caffe -L$(ARMNN_LIB) -larmnn -larmnnCaffeParser
 
 clean:
 	-rm -f mnist mnist_caffe
