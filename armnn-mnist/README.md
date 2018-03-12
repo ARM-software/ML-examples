@@ -7,7 +7,7 @@ This is the example code used in Arm's [Deploying a TensorFlow MNIST model on Ar
 
 Two applications are included:
 
-* mnist.cpp, which reads from a TensorFlow model.
+* mnist_tf.cpp, which reads from a TensorFlow model.
 * mnist_caffe.cpp, which reads from a Caffe model.
 
 ## Dependencies
