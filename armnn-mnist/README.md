@@ -35,4 +35,4 @@ You can change the image used by modifying this line in mnist.cpp and/or mnist_c
 
 To run on an Arm Mali GPU, change CpuAcc to GpuAcc when creating the IRuntime:
 
-    armnn::IRuntimePtr context = armnn::IRuntime::Create(armnn::Compute::GpuAcc);
+    armnn::IRuntimePtr runtime = armnn::IRuntime::Create(armnn::Compute::GpuAcc);

@@ -54,17 +54,17 @@ int main(int argc, char** argv)
     armnnCaffeParser::BindingPointInfo inputBindingInfo = parser->GetNetworkInputBindingInfo("data");
     armnnCaffeParser::BindingPointInfo outputBindingInfo = parser->GetNetworkOutputBindingInfo("prob");
 
-    // Create a context and optimize the network for a specific compute device, e.g. CpuAcc, GpuAcc
-    armnn::IRuntimePtr context = armnn::IRuntime::Create(armnn::Compute::CpuAcc);
-    armnn::IOptimizedNetworkPtr optNet = armnn::Optimize(*network, context->GetDeviceSpec());
+    // Optimize the network for a specific runtime compute device, e.g. CpuAcc, GpuAcc
+    armnn::IRuntimePtr runtime = armnn::IRuntime::Create(armnn::Compute::CpuAcc);
+    armnn::IOptimizedNetworkPtr optNet = armnn::Optimize(*network, runtime->GetDeviceSpec());
 
-    // Load the optimized network onto the device
+    // Load the optimized network onto the runtime device
     armnn::NetworkId networkIdentifier;
-    context->LoadNetwork(networkIdentifier, std::move(optNet));
+    runtime->LoadNetwork(networkIdentifier, std::move(optNet));
 
     // Run a single inference on the test image
     std::array<float, 10> output;
-    armnn::Status ret = context->EnqueueWorkload(networkIdentifier,
+    armnn::Status ret = runtime->EnqueueWorkload(networkIdentifier,
                                                  MakeInputTensors(inputBindingInfo, &input->image[0]),
                                                  MakeOutputTensors(outputBindingInfo, &output[0]));
 
