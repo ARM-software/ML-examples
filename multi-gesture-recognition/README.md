@@ -3,7 +3,7 @@ A set of scripts to train a convolutional neural network from scratch to recogni
 
 ## Getting started
 
-This is the example code used in Arm's [Raspberry Pi multi-gesture recognition walkthrough](https://developer.arm.com/technologies/machine-learning-on-arm/developer-material/how-to-guides/teach-your-pi-multi-gesture/improve-generalization-by-recording-more-data) - full installation and usage instructions can be found there.
+This is the example code used in Arm's [Raspberry Pi multi-gesture recognition walkthrough](https://developer.arm.com/technologies/machine-learning-on-arm/developer-material/how-to-guides/teach-your-pi-multi-gesture) - full installation and usage instructions can be found there.
 
 *Note: These example scripts are designed to be easy to read and follow, not to demonstrate state-of-the-art or best practice.*
 
@@ -20,7 +20,7 @@ The exact URL of the current TensorFlow build varies between versions. Go to [th
 
 ## Example
 
-Check out the [multi-gesture recognition walkthrough](https://developer.arm.com/technologies/machine-learning-on-arm/developer-material/how-to-guides/teach-your-pi-multi-gesture/improve-generalization-by-recording-more-data). If you just need to be reminded about the syntax supported by the example scripts, read on.
+Check out the [multi-gesture recognition walkthrough](https://developer.arm.com/technologies/machine-learning-on-arm/developer-material/how-to-guides/teach-your-pi-multi-gesture). If you just need to be reminded about the syntax supported by the example scripts, read on.
 
 ### Preview 
 Make sure the camera can see the area of interest (the rotation doesn't really matter):

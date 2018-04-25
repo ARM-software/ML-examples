@@ -19,5 +19,5 @@ Explore gesture recognition with TensorFlow and transfer learning on the Raspber
 ### Multi-Gesture Recognition
 Train a convolutional neural network from scratch to recognize multiple gestures in a wide range of conditions with TensorFlow and a Raspberry Pi 3.
 
-* [Tutorial on Arm's developer site](https://developer.arm.com/technologies/machine-learning-on-arm/developer-material/how-to-guides/teach-your-pi-multi-gesture/improve-generalization-by-recording-more-data)
+* [Tutorial on Arm's developer site](https://developer.arm.com/technologies/machine-learning-on-arm/developer-material/how-to-guides/teach-your-pi-multi-gesture)
 * [Source code on GitHub](multi-gesture-recognition/README.md)
