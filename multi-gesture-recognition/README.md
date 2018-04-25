@@ -20,7 +20,7 @@ The exact URL of the current TensorFlow build varies between versions. Go to [th
 
 ## Example
 
-Check out the [multi-gesture recognition walkthrough](https://developer.arm.com/technologies/machine-learning-on-arm/developer-material/how-to-guides/teach-your-raspberry-pi-multi-gesture-recognition). If you just need to be reminded about the syntax supported by the example scripts, read on.
+Check out the [multi-gesture recognition walkthrough](https://developer.arm.com/technologies/machine-learning-on-arm/developer-material/how-to-guides/teach-your-pi-multi-gesture/improve-generalization-by-recording-more-data). If you just need to be reminded about the syntax supported by the example scripts, read on.
 
 ### Preview 
 Make sure the camera can see the area of interest (the rotation doesn't really matter):
