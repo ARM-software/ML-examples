@@ -3,7 +3,7 @@ A set of scripts to train a convolutional neural network from scratch to recogni
 
 ## Getting started
 
-This is the example code used in Arm's [Raspberry Pi multi-gesture recognition walkthrough](https://developer.arm.com/technologies/machine-learning-on-arm/developer-material/how-to-guides/teach-your-raspberry-pi-multi-gesture-recognition) - full installation and usage instructions can be found there.
+This is the example code used in Arm's [Raspberry Pi multi-gesture recognition walkthrough](https://developer.arm.com/technologies/machine-learning-on-arm/developer-material/how-to-guides/teach-your-pi-multi-gesture/improve-generalization-by-recording-more-data) - full installation and usage instructions can be found there.
 
 *Note: These example scripts are designed to be easy to read and follow, not to demonstrate state-of-the-art or best practice.*
 
