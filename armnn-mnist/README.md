@@ -12,7 +12,7 @@ Two applications are included:
 
 ## Dependencies
 
-You will need the Arm NN SDK, available from the [Arm NN SDK site](https://developer.arm.com/products/processors/machine-learning/arm-nn). TensorFlow support will require version 18.02.1.
+You will need the Arm NN SDK, available from the [Arm NN SDK site](https://developer.arm.com/products/processors/machine-learning/arm-nn). TensorFlow support will require version 18.02.1 or above.
 
 ## Usage
 
