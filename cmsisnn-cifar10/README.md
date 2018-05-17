@@ -1,4 +1,4 @@
-# CMSIS-NN CIFAR10 Example#
+# CMSIS-NN CIFAR10 Example
 
 This example shows how to quantize a trained Caffe model to 8-bits and deploy it on Arm Cortex-M CPUs using [CMSIS-NN](https://github.com/ARM-software/CMSIS_5).
 
