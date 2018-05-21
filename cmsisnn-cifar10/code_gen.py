@@ -211,8 +211,8 @@ def generate_buffers(caffe_model, file_name):
             buffer_size = caffe_model.layer_shape[layer][1]
             if caffe_model.layer_type[prev_layer]=='innerproduct' or caffe_model.layer_type[prev_layer]=='14':
                 buffer_size = buffer_size + caffe_model.layer_shape[prev_layer][1]
-            elif caffe_model.layer_type[layer]=='convolution' or caffe_model.layer_type[layer]=='4' or\
-                caffe_model.layer_type[layer]=='pooling' or caffe_model.layer_type[layer]=='17':
+            elif caffe_model.layer_type[prev_layer]=='convolution' or caffe_model.layer_type[prev_layer]=='4' or\
+                caffe_model.layer_type[prev_layer]=='pooling' or caffe_model.layer_type[prev_layer]=='17':
                 buffer_size = buffer_size + caffe_model.layer_shape[prev_layer][1] * \
                      caffe_model.layer_shape[prev_layer][2] * caffe_model.layer_shape[prev_layer][3]
             max_buffer_size = max(max_buffer_size,buffer_size)
