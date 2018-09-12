@@ -54,9 +54,13 @@ int main(int argc, char** argv)
     armnnCaffeParser::BindingPointInfo inputBindingInfo = parser->GetNetworkInputBindingInfo("data");
     armnnCaffeParser::BindingPointInfo outputBindingInfo = parser->GetNetworkOutputBindingInfo("prob");
 
+
+
     // Optimize the network for a specific runtime compute device, e.g. CpuAcc, GpuAcc
-    armnn::IRuntimePtr runtime = armnn::IRuntime::Create(armnn::Compute::CpuAcc);
-    armnn::IOptimizedNetworkPtr optNet = armnn::Optimize(*network, runtime->GetDeviceSpec());
+    //armnn::IRuntimePtr runtime = armnn::IRuntime::Create(armnn::Compute::CpuAcc);
+    armnn::IRuntime::CreationOptions options;
+    armnn::IRuntimePtr runtime = armnn::IRuntime::Create(options);
+    armnn::IOptimizedNetworkPtr optNet = armnn::Optimize(*network, {armnn::Compute::CpuRef}, runtime->GetDeviceSpec());
 
     // Load the optimized network onto the runtime device
     armnn::NetworkId networkIdentifier;
