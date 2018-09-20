@@ -39,7 +39,7 @@ int main(int argc, char** argv)
 {
     // Load a test image and its correct label
     std::string dataDir = "data/";
-    int testImageIndex = 1;
+    int testImageIndex = 0;
     std::unique_ptr<MnistImage> input = loadMnistImage(dataDir, testImageIndex);
     if (input == nullptr)
         return 1;
