@@ -190,7 +190,10 @@ def generate_buffers(caffe_model, file_name):
         max_buffer_size = max(max_buffer_size,im2col_buffer_size)
         print("Layer: "+layer+", required memory: "+str(im2col_buffer_size)+", im2col buffer size: "+str(max_buffer_size))
     for  layer in caffe_model.ip_layer:
-        fc_buffer_size=2*caffe_model.layer_shape[layer][1]
+        layer_no=caffe_model.layer.index(layer)
+        if layer_no>0:
+            prev_layer=caffe_model.layer[layer_no-1]
+        fc_buffer_size=2*caffe_model.layer_shape[prev_layer][1]*caffe_model.layer_shape[prev_layer][2]*caffe_model.layer_shape[prev_layer][3]
         max_buffer_size = max(max_buffer_size,fc_buffer_size)
         print("Layer: "+layer+", required memory: "+str(fc_buffer_size)+", im2col buffer size: "+str(max_buffer_size))
     f.write("q7_t col_buffer["+str(max_buffer_size)+"];\n")
