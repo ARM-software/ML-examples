@@ -102,6 +102,7 @@ def generate_parameters(caffe_model, file_name):
             f.write("#define "+layer.upper()+"_IN_DIM "+str(caffe_model.layer_shape[prev_layer][1]*\
                     caffe_model.layer_shape[prev_layer][2]*caffe_model.layer_shape[prev_layer][3])+"\n")
             f.write("#define "+layer.upper()+"_OUT_DIM "+str(caffe_model.layer_shape[layer][1])+"\n\n")
+    f.write("#define DATA_RSHIFT "+str(caffe_model.act_dec_bits[caffe_model.data_layer])+"\n")
     for layer in caffe_model.conv_layer+caffe_model.ip_layer:
         f.write("#define "+layer.upper()+"_BIAS_LSHIFT " + str(caffe_model.bias_lshift[layer])+"\n")
         f.write("#define "+layer.upper()+"_OUT_RSHIFT " + str(caffe_model.act_rshift[layer])+"\n")
@@ -110,6 +111,19 @@ def generate_parameters(caffe_model, file_name):
 def generate_weights(caffe_model,file_name):
     print('Generating weights file: '+file_name)
     f=open(file_name,'w')
+    if (caffe_model.mean_file is not ''):
+        data = open(caffe_model.mean_file, 'rb' ).read()
+        blob = caffe.proto.caffe_pb2.BlobProto()
+        blob.ParseFromString(data)
+        mean_data = np.array(caffe.io.blobproto_to_array(blob))[0]
+        mean_data = np.array(np.round(mean_data), dtype=int)
+        mean_data = np.transpose(mean_data, (1,2,0))
+    else:
+        mean_data = np.array(np.round(caffe_model.mean_val), dtype=int)
+    f.write('#define MEAN_DATA {')
+    mean_data.tofile(f,sep=',',format='%d')
+    f.write('}\n\n')
+
     net = caffe.Net(caffe_model.model_file,caffe_model.quant_weight_file,caffe.TEST)
     for layer_name in caffe_model.conv_layer:
         net.params[layer_name][0].data[:]=np.round(net.params[layer_name][0].data*\
@@ -152,19 +166,27 @@ def generate_header(file_name):
     print('Generating file: '+file_name)
     f=open(file_name,'w')
     f.write('\
-#include <stdio.h>\n\
-#include <stdlib.h>\n\
-#include <math.h>\n\
+#ifndef __NN_H__\n\
+#define __NN_H__\n\n\
 #include "mbed.h"\n\
 #include "arm_math.h"\n\
 #include "parameter.h"\n\
 #include "weights.h"\n\
-#include "arm_nnfunctions.h"\n')
+#include "arm_nnfunctions.h"\n\n\
+void run_nn(q7_t* input_data, q7_t* output_data);\n\n\
+#endif\n\
+')
     f.close()
 
 def generate_buffers(caffe_model, file_name):
     f=open(file_name,'a')
+
     f.write("\n")
+    if (caffe_model.mean_file is not ''):
+        f.write("static uint8_t mean[DATA_OUT_CH*DATA_OUT_DIM*DATA_OUT_DIM] = MEAN_DATA;\n\n")
+    else:
+        f.write("static uint8_t mean[DATA_OUT_CH] = MEAN_DATA;\n\n")
+
     for layer in caffe_model.conv_layer:
         f.write("static q7_t "+layer+"_wt["+layer.upper()+"_IN_CH*"+layer.upper()+"_KER_DIM*"+\
                 layer.upper()+"_KER_DIM*"+layer.upper()+"_OUT_CH] = "+layer.upper()+"_WT;\n")
@@ -176,12 +198,13 @@ def generate_buffers(caffe_model, file_name):
 
     #Input buffer
     layer=caffe_model.data_layer
-    f.write("q7_t input_data["+layer.upper()+"_OUT_CH*"+layer.upper()+"_OUT_DIM*"+\
+    f.write("//Add input_data and output_data in top main.cpp file\n");
+    f.write("//uint8_t input_data["+layer.upper()+"_OUT_CH*"+layer.upper()+"_OUT_DIM*"+\
             layer.upper()+"_OUT_DIM];\n")
     #Output buffer
     layer_no=caffe_model.layer.index(caffe_model.accuracy_layer)
     last_minus1_layer=caffe_model.layer[layer_no-1]
-    f.write("q7_t output_data["+last_minus1_layer.upper()+"_OUT_DIM];\n\n")
+    f.write("//q7_t output_data["+last_minus1_layer.upper()+"_OUT_DIM];\n\n")
     
     #Intermediate buffers
     max_buffer_size=0
@@ -223,44 +246,32 @@ def generate_buffers(caffe_model, file_name):
     f.write("q7_t scratch_buffer["+str(max_buffer_size)+"];\n")
 
 def generate_globals(file_name):
-    f=open(file_name,'a')
-    f.write('\n\
-Serial pc(USBTX, USBRX);\n\
+    f=open(file_name,'w')
+    f.write('\
+#include "nn.h"\n\n\
 Timer t;\n\
-int start_time, stop_time;\n\n\
 ')
     f.close()
 
-def generate_main(caffe_model,file_name):
-    data_layer=caffe_model.data_layer
-    input_data_size = caffe_model.layer_shape[data_layer][1]*caffe_model.layer_shape[data_layer][2]*\
-            caffe_model.layer_shape[data_layer][3]
+def generate_mean_subtraction(caffe_model, file_name):
     f=open(file_name,'a')
-    f.write('\n\
-int main () {\n\
-  //TODO: Get input_data (images) from camera \n\
-  //Add mean subtraction code here \n\
-  t.start();\n\
-  t.reset();\n\
-  start_time = t.read_us();\n\
-  run_nn();\n\
-  stop_time = t.read_us();\n\
-  t.stop();\n\
-  pc.printf("Final output: "); \n\
-')
-    layer_no=caffe_model.layer.index(caffe_model.accuracy_layer)
-    last_minus1_layer=caffe_model.layer[layer_no-1]
-    f.write('  for (int i=0;i<{};i++)\n'.format(caffe_model.layer_shape[last_minus1_layer][1]))
-    f.write('  {\n    pc.printf("%d ", output_data[i]);\n  }\n\
-  pc.printf("\\r\\n");\n\n\
-  return 0;\n\
-}\n\
-')
+    f.write('\nvoid mean_subtract(q7_t* image_data) {\n')
+    if (caffe_model.mean_file is not ''): # i.e., mean per pixel
+        f.write('  for(int i=0; i<DATA_OUT_CH*DATA_OUT_DIM*DATA_OUT_DIM; i++) {\n')
+        f.write('    image_data[i] = (q7_t)__SSAT( ((int)(image_data[i] - mean[i]) >> DATA_RSHIFT), 8);\n')
+        f.write('  }\n')
+    else:
+        f.write('  for(int i=0; i<DATA_OUT_CH*DATA_OUT_DIM*DATA_OUT_DIM; i+=3) {\n')
+        f.write('    image_data[i] = (q7_t)__SSAT( (((int)image_data[i] - mean[0]) >> DATA_RSHIFT), 8);\n')
+        f.write('    image_data[i+1] = (q7_t)__SSAT( (((int)image_data[i+1] - mean[1]) >> DATA_RSHIFT), 8);\n')
+        f.write('    image_data[i+2] = (q7_t)__SSAT( (((int)image_data[i+2] - mean[2]) >> DATA_RSHIFT), 8);\n')
+        f.write('  }\n')
+    f.write('}\n')
     f.close()
 
 def generate_network_code(caffe_model,file_name,profile=False):
     f=open(file_name,'a')
-    f.write('\nvoid run_nn() {\n\n')
+    f.write('\nvoid run_nn(q7_t* input_data, q7_t* output_data) {\n')
     f.write('  q7_t* buffer1 = scratch_buffer;\n')
     #find maximum layer size
     max_layer_size=0
@@ -273,6 +284,7 @@ def generate_network_code(caffe_model,file_name,profile=False):
         if max_layer_size < layer_size:
             max_layer_size = layer_size
     f.write('  q7_t* buffer2 = buffer1 + {};\n'.format(max_layer_size))
+    f.write('  mean_subtract(input_data);\n');
     input_buffer='input_data'
     output_buffer='buffer1'
     if profile==True:
@@ -364,12 +376,14 @@ if __name__ == '__main__':
     generate_parameters(my_model, cmd_args.out_dir+'/parameter.h')
     
     #define inputs, wts, biases and buffers
-    generate_header(cmd_args.out_dir+'/main.cpp')
-    generate_globals(cmd_args.out_dir+'/main.cpp')
-    generate_buffers(my_model, cmd_args.out_dir+'/main.cpp')
+    generate_header(cmd_args.out_dir+'/nn.h')
+    generate_globals(cmd_args.out_dir+'/nn.cpp')
+    generate_buffers(my_model, cmd_args.out_dir+'/nn.cpp')
+
+    #generate image preprocessing code
+    generate_mean_subtraction(my_model, cmd_args.out_dir+'/nn.cpp')
 
     #call layers
-    generate_network_code(my_model,cmd_args.out_dir+'/main.cpp',profile=cmd_args.profile)
-    generate_main(my_model,cmd_args.out_dir+'/main.cpp')
+    generate_network_code(my_model,cmd_args.out_dir+'/nn.cpp',profile=cmd_args.profile)
     
 

@@ -58,6 +58,7 @@
 #define IP1_IN_DIM 512
 #define IP1_OUT_DIM 10
 
+#define DATA_RSHIFT 0
 #define CONV1_BIAS_LSHIFT 0
 #define CONV1_OUT_RSHIFT 11
 #define CONV2_BIAS_LSHIFT 0

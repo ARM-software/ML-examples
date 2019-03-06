@@ -66,6 +66,8 @@ class Caffe_Quantizer(object):
         self.bias_lshift={}
         self.act_rshift={}
         self.data_layer=None
+        self.mean_file=""
+        self.mean_val=[]
         self.label_layer=None
         self.accuracy_layer=accuracy_layer
         self.iterations=iterations
@@ -109,6 +111,8 @@ class Caffe_Quantizer(object):
         self.bias_lshift=model_par.bias_lshift
         self.act_rshift=model_par.act_rshift
         self.data_layer=model_par.data_layer
+        self.mean_file=model_par.mean_file
+        self.mean_val=model_par.mean_val
         self.label_layer=model_par.label_layer
         self.accuracy_layer=model_par.accuracy_layer
         self.iterations=model_par.iterations
@@ -206,6 +210,8 @@ class Caffe_Quantizer(object):
                     batch_size = layer.data_param.batch_size
                     self.data_layer = str(layer.top[0])
                     self.label_layer = str(layer.top[1])
+                    self.mean_file = layer.transform_param.mean_file
+                    self.mean_val = list(layer.transform_param.mean_value)
 
     def get_graph_connectivity(self):
 
@@ -614,11 +620,11 @@ if __name__ == '__main__':
     #Quantize biases to 8 bits based on the quantization outputs of weights and activations
     my_model.quantize_bias_8bit()
     my_model.run_quantized_network()
-
+ 
     my_model.save_quant_params(cmd_args.save)
     #To load the parameters use the following:
     #my_model.load_quant_params('mymodel.p')
-
+ 
     #Print dataformats
     print('Input: '+my_model.data_layer+' Q'+str(my_model.act_int_bits[my_model.data_layer])+'.'+\
         str(my_model.act_dec_bits[my_model.data_layer])+'(scaling factor:'+\
@@ -630,9 +636,9 @@ if __name__ == '__main__':
             ' (scaling factor:'+str(2**(my_model.wt_dec_bits[layer]))+') Biases: Q'+\
             str(my_model.bias_int_bits[layer])+'.'+str(my_model.bias_dec_bits[layer])+\
             '(scaling factor:'+str(2**(my_model.bias_dec_bits[layer]))+')')
-
+ 
     #Print data shifts to be used by ML kernels
     for layer in my_model.conv_layer+my_model.ip_layer:
         print('Layer: '+layer+' bias left shift: '+str(my_model.bias_lshift[layer])+\
             ' act_rshift: '+str(my_model.act_rshift[layer]))
-
+ 
