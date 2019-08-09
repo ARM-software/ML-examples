@@ -14,7 +14,7 @@ One application, along with utility code is included:
 
 ## Dependencies
 You will need:
-* Arm NN SDK, available from the [Arm NN SDK
+* Arm NN SDK >= 19.08, available from the [Arm NN SDK
 site](https://developer.arm.com/products/processors/machine-learning/arm-nn).
 * Boost library, which should be part of the Arm NN SDK installation process.
 
