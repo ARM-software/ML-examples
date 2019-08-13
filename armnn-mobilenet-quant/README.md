@@ -24,7 +24,7 @@ You will need:
 
  **NOTE: while following the build instructions, please also configure the build with the following options enabled**:
 
-    - BUILD\_TESTS
+    - BUILD_TESTS
 
     And optionally, if you want to support CPU acceleration (NEON) and GPU acceleration (OpenCL):
 
