@@ -15,18 +15,22 @@ One application, along with utility code is included:
 ## Dependencies
 You will need:
 * Arm NN SDK >= 19.08.
-It is available from the [github repo](https://github.com/ARM-software/armnn) (**NOTE: 19.08 release is not available on this repo until the end of August 2019. Please see below for the development repo if you're eager to run this example code before the release**)
 
-Alternatively, you can obtain the latest unstable version from the [development repo](https://review.mlplatform.org/#/admin/projects/ml/armnn).
+ It is available from the [github repo](https://github.com/ARM-software/armnn) (**NOTE: 19.08 release is not available on this repo until the end of August 2019. Please see below for the development repo if you're eager to run this example code before the release**)
 
-The build instructions for ArmNN with TfLite parser can be found in this [tutorial](https://developer.arm.com/solutions/machine-learning-on-arm/developer-material/how-to-guides/configuring-the-arm-nn-sdk-build-environment-for-tensorflow-lite).
+ Alternatively, you can obtain the latest unstable version from the [development repo](https://review.mlplatform.org/#/admin/projects/ml/armnn).
 
-**NOTE: while following the build instructions, please also configure the build with the following options enabled**:
+ The build instructions for ArmNN with TfLite parser can be found in this [tutorial](https://developer.arm.com/solutions/machine-learning-on-arm/developer-material/how-to-guides/configuring-the-arm-nn-sdk-build-environment-for-tensorflow-lite).
+
+ **NOTE: while following the build instructions, please also configure the build with the following options enabled**:
+
     - BUILD\_TESTS
 
     And optionally, if you want to support CPU acceleration (NEON) and GPU acceleration (OpenCL):
+
     - ARMCOMPUTENEON
     - ARMCOMPUTECL
+
 * Boost library, which should be part of the Arm NN SDK installation process.
 * A (trained) quantised mobilenet V1.tflite file. You can download a pre-trained model from [Google](https://www.tensorflow.org/lite/guide/hosted_models).
 * An image(PNG,JPEG format) to classify.
