@@ -4,7 +4,7 @@ Use Arm NN to deploy a TensorflowLite Quantized MobileNet V1 network on an Arm C
 
 ## Getting started
 
-This is the example code used in Armn's Deploying a Tensorflow Lite quantised MobileNet model on ArmNN (TODO: Add link)
+This is the example code used in Armn's Deploying a Tensorflow Lite quantised MobileNet model on ArmNN (TBD).
 tutorial - a more detailed description can be found there.
 
 One application, along with utility code is included:
@@ -16,10 +16,14 @@ One application, along with utility code is included:
 You will need:
 * Arm NN SDK >= 19.08.
 It is available from the [github repo](https://github.com/ARM-software/armnn) (**NOTE: 19.08 release is not available on this repo until the end of August 2019. Please see below for the development repo if you're eager to run this example code before the release**)
+
 Alternatively, you can obtain the latest unstable version from the [development repo](https://review.mlplatform.org/#/admin/projects/ml/armnn).
+
 The build instructions for ArmNN with TfLite parser can be found in this [tutorial](https://developer.arm.com/solutions/machine-learning-on-arm/developer-material/how-to-guides/configuring-the-arm-nn-sdk-build-environment-for-tensorflow-lite).
+
 **NOTE: while following the build instructions, please also configure the build with the following options enabled**:
     - BUILD\_TESTS
+
     And optionally, if you want to support CPU acceleration (NEON) and GPU acceleration (OpenCL):
     - ARMCOMPUTENEON
     - ARMCOMPUTECL
