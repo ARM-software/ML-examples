@@ -19,8 +19,7 @@ From a base Raspian install you will need to add TensorFlow:
     
     # Pi 3 (Raspbian 9) or Pi 4 Model B(Raspbian 10)
     sudo pip install --upgrade tensorflow
-    
-    # On a low memory Pi, you will probably get a "Memory Error" error message. Please use the command below instead
+    # On a low memory Pi, you will probably get a "Memory Error" error message during installation. Instead, please use the command below.
     sudo pip install --no-cache-dir tensorflow
     
 ## Example
