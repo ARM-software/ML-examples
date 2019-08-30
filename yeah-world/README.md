@@ -11,15 +11,18 @@ This is the example code used in Arm's [Raspberry Pi gesture recognition walkthr
 
 From a base Raspian install you will need to add TensorFlow:
 
-	 # TensorFlow dependencies
+    # TensorFlow dependencies
     sudo apt-get install libblas-dev liblapack-dev python-dev libatlas-base-dev gfortran python-setuptools python-h5py 
     
-    # Pi Zero
+    # Pi Zero 
     sudo pip2 install http://ci.tensorflow.org/view/Nightly/job/nightly-pi-zero/lastSuccessfulBuild/artifact/output-artifacts/tensorflow-1.4.0-cp27-none-any.whl
     
-    # Pi 3
-    sudo pip2 install http://ci.tensorflow.org/view/Nightly/job/nightly-pi/lastSuccessfulBuild/artifact/output-artifacts/tensorflow-1.4.0-cp27-none-any.whl 
-
+    # Pi 3 (Raspbian 9) or Pi 4 Model B(Raspbian 10)
+    sudo pip install --upgrade tensorflow
+    
+    # On a low memory Pi, you will probably get a "Memory Error" error message. Please use the command below instead
+    sudo pip install --no-cache-dir tensorflow
+    
 ## Example
 
 Check out the [full gesture recognition walkthrough](https://developer.arm.com/technologies/machine-learning-on-arm/developer-material/how-to-guides/teach-your-raspberry-pi-yeah-world). If you just need to be reminded about the syntax supported by the example scripts, read on.
