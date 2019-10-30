@@ -2,27 +2,28 @@
 // Copyright © 2017 Arm Ltd. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
+
 #include "model_output_labels_loader.hpp"
+#include "inference_test_image.hpp"
+#include "utils.hpp"
 
-#include "armnn/BackendId.hpp"
-#include "armnn/IRuntime.hpp"
-#include "armnnTfLiteParser/ITfLiteParser.hpp"
-#include "backendsCommon/BackendRegistry.hpp"
-#include "ImageTensorGenerator/ImageTensorGenerator.hpp"
-#include "InferenceTest.hpp"
-#include "TensorIOUtils.hpp"
+#include <armnn/BackendId.hpp>
+#include <armnn/IRuntime.hpp>
+#include <armnn/Utils.hpp>
+#include <armnn/BackendRegistry.hpp>
 
-#include <algorithm>
+#include <armnnTfLiteParser/ITfLiteParser.hpp>
+
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/variant.hpp>
+
+#include <algorithm>
 #include <iostream>
 #include <iterator>
 #include <map>
 #include <string>
 #include <vector>
-
-using namespace armnn::test;
 
 struct ProgramOptions
 {
@@ -77,7 +78,8 @@ int GetProgramOptions(int argc, char* argv[], ProgramOptions& options)
         std::cerr << desc << std::endl;
         return EXIT_FAILURE;
     }
-    return 0;
+
+    return EXIT_SUCCESS;
 }
 
 int main(int argc, char* argv[])
@@ -89,8 +91,6 @@ int main(int argc, char* argv[])
     const std::string outputName = "MobilenetV1/Predictions/Reshape_1";
     const unsigned int inputTensorWidth = 224;
     const unsigned int inputTensorHeight = 224;
-    const unsigned int inputTensorBatchSize = 1;
-    const armnn::DataLayout inputTensorDataLayout = armnn::DataLayout::NHWC;
 
     // ------------------------------------------------------------------------
     // Get program options
@@ -106,8 +106,7 @@ int main(int argc, char* argv[])
     // Load model output labels
     // ------------------------------------------------------------------------
 
-    const std::vector<CategoryNames> modelOutputLabels =
-        LoadModelOutputLabels(programOptions.modelOutputLabelsPath);
+    const std::vector<CategoryNames> modelOutputLabels = LoadModelOutputLabels(programOptions.modelOutputLabelsPath);
 
     // ------------------------------------------------------------------------
     // Load and preprocess input image
@@ -117,17 +116,15 @@ int main(int argc, char* argv[])
 
     // Prepare image normalization parameters
     NormalizationParameters normParams;
-    normParams.scale = 1.0;
-    normParams.mean = { 0.0, 0.0, 0.0 };
+    normParams.scale  = 1.0;
+    normParams.mean   = { 0.0, 0.0, 0.0 };
     normParams.stddev = { 1.0, 1.0, 1.0 };
 
     // Load and preprocess input image
-    const std::vector<TContainer> inputDataContainers =
-    { PrepareImageTensor<uint8_t>(programOptions.imagePath,
-            inputTensorWidth, inputTensorHeight,
-            normParams,
-            inputTensorBatchSize,
-            inputTensorDataLayout) };
+    const std::vector<TContainer> inputDataContainers
+    {
+        PrepareImageTensor(programOptions.imagePath, inputTensorWidth, inputTensorHeight, normParams)
+    };
 
     // ------------------------------------------------------------------------
     // Prepare output tensor
@@ -158,8 +155,9 @@ int main(int argc, char* argv[])
     // Optimize the network for a specific runtime compute device, e.g. CpuAcc, GpuAcc
     armnn::IRuntime::CreationOptions options;
     armnn::IRuntimePtr runtime(armnn::IRuntime::Create(options));
-    armnn::IOptimizedNetworkPtr optimizedNet =
-        armnn::Optimize(*network, programOptions.computeDevice, runtime->GetDeviceSpec());
+    armnn::IOptimizedNetworkPtr optimizedNet = armnn::Optimize(*network,
+                                                               programOptions.computeDevice,
+                                                               runtime->GetDeviceSpec());
 
     // Load the optimized network onto the runtime device
     armnn::NetworkId networkId;
@@ -171,8 +169,8 @@ int main(int argc, char* argv[])
 
     std::cout << "Running network..." << std::endl;
     runtime->EnqueueWorkload(networkId,
-            armnnUtils::MakeInputTensors(inputBindings, inputDataContainers),
-            armnnUtils::MakeOutputTensors(outputBindings, outputDataContainers));
+                             MakeInputTensors(inputBindings, inputDataContainers),
+                             MakeOutputTensors(outputBindings, outputDataContainers));
 
     // ------------------------------------------------------------------------
     // Process and report output
@@ -189,5 +187,6 @@ int main(int argc, char* argv[])
     std::cout << std::endl;
 
     std::cerr<< "Ran successfully!" << std::endl;
-    return 0;
+
+    return EXIT_SUCCESS;
 }

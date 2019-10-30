@@ -2,13 +2,16 @@
 // Copyright © 2017 Arm Ltd. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
-#include <algorithm>
+
+#pragma once
+
 #include <boost/assert.hpp>
 #include <boost/filesystem.hpp>
+
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
-
 
 using CategoryNames = std::vector<std::string>;
 
@@ -20,7 +23,7 @@ using CategoryNames = std::vector<std::string>;
  * @return A vector of tokens split from \p originalString by \delimiter
  */
 std::vector<std::string>
-    SplitBy(const std::string& originalString, const std::string& delimiter = " ", bool includeEmptyToken = false)
+SplitBy(const std::string& originalString, const std::string& delimiter = " ", bool includeEmptyToken = false)
 {
     std::vector<std::string> tokens;
     size_t cur  = 0;
