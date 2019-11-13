@@ -15,9 +15,10 @@ ways to do this; the method here (pickle raw frames) is a compromise
 between requiring few dependencies, being easy to understand, allowing
 per-frame data augmentation and performance on a Pi Zero.
 """
+from __future__ import print_function
 from time import time, sleep
 from sys import argv, exit, stdout
-from cPickle import load, dump
+from pickle import load, dump
 from os.path import exists
 from os import getenv
 import pygame
@@ -98,7 +99,7 @@ def record(camera, filename, seconds):
 
     stdout.write('Writing %d frames to %s... ' % (len(frames), filename))
     stdout.flush()
-    dump(frames, open(filename, 'wb'))
+    dump(frames, open(filename, 'wb'), protocol=2)
     print('done.')
 
 

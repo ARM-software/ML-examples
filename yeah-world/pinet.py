@@ -12,14 +12,16 @@
 """ Provides PiNet, a MobileNet-based feature extractor loaded from TensorFlow.
 This loads many times faster than when using keras.applications, which can take
 several minutes on a Pi Zero. """
+from __future__ import print_function
 
 
+from builtins import object
 import tensorflow as tf
 import numpy as np
 
 
 
-class PiNet:
+class PiNet(object):
     """ Load a feature extractor and provide a convenience function for 1-batch
         preprocessing and inference """
     def __init__(self):

@@ -13,6 +13,8 @@
 A simple wrapper around PiCamera that can randomly vary the exposure and
 white balance during image capture as a form of data augmentation.
 """
+from builtins import next
+from builtins import object
 from time import sleep
 from random import choice, uniform
 
@@ -21,7 +23,7 @@ from picamera import PiCamera
 
 
 
-class Camera:
+class Camera(object):
     """ A simple PiCamera wrapper. Setting training_mode will randomly vary
         exposure and white balance between captured images. The capture stream
         is truncated before capture to reduce recognition latency at the expense
@@ -58,5 +60,5 @@ class Camera:
             awb_b = max(0., uniform(-.5, .5) + self.base_awb[1])
             self.camera.awb_gains = (awb_r, awb_b)
 
-        frame = self.stream.next().array
+        frame = next(self.stream).array
         return frame
