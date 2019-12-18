@@ -14,9 +14,10 @@ Train a classifier to distinguish between several sets of images. This
 uses a pretrained feature extractor (PiNet) to convert images to features
 then trains a very simple Keras classifier on those features.
 """
+from __future__ import print_function
 
 from sys import argv, exit, stdout
-from cPickle import load
+from pickle import load
 from tensorflow import keras
 from pinet import PiNet
 import numpy as np

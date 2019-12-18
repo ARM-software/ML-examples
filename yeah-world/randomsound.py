@@ -16,6 +16,7 @@ Provides RandomSound, a simple way to play a random sound file from a
 directory using pygame.
 """
 
+from builtins import object
 from os.path import join
 from glob import glob
 from random import choice
@@ -25,7 +26,7 @@ from pygame import mixer
 
 
 
-class RandomSound:
+class RandomSound(object):
     """ A simple way to play random sound files """
     def __init__(self):
         mixer.init()
