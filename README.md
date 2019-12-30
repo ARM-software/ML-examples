@@ -10,6 +10,11 @@ Deploy a TensorFlow MNIST model with the Arm NN inference engine.
 * [Tutorial on Arm's developer site](https://developer.arm.com/technologies/machine-learning-on-arm/developer-material/how-to-guides/)
 * [Source code on GitHub](armnn-mnist/README.md)
 
+### Arm NN Quantised Mobilenet
+Deploy a TensorFlowLite Quantized MobileNet V1 model with the Arm NN inference engine.
+* Tutorial on Arm's developer site(TBD)
+* [Source code on GitHub](armnn-mobilenet-quant/README.md)
+
 ### Yeah, World
 Explore gesture recognition with TensorFlow and transfer learning on the Raspberry Pi 4 Model B, Pi 3 and Pi Zero.
 
