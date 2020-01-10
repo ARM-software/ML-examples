@@ -1,6 +1,6 @@
 /*
  *  Copyright © 2019 Arm Ltd. All rights reserved.
- * SPDX-License-Identifier: MIT
+ * SPDX-License-Identifier: Apache-2.0
  */
 package com.arm.styletransfer;
 
