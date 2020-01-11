@@ -1,6 +1,6 @@
-#Accelerating ML inference on Raspberry Pi with PyArmNN
+# Accelerating ML inference on Raspberry Pi with PyArmNN
 
-##Overview 
+## Overview 
 
 A neural network, trained to recognize images that include a fire or flames, can make fire-detection systems more reliable and cost-effective. This tutorial shows how to use the newly released Python APIs for Arm NN inference engine, to classify images as “Fire” versus “Non-Fire.”
 
@@ -26,7 +26,7 @@ To run a ML model on device, our main steps are:
 •	Choose backends, create runtime and optimize the model
 •	Perform inference
 •	Interpret and report the output
-Import pyarmnn module
+### Import pyarmnn module
 
 Use the variables below to define the location of our model, image and label file.
 import pyarmnn as ann
@@ -37,7 +37,7 @@ print(f"Working with ARMNN {ann.ARMNN_VERSION}")
 
 
 
-Load and pre-process an input image
+### Load and pre-process an input image
 
 Load the image specified in the command line, resize it to the model input dimension. In our case, our model accepts 128x128 input images. The input image is wrapped in a const tensor and bound to the input tensor. 
 
@@ -49,7 +49,7 @@ parser.add_argument(
       '--image', help='File path of image file', required=True)
 args = parser.parse_args()
 
-# Load an image.
+#Load an image.
 image = cv2.imread(args.image)
 image = cv2.resize(image, (128, 128))
 image = np.array(image, dtype=np.float32) / 255.0
@@ -57,16 +57,7 @@ print(image.size)
 
 
 
-
-
-
-
-
-
-
-
-
-Create a parser and load the network
+### Create a parser and load the network
 
 The next step when working with Armn NN is to create a parser object that will be used to load the network file. Arm NN has parsers for a variety of model file types, including TFLite, ONNX, Caffe etc. Parsers handle creation of the underlying Arm NN graph so you don't need to construct your model graph by hand. 
 
@@ -76,7 +67,7 @@ parser = ann.ITfLiteParser()
 network = parser.CreateNetworkFromBinaryFile('./fire_detection.tflite')
 
 
-Get Input Binding Info
+### Get Input Binding Info
 Once created, the parser is used to extract the input information for the network.
 We can extract all the input names by calling GetSubgraphInputTensorNames() and then use them get the input binding information. For this example, since our model only has one input layer, we use input_names[0] to obtain the input tensor, then use this string to retrieve the input binding info.
 The input binding info contains all the essential information about the input, it is a tuple consisting of integer identifiers for bindable layers (inputs, outputs) and the tensor info (data type, quantization information, number of dimensions, total number of elements).
@@ -93,22 +84,17 @@ tensor info: {input_tensor_info}
 
 
 
-
-
-
-Choose backends, create runtime and optimize the model
+### Choose backends, create runtime and optimize the model
 Specify the backend list you can optimize the network.
 
 options = ann.CreationOptions()
 runtime = ann.IRuntime(options)
-
-# Backend choices earlier in the list have higher preference.
 preferredBackends = [ann.BackendId('CpuAcc'), ann.BackendId('CpuRef')]
 opt_network, messages = ann.Optimize(network, preferredBackends, runtime.GetDeviceSpec(), ann.OptimizerOptions())
 
 
 
-Load optimized network into the runtime
+### Load optimized network into the runtime
 
 Load the optimized network in the runtime context. LoadNetwork() creates the backend-specific workloads for the layers. 
 
@@ -119,7 +105,7 @@ input_tensors = ann.make_input_tensors([input_binding_info], [image])
 
 
 
-Get output binding info and make output tensor
+### Get output binding info and make output tensor
 Similar to the input binding info, we can retrieve from the parser the output tensor names and get the binding information.
 In our sample, it is considered that an image classification model has only one output, hence it's used only the first name from the list returned, it can easily be extended to multiple output looping on the output_names.
 
@@ -129,7 +115,7 @@ output_tensors = ann.make_output_tensors([output_binding_info])
 
 
 
-Perform Inference
+### Perform Inference
 Performance Inference EnqueueWorkload() function of the runtime context executes the inference for the network loaded.
 
 runtime.EnqueueWorkload(0, input_tensors, output_tensors)
