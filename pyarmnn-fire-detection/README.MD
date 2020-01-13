@@ -21,25 +21,32 @@ We will use a Raspberry Pi 3 / 4 device. Pi device is powered by an Arm CPU with
 
 •	PyArmNN package. Use the pyarmnn-19.11.0.tar.gz in this directory. 'pip3 install pyarmnn-19.11.0.tar.gz'
 
-•	fire_detection.tflite, generated from this tutorial and converted to a TensorFlow Lite model.
+•	fire_detection.tflite, generated from this tutorial https://www.pyimagesearch.com/2019/11/18/fire-and-smoke-detection-with-keras-and-deep-learning/ and converted to a TensorFlow Lite model. For your convenience, we included the fire_detection.tflite model in this directory.
 
 ## Run ML Inference with PyArmNN
 To run a ML model on device, our main steps are:
+
 •	Import pyarmnn module
+
 •	Load an input image
+
 •	Create a parser and load the network
+
 •	Choose backends, create runtime and optimize the model
+
 •	Perform inference
+
 •	Interpret and report the output
+
 ### Import pyarmnn module
 
-Use the variables below to define the location of our model, image and label file.
-import pyarmnn as ann
-import numpy as np
-import cv2
+Use the variables below to define the location of our model, image and label file. 
+       
+    import pyarmnn as ann
+    import numpy as np
+    import cv2
 
-print(f"Working with ARMNN {ann.ARMNN_VERSION}")
-
+    print(f"Working with ARMNN {ann.ARMNN_VERSION}")
 
 
 ### Load and pre-process an input image
@@ -48,18 +55,17 @@ Load the image specified in the command line, resize it to the model input dimen
 
 Our model is a floating-point model. We must scale the input image values to a range of -1 to 1.
 
-parser = argparse.ArgumentParser(
-      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument(
+    parser = argparse.ArgumentParser(
+       formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument(
       '--image', help='File path of image file', required=True)
-args = parser.parse_args()
+    args = parser.parse_args()
 
-#Load an image.
-image = cv2.imread(args.image)
-image = cv2.resize(image, (128, 128))
-image = np.array(image, dtype=np.float32) / 255.0
-print(image.size)
-
+    #Load an image.
+    image = cv2.imread(args.image)
+    image = cv2.resize(image, (128, 128))
+    image = np.array(image, dtype=np.float32) / 255.0
+    print(image.size)
 
 ### Create a parser and load the network
 
@@ -67,9 +73,8 @@ The next step when working with Armn NN is to create a parser object that will b
 
 In this example, we will create a TfLite parser to load our TensorFlow Lite model from the specified path:
 
-parser = ann.ITfLiteParser()
-network = parser.CreateNetworkFromBinaryFile('./fire_detection.tflite')
-
+    parser = ann.ITfLiteParser()
+    network = parser.CreateNetworkFromBinaryFile('./fire_detection.tflite')
 
 ### Get Input Binding Info
 Once created, the parser is used to extract the input information for the network.
@@ -78,71 +83,59 @@ We can extract all the input names by calling GetSubgraphInputTensorNames() and 
 
 The input binding info contains all the essential information about the input, it is a tuple consisting of integer identifiers for bindable layers (inputs, outputs) and the tensor info (data type, quantization information, number of dimensions, total number of elements).
 
-graph_id = 0
-input_names = parser.GetSubgraphInputTensorNames(graph_id)
-input_binding_info = parser.GetNetworkInputBindingInfo(graph_id, input_names[0])
-input_tensor_id = input_binding_info[0]
-input_tensor_info = input_binding_info[1]
-print(f"""
-tensor id: {input_tensor_id},
-tensor info: {input_tensor_info}
-""")
-
-
+    graph_id = 0
+    input_names = parser.GetSubgraphInputTensorNames(graph_id)
+    input_binding_info = parser.GetNetworkInputBindingInfo(graph_id, input_names[0])
+    input_tensor_id = input_binding_info[0]
+    input_tensor_info = input_binding_info[1]
+    print(f"""
+     tensor id: {input_tensor_id},
+     tensor info: {input_tensor_info}
+    """)
 
 ### Choose backends, create runtime and optimize the model
 Specify the backend list you can optimize the network.
 
-options = ann.CreationOptions()
-runtime = ann.IRuntime(options)
-preferredBackends = [ann.BackendId('CpuAcc'), ann.BackendId('CpuRef')]
-opt_network, messages = ann.Optimize(network, preferredBackends, runtime.GetDeviceSpec(), ann.OptimizerOptions())
-
-
+    options = ann.CreationOptions()
+    runtime = ann.IRuntime(options)
+    preferredBackends = [ann.BackendId('CpuAcc'), ann.BackendId('CpuRef')]
+    opt_network, messages = ann.Optimize(network, preferredBackends, runtime.GetDeviceSpec(), ann.OptimizerOptions())
 
 ### Load optimized network into the runtime
 
 Load the optimized network in the runtime context. LoadNetwork() creates the backend-specific workloads for the layers. 
 
-
-net_id, _ = runtime.LoadNetwork(opt_network)
-print(f"Loaded network, id={net_id}")
-input_tensors = ann.make_input_tensors([input_binding_info], [image])
-
-
+    net_id, _ = runtime.LoadNetwork(opt_network)
+    print(f"Loaded network, id={net_id}")
+    input_tensors = ann.make_input_tensors([input_binding_info], [image])
 
 ### Get output binding info and make output tensor
 Similar to the input binding info, we can retrieve from the parser the output tensor names and get the binding information.
 In our sample, it is considered that an image classification model has only one output, hence it's used only the first name from the list returned, it can easily be extended to multiple output looping on the output_names.
 
-output_names = parser.GetSubgraphOutputTensorNames(graph_id)
-output_binding_info = parser.GetNetworkOutputBindingInfo(0, output_names[0])
-output_tensors = ann.make_output_tensors([output_binding_info])
-
-
+    output_names = parser.GetSubgraphOutputTensorNames(graph_id)
+    output_binding_info = parser.GetNetworkOutputBindingInfo(0, output_names[0])
+    output_tensors = ann.make_output_tensors([output_binding_info])
 
 ### Perform Inference
 Performance Inference EnqueueWorkload() function of the runtime context executes the inference for the network loaded.
 
-runtime.EnqueueWorkload(0, input_tensors, output_tensors)
-output, output_tensor_info = ann.from_output_tensor(output_tensors[0][1])
-print(f"Output tensor info: {output_tensor_info}")
-
-
-
+    runtime.EnqueueWorkload(0, input_tensors, output_tensors)
+    output, output_tensor_info = ann.from_output_tensor(output_tensors[0][1])
+    print(f"Output tensor info: {output_tensor_info}")
 
 ## Run the Python script from command line:
 
-$ python3 predict_pyarmnn.py --image ./images/opencountry_land663.jpg 
-Working with ARMNN 20190800
+    $ python3 predict_pyarmnn.py --image ./images/opencountry_land663.jpg 
+    Working with ARMNN 20190800
 
-tensor id: 15616, 
-tensor info: TensorInfo{DataType: 1, IsQuantized: 0, QuantizationScale: 0.000000, QuantizationOffset: 0, NumDimensions: 4, NumElements: 49152}
+    tensor id: 15616, 
+    tensor info: TensorInfo{DataType: 1, IsQuantized: 0, QuantizationScale: 0.000000, QuantizationOffset: 0, NumDimensions: 4, NumElements: 49152}
 
-(128, 128, 3)
-Output tensor info: TensorInfo{DataType: 1, IsQuantized: 0, QuantizationScale: 0.000000, QuantizationOffset: 0, NumDimensions: 2, NumElements: 2}
-[0.9967675, 0.00323252]
-Non-Fire
+    (128, 128, 3)
+    Output tensor info: TensorInfo{DataType: 1, IsQuantized: 0, QuantizationScale: 0.000000, QuantizationOffset: 0, NumDimensions: 2, NumElements: 2}
+    [0.9967675, 0.00323252]
+    Non-Fire
 
 In our example, class 0’s possibility is 0.9967675, vs. class 1’s possibility is 0.00323252. Fire is not detected in the image. 
 
@@ -154,31 +147,33 @@ TensorFlow Lite uses interpreter to perform an inference. The interpreter uses a
 
 For performance comparison, inference was carried out with our fire detection model. In our example, we only run inference once. We can also run the model multiple times and take the average inferencing time. 
 
-$ python3 predict_tflite.py --image ./images/746.jpg 
-2020-01-01 11:32:33.609188: E 
-Elapsed time is  38.02500700112432 ms
-[[9.9076563e-04 9.9900925e-01]]
-Fire
+    $ python3 predict_tflite.py --image ./images/746.jpg 
+    2020-01-01 11:32:33.609188: E 
+    Elapsed time is  38.02500700112432 ms
+    [[9.9076563e-04 9.9900925e-01]]
+    Fire
 
 We extend predict_pyarmmnn.py with the same code for inference benchmarking. 
-start = timer()
-runtime.EnqueueWorkload(0, input_tensors, output_tensors)
-end = timer()
-print('Elapsed time is ', (end - start) * 1000, 'ms')
+      
+    start = timer()
+    runtime.EnqueueWorkload(0, input_tensors, output_tensors)
+    end = timer()
+    print('Elapsed time is ', (end - start) * 1000, 'ms')
 
 Run the Python script again:
-$ python3 predict_pyarmnn.py --image ./images/746.jpg 
-Working with ARMNN 20190800
-(128, 128, 3)
 
-tensor id: 15616, 
-tensor info: TensorInfo{DataType: 1, IsQuantized: 0, QuantizationScale: 0.000000, QuantizationOffset: 0, NumDimensions: 4, NumElements: 49152}
+    $ python3 predict_pyarmnn.py --image ./images/746.jpg 
+    Working with ARMNN 20190800
+    (128, 128, 3)
 
-Loaded network, id=0
-Elapsed time is  21.224445023108274 ms
-Output tensor info: TensorInfo{DataType: 1, IsQuantized: 0, QuantizationScale: 0.000000, QuantizationOffset: 0, NumDimensions: 2, NumElements: 2}
-[0.0009907632, 0.99900925]
-Fire
+    tensor id: 15616, 
+     tensor info: TensorInfo{DataType: 1, IsQuantized: 0, QuantizationScale: 0.000000, QuantizationOffset: 0, NumDimensions: 4, NumElements: 49152}
+
+    Loaded network, id=0
+    Elapsed time is  21.224445023108274 ms
+    Output tensor info: TensorInfo{DataType: 1, IsQuantized: 0, QuantizationScale: 0.000000, QuantizationOffset: 0, NumDimensions: 2, NumElements: 2}
+    [0.0009907632, 0.99900925]
+    Fire
 From the result, you can observe an inference performance enhancement by using Arm NN Neon optimized computational backend.   
 
 ## Next Steps and Helpful Resources 
