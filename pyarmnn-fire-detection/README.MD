@@ -6,7 +6,9 @@ A neural network, trained to recognize images that include a fire or flames, can
 
 ## What is Arm NN and PyArmNN? 
 Arm NN is an inference engine for CPUs, GPUs and NPUs. It executes ML model on-device in order to make predictions based on input data. Arm NN enables efficient translation of existing neural network frameworks, such as TensorFlow Lite, TensorFlow, ONNX and Caffe, allowing them to run efficiently, without modification, across Arm Cortex-A CPUs, Arm Mali GPUs and Arm Ethos NPUs.
+
 PyArmNN is a newly developed python extension for Arm NN SDK. In this tutorial, we are going to use PyArmNN APIs to run a fire detection image classification model fire_detection.tflite (courtesy of this tutorial) and compare the inference performance with TensorFlow Lite on a Raspberry Pi. 
+
 Arm NN provides TFLite parser armnnTfLiteParser, which is a library for loading neural networks defined by TensorFlow Lite FlatBuffers files into the Arm NN runtime. We are going to use the TFLite parser to parse our fire detection model for “Fire” vs. “Non-Fire” image classification. 
 
 ## What do we need?
@@ -14,8 +16,11 @@ Arm NN provides TFLite parser armnnTfLiteParser, which is a library for loading 
 We will use a Raspberry Pi 3 / 4 device. Pi device is powered by an Arm CPU with Neon architecture. Neon is an optimization architecture extension for Arm processors. It is designed specifically for faster video processing, image processing, speech recognition and machine learning. This hardware optimization supports Single Instruction Multiple Data (SIMD), where multiple processing elements in the pipeline perform operations on multiple data points simultaneously. Arm NN presents you the APIs to harness the power of Neon backend. 
 
 •	A Raspberry Pi 3/4. I am testing with a Raspberry Pi 4 with Raspbian 10 OS. 
-•	Before you proceed with the project setup, you will need to check out and build Arm NN version 19.11 or newer for your Raspberry Pi. Instruction is here. Please enable Neon support when you build Arm NN. 
-•	PyArmNN package
+
+•	Before you proceed with the project setup, you will need to check out and build Arm NN version 19.11 or newer for your Raspberry Pi. Instruction is at https://developer.arm.com/solutions/machine-learning-on-arm/developer-material/how-to-guides/configuring-the-arm-nn-sdk-build-environment-for-tensorflow-lite. Please enable Neon support when you build Arm NN. 
+
+•	PyArmNN package. Use the pyarmnn-19.11.0.tar.gz in this directory. 'pip3 install pyarmnn-19.11.0.tar.gz'
+
 •	fire_detection.tflite, generated from this tutorial and converted to a TensorFlow Lite model.
 
 ## Run ML Inference with PyArmNN
@@ -56,7 +61,6 @@ image = np.array(image, dtype=np.float32) / 255.0
 print(image.size)
 
 
-
 ### Create a parser and load the network
 
 The next step when working with Armn NN is to create a parser object that will be used to load the network file. Arm NN has parsers for a variety of model file types, including TFLite, ONNX, Caffe etc. Parsers handle creation of the underlying Arm NN graph so you don't need to construct your model graph by hand. 
@@ -69,7 +73,9 @@ network = parser.CreateNetworkFromBinaryFile('./fire_detection.tflite')
 
 ### Get Input Binding Info
 Once created, the parser is used to extract the input information for the network.
+
 We can extract all the input names by calling GetSubgraphInputTensorNames() and then use them get the input binding information. For this example, since our model only has one input layer, we use input_names[0] to obtain the input tensor, then use this string to retrieve the input binding info.
+
 The input binding info contains all the essential information about the input, it is a tuple consisting of integer identifiers for bindable layers (inputs, outputs) and the tensor info (data type, quantization information, number of dimensions, total number of elements).
 
 graph_id = 0
