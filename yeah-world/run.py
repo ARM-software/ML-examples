@@ -13,6 +13,7 @@
 Run a trained model on frames from the camera and play random sounds when
 class 0 is detected.
 """
+from __future__ import print_function
 
 from sys import argv, stderr, exit
 from os import getenv
