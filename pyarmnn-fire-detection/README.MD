@@ -7,7 +7,7 @@ A neural network, trained to recognize images that include a fire or flames, can
 ## What is Arm NN and PyArmNN? 
 Arm NN is an inference engine for CPUs, GPUs and NPUs. It executes ML model on-device in order to make predictions based on input data. Arm NN enables efficient translation of existing neural network frameworks, such as TensorFlow Lite, TensorFlow, ONNX and Caffe, allowing them to run efficiently, without modification, across Arm Cortex-A CPUs, Arm Mali GPUs and Arm Ethos NPUs.
 
-PyArmNN is a newly developed python extension for Arm NN SDK. In this tutorial, we are going to use PyArmNN APIs to run a fire detection image classification model fire_detection.tflite (courtesy of this tutorial) and compare the inference performance with TensorFlow Lite on a Raspberry Pi. 
+PyArmNN is a newly developed python extension for Arm NN SDK. In this tutorial, we are going to use PyArmNN APIs to run a fire detection image classification model fire_detection.tflite and compare the inference performance with TensorFlow Lite on a Raspberry Pi. 
 
 Arm NN provides TFLite parser armnnTfLiteParser, which is a library for loading neural networks defined by TensorFlow Lite FlatBuffers files into the Arm NN runtime. We are going to use the TFLite parser to parse our fire detection model for “Fire” vs. “Non-Fire” image classification. 
 
@@ -19,7 +19,9 @@ We will use a Raspberry Pi 3 / 4 device. Pi device is powered by an Arm CPU with
 
 •	Before you proceed with the project setup, you will need to check out and build Arm NN version 19.11 or newer for your Raspberry Pi. Instruction is at https://developer.arm.com/solutions/machine-learning-on-arm/developer-material/how-to-guides/configuring-the-arm-nn-sdk-build-environment-for-tensorflow-lite. Please enable Neon support when you build Arm NN. 
 
-•	PyArmNN package. Use the pyarmnn-19.11.0.tar.gz in this directory. 'pip3 install pyarmnn-19.11.0.tar.gz'
+•	PyArmNN package. Install the pyarmnn-19.11.0.tar.gz in this directory. 
+
+     pip3 install pyarmnn-19.11.0.tar.gz
 
 •	fire_detection.tflite, generated from this tutorial https://www.pyimagesearch.com/2019/11/18/fire-and-smoke-detection-with-keras-and-deep-learning/ and converted to a TensorFlow Lite model. For your convenience, we included the fire_detection.tflite model in this directory.
 
@@ -143,9 +145,9 @@ In our example, class 0’s possibility is 0.9967675, vs. class 1’s possibilit
 
 As the next step, we compare PyArmNN and TensorFlow Lite Python APIs performance on a Raspberry Pi. 
 
-TensorFlow Lite uses interpreter to perform an inference. The interpreter uses a static graph ordering and a custom(less-dynamic) memory allocator. To understand how to load and run a model with Python API, please refer to TensorFlow Lite documentation.
+TensorFlow Lite uses an interpreter to perform inferences. The interpreter uses a static graph ordering and a custom(less-dynamic) memory allocator. To understand how to load and run a model with Python API, please refer to TensorFlow Lite documentation.
 
-For performance comparison, inference was carried out with our fire detection model. In our example, we only run inference once. We can also run the model multiple times and take the average inferencing time. 
+For performance comparison, inference is carried out with our fire detection model. In our example, we only run inference once. We can also run the model multiple times and take the average inferencing time. 
 
     $ python3 predict_tflite.py --image ./images/746.jpg 
     2020-01-01 11:32:33.609188: E 
@@ -178,8 +180,11 @@ From the result, you can observe an inference performance enhancement by using A
 
 ## Next Steps and Helpful Resources 
 This tutorial shows how to use the Arm NN Python APIs to classify images as “Fire” versus “Non-Fire.” You also can use it as a starting point to handle other types of neural networks. 
+
 To learn more about Arm NN, check out the following resources: 
+
 •	Arm Software Developer Kit (SDK)
+
 •	Project Trillium Framework
 
 
