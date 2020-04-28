@@ -1,0 +1,37 @@
+%YAML 1.2
+---
+# Node configuration
+model:
+  name: yolo2tiny
+  type: fp32
+  file: models/yolo_v2_tiny.pb
+  weights: models/yolo_v2_tiny.pb
+
+  inputs:
+    - input
+  outputs:
+    - output
+
+  classes: models/coco.names
+
+# Model configuration
+yolo2tiny:
+  input:
+    width: 416
+    height: 416
+    depth: 3
+  output:
+    width: 13
+    height: 13
+    depth: 425
+  anchors:
+    - width: 0.57273
+      height: 0.677385
+    - width: 1.87446
+      height: 2.06253
+    - width: 3.33843
+      height: 5.47434
+    - width: 7.88282
+      height: 3.52778
+    - width: 9.77052
+      height: 9.16828
