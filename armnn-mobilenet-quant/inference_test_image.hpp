@@ -7,6 +7,7 @@
 
 #include <array>
 #include <vector>
+#include <cstdint>
 
 // Parameters used in normalizing images
 struct NormalizationParameters
