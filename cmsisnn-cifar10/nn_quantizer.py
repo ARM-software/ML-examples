@@ -231,12 +231,12 @@ class Caffe_Quantizer(object):
             num_branch = len(self.bottom_blob[current_layer])
             current_blob = self.bottom_blob[current_layer][0]
             has_unused_relu = 0
-            for key, value in self.top_blob.iteritems():
+            for key, value in self.top_blob.items():
                 if (current_blob in value) and (key not in traversed) and \
                         (self.layer_type[key] == 'relu' or self.layer_type[key]=='18'):
                     has_unused_relu = 1
                     break
-            for key, value in self.top_blob.iteritems():
+            for key, value in self.top_blob.items():
                 if(has_unused_relu == 1):
                     if (current_blob in value) and (key not in traversed) and \
                             (self.layer_type[key]=='relu' or self.layer_type[key]=='18'):
