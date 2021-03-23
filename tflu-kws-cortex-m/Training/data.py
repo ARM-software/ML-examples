@@ -453,7 +453,13 @@ class AudioProcessor:
         search_path = Path(background_dir / '*.wav')
         for wav_path in tf.io.gfile.glob(str(search_path)):
             wav_data, _ = load_wav_file(wav_path, desired_samples=-1)
-            background_data.append(tf.reshape(wav_data, [-1]))
+            # Because the wav_data tensors can have unequal ranks, which will make 
+            # tf.ragged.stack to throw an error, we only stack the first n elements,
+            # of each tensor, where n is the number of elements in the first wav tensor.
+            if background_data:
+                background_data.append(tf.reshape(wav_data[:tf.shape(background_data[0])[0]], [-1]))
+            else:
+                background_data.append(tf.reshape(wav_data, [-1]))
 
         if not background_data:
             raise Exception('No background wav files were found in ' + search_path)
