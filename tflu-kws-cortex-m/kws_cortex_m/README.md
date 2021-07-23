@@ -19,6 +19,7 @@ This directory consists of example codes and steps for running a quantized DNN o
 
 One of the following boards:
 
+* [STM32F746NG-DISCO board (Cortex-M7)](https://os.mbed.com/platforms/ST-Discovery-F746NG/)
 * [STM32H747I-DISCO board (Cortex-M7)](https://os.mbed.com/platforms/ST-Discovery-H747I/)
 * [FRDM-K64F board (Cortex-M4)](https://os.mbed.com/platforms/FRDM-K64F/)
 
@@ -56,12 +57,13 @@ In order to generate the mbed project contained in this folder change directory 
 $ cd tensorflow
 ``` 
 
-and from there run the following command:
+and from there run the following commands. Checkout of earlier version of Tensorflow is necessary due to deprecation of support for 'TAGS'.
 
 ```sh
+$ git checkout 72c19e8880
 $ make -f tensorflow/lite/micro/tools/make/Makefile TAGS=<tags> generate_kws_cortex_m_mbed_project
 ```
-Where TAGS specify the application to build (Simple_KWS_Test) and the model to use (DNN, DS_CNN).
+Where TAGS specify the application to build (Simple_KWS_Test, Realtime_KWS_Test) and the model to use (DNN, DS_CNN).
 
 For example:
 
@@ -87,7 +89,7 @@ $ mbed config root .
 $ mbed deploy
 ```
 
-In order to compile, run:
+In order to compile the "Simple_KWS_Test" application, run:
 
 ```sh
 $ mbed compile -m <TARGET> -t GCC_ARM
@@ -102,6 +104,23 @@ or,
 
 ```sh
 $ mbed compile -m DISCO_H747I -t GCC_ARM
+```
+
+or,
+
+```sh
+$ mbed compile -m DISCO_F746NG -t GCC_ARM
+```
+
+
+The "Realtime_KWS_Test" application uses the audio and lcd provided on the board and is tailored for the STM32F746NG-DISCO board.
+
+In order to compile the application, run:
+
+```sh
+$ mbed add http://os.mbed.com/teams/ST/code/BSP_DISCO_F746NG/
+$ mbed deploy
+$ mbed compile -m DISCO_DISCO_F746NG -t GCC_ARM
 ```
 
 ## Deploying the application on the board

@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 #
-# Modifications Copyright 2020 Arm Inc. All Rights Reserved.
+# Modifications Copyright 2021 Arm Inc. All Rights Reserved.
 # Modified to use TensorFlow 2.0 and data pipelines.
 #
 """Functions for loading and preparing data for keyword spotting."""
@@ -155,7 +155,7 @@ class AudioProcessor:
         self.words_list = prepare_words_list(wanted_words)
 
         self._tf_datasets = {}
-        self.background_data = []
+        self.background_data = None
         self._set_size = {'training': 0, 'validation': 0, 'testing': 0}
 
         self._download_and_extract_data(data_url, data_dir)
@@ -187,7 +187,7 @@ class AudioProcessor:
         else:
             ValueError("Incorrect dataset type given")
 
-        use_background = (self.background_data != []) and (mode == AudioProcessor.Modes.TRAINING)
+        use_background = (self.background_data is not None) and (mode == AudioProcessor.Modes.TRAINING)
         dataset = dataset.map(lambda path, label: self._process_path(path, label, self.model_settings,
                                                                      background_frequency, background_volume_range,
                                                                      time_shift, use_background, self.background_data),
@@ -196,13 +196,13 @@ class AudioProcessor:
         return dataset
 
     def set_size(self, mode):
-        """Get the number of samples in the requested dataset partition
+        """Get the number of samples in the requested dataset partition.
 
         Args:
             mode: Which partition, see AudioProcessor.Modes enumeration.
 
         Returns:
-            Number of samples in the partition
+            Number of samples in the partition.
 
         Raises:
             ValueError: If mode is not recognised.
@@ -263,8 +263,7 @@ class AudioProcessor:
 
         # Get a random section of background noise.
         if use_background:
-            background_index = tf.random.uniform(shape=(), maxval=len(background_data), dtype=tf.int32)
-
+            background_index = tf.random.uniform(shape=(), maxval=background_data.shape[0], dtype=tf.int32)
             background_sample = background_data[background_index]
             background_offset = tf.random.uniform(shape=(), maxval=len(background_sample)-desired_samples,
                                                   dtype=tf.int32)
@@ -422,7 +421,7 @@ class AudioProcessor:
             else:
                 unknown_index[set_index].append({'label': word, 'file': wav_path})
         if not all_words:
-            raise Exception('No .wavs found at ' + search_pattern)
+            raise Exception('No .wavs found at ' + str(search_pattern))
 
         return data_index, unknown_index, all_words
 
@@ -448,6 +447,7 @@ class AudioProcessor:
         background_data = []
         background_dir = Path(self.data_dir / BACKGROUND_NOISE_DIR_NAME)
         if not background_dir.exists():
+            self.background_data = None
             return
 
         search_path = Path(background_dir / '*.wav')
@@ -456,7 +456,7 @@ class AudioProcessor:
             background_data.append(tf.reshape(wav_data, [-1]))
 
         if not background_data:
-            raise Exception('No background wav files were found in ' + search_path)
+            raise Exception('No background wav files were found in ' + str(search_path))
 
         # Ragged tensor as we cant use lists in tf dataset map functions.
         self.background_data = tf.ragged.stack(background_data)

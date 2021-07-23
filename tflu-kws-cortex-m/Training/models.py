@@ -1,4 +1,4 @@
-# Copyright © 2020 Arm Ltd. All rights reserved.
+# Copyright © 2021 Arm Ltd. All rights reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -93,7 +93,7 @@ def create_dnn_model(model_settings, model_size_info):
     Args:
         model_settings: Dict of different settings for model training.
         model_size_info: Length of the array defines the number of hidden-layers and
-            each element in the array represent the number of neurons in that layer
+            each element in the array represent the number of neurons in that layer.
 
     Returns:
         tf.keras Model of the 'DNN' architecture.

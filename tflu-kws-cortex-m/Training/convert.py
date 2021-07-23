@@ -1,4 +1,4 @@
-# Copyright © 2020 Arm Ltd. All rights reserved.
+# Copyright © 2021 Arm Ltd. All rights reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,12 +10,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Functions for quantizing a trained keyword spotting model and saving to tflite."""
+"""Functions for converting and quantizing a trained keyword spotting
+   model and saving to TFLite."""
 
 import argparse
 
 import tensorflow as tf
-from tensorflow.lite.python import interpreter as interpreter_wrapper
 
 import data
 import models
@@ -24,16 +24,19 @@ from test_tflite import tflite_test
 NUM_REP_DATA_SAMPLES = 100  # How many samples to use for post training quantization.
 
 
-def quantize(model_settings, audio_processor, checkpoint, tflite_path):
-    """Load our trained floating point model and quantize it.
+def convert(model_settings, audio_processor, checkpoint, quantize, inference_type, tflite_path):
+    """Load our trained floating point model and convert it.
 
-    Post training quantization is performed and the resulting model is saved as a TFLite file.
+    TFLite conversion or post training quantization is performed and the
+    resulting model is saved as a TFLite file.
     We use samples from the validation set to do post training quantization.
 
     Args:
         model_settings: Dictionary of common model settings.
         audio_processor: Audio processor class object.
         checkpoint: Path to training checkpoint to load.
+        quantize: Whether to quantize the model or convert to fp32 TFLite model.
+        inference_type: Input/output type of the quantized model.
         tflite_path: Output TFLite file save path.
     """
     model = models.create_model(model_settings, FLAGS.model_architecture, FLAGS.model_size_info)
@@ -50,21 +53,30 @@ def quantize(model_settings, audio_processor, checkpoint, tflite_path):
             i += 1
             yield [mfcc]
 
-    # Quantize model and save to disk.
-    tflite_model = post_training_quantize(model, _rep_dataset)
-    with open(tflite_path, 'wb') as f:
-        f.write(tflite_model)
-    print(f'Quantized model saved to {tflite_path}.')
+    if quantize:
+        # Quantize model and save to disk.
+        tflite_model = post_training_quantize(model, inference_type, _rep_dataset)
+        with open(tflite_path, 'wb') as f:
+            f.write(tflite_model)
+        print(f'Quantized model saved to {tflite_path}.')
+    else:
+        converter = tf.lite.TFLiteConverter.from_keras_model(model)
+        converter.optimizations = [tf.lite.Optimize.DEFAULT]
+        tflite_model = converter.convert()
+        with open(tflite_path, 'wb') as f:
+            f.write(tflite_model)
+        print(f'Converted model saved to {tflite_path}.')
 
 
-def post_training_quantize(keras_model, rep_dataset):
-    """Perform post training quantization and returns the tflite model ready for saving.
+def post_training_quantize(keras_model, inference_type, rep_dataset):
+    """Perform post training quantization and returns the TFLite model ready for saving.
 
     See https://www.tensorflow.org/lite/performance/post_training_quantization#full_integer_quantization for
     more details.
 
     Args:
         keras_model: The trained tf Keras model used for post training quantization.
+        inference_type: Input/output type of the quantized model.
         rep_dataset: Function to use as a representative dataset, must be callable.
 
     Returns:
@@ -72,6 +84,10 @@ def post_training_quantize(keras_model, rep_dataset):
     """
     converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
+
+    if inference_type=='int8':
+        converter.inference_input_type = tf.int8
+        converter.inference_output_type = tf.int8
 
     # Int8 post training quantization needs representative dataset.
     converter.representative_dataset = rep_dataset
@@ -96,12 +112,16 @@ def main():
                                           testing_percentage=FLAGS.testing_percentage,
                                           model_settings=model_settings)
 
-    tflite_path = f'{FLAGS.model_architecture}_quantized.tflite'
+    if FLAGS.quantize:
+        tflite_path = f'{FLAGS.model_architecture}_quantized.tflite'
+    else:
+        tflite_path = f'{FLAGS.model_architecture}.tflite'
 
-    # Load floating point model from checkpoint and quantize it.
-    quantize(model_settings, audio_processor, FLAGS.checkpoint, tflite_path)
+    # Load floating point model from checkpoint and convert it.
+    convert(model_settings, audio_processor, FLAGS.checkpoint,
+            FLAGS.quantize, FLAGS.inference_type, tflite_path)
 
-    # Test the newly quantized model on the test set.
+    # Test the newly converted model on the test set.
     tflite_test(model_settings, audio_processor, tflite_path)
 
 
@@ -188,6 +208,22 @@ if __name__ == '__main__':
         '--checkpoint',
         type=str,
         help='Checkpoint to load the weights from.')
+    parser.add_argument(
+        '--quantize',
+        dest='quantize',
+        action="store_true",
+        default=True,
+        help='Whether to quantize the model or convert to fp32 TFLite model. Defaults to True.')
+    parser.add_argument(
+        '--no-quantize',
+        dest='quantize',
+        action="store_false",
+        help='Whether to quantize the model or convert to fp32 TFLite model. Defaults to True.')
+    parser.add_argument(
+        '--inference_type',
+        type=str,
+        default='fp32',
+        help='If quantize is true, whether the model input and output is float32 or int8')
 
     FLAGS, _ = parser.parse_known_args()
     main()
