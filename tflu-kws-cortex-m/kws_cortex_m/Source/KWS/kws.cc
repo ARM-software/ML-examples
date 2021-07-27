@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Arm Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2021 Arm Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -131,7 +131,7 @@ void KWS::AveragePredictions()
             numOutClasses * sizeof(float));
 
     // Compute averages.
-    int sum;
+    float sum;
     for (int j = 0; j < numOutClasses; j++) {
         sum = 0;
         for(int i = 0; i < slidingWindowLen; i++) {

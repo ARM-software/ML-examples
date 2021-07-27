@@ -1,4 +1,4 @@
-# Copyright © 2020 Arm Ltd. All rights reserved.
+# Copyright © 2021 Arm Ltd. All rights reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -15,7 +15,6 @@
 import argparse
 
 import tensorflow as tf
-from tensorflow.lite.python import interpreter as interpreter_wrapper
 import numpy as np
 
 import data
@@ -52,25 +51,46 @@ def tflite_test(model_settings, audio_processor, tflite_path):
 
 
 def tflite_inference(input_data, tflite_path):
-    """Call forwards pass of tflite file and returns the result.
+    """Call forwards pass of TFLite file and returns the result.
 
     Args:
-        input_data: input data to use on forward pass.
-        tflite_path: path to tflite file to run.
+        input_data: Input data to use on forward pass.
+        tflite_path: Path to TFLite file to run.
 
     Returns:
         Output from inference.
     """
-    interpreter = interpreter_wrapper.Interpreter(model_path=tflite_path)
+    interpreter = tf.lite.Interpreter(model_path=tflite_path)
     interpreter.allocate_tensors()
 
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
-    interpreter.set_tensor(input_details[0]['index'], input_data)
+    input_dtype = input_details[0]["dtype"]
+    output_dtype = output_details[0]["dtype"]
+
+    # Check if the input/output type is quantized,
+    # set scale and zero-point accordingly
+    if input_dtype == np.int8:
+        input_scale, input_zero_point = input_details[0]["quantization"]
+    else:
+        input_scale, input_zero_point = 1, 0
+
+    input_data = input_data / input_scale + input_zero_point
+    input_data = np.round(input_data) if input_dtype == np.int8 else input_data
+
+    if output_dtype == np.int8:
+        output_scale, output_zero_point = output_details[0]["quantization"]
+    else:
+        output_scale, output_zero_point = 1, 0
+
+
+    interpreter.set_tensor(input_details[0]['index'], tf.cast(input_data, input_dtype))
     interpreter.invoke()
 
     output_data = interpreter.get_tensor(output_details[0]['index'])
+
+    output_data = output_scale * (output_data.astype(np.float32) - output_zero_point)
 
     return output_data
 
@@ -110,7 +130,7 @@ if __name__ == '__main__':
         '--tflite_path',
         type=str,
         default='',
-        help='Path to tflite file to use for testing.')
+        help='Path to TFLite file to use for testing.')
     parser.add_argument(
         '--silence_percentage',
         type=float,

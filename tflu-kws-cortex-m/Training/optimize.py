@@ -10,25 +10,42 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Functions for training simple keyword spotting models."""
+"""Functions for optimizing simple keyword spotting models using clustering API."""
 
 import argparse
 from pathlib import Path
 
 import tensorflow as tf
 import numpy as np
+import tensorflow_model_optimization as tfmot
 
 import data
 import models
 
 
-def train():
+def print_model_weight_clusters(model):
+
+    for layer in model.layers:
+        if isinstance(layer, tf.keras.layers.Wrapper):
+            weights = layer.trainable_weights
+        else:
+            weights = layer.weights
+        for weight in weights:
+            if "kernel" in weight.name:
+                unique_count = len(np.unique(weight))
+                print(
+                    f"{layer.name}/{weight.name}: {unique_count} clusters "
+                )
+
+
+def optimize():
     model_settings = models.prepare_model_settings(len(data.prepare_words_list(FLAGS.wanted_words.split(','))),
                                                    FLAGS.sample_rate, FLAGS.clip_duration_ms, FLAGS.window_size_ms,
                                                    FLAGS.window_stride_ms, FLAGS.dct_coefficient_count)
 
-    # Create the model.
+    # Create the model to optimize from checkpoint.
     model = models.create_model(model_settings, FLAGS.model_architecture, FLAGS.model_size_info)
+    model.load_weights(FLAGS.checkpoint).expect_partial()
 
     audio_processor = data.AudioProcessor(data_url=FLAGS.data_url,
                                           data_dir=FLAGS.data_dir,
@@ -46,11 +63,20 @@ def train():
     lr_schedule = tf.keras.optimizers.schedules.PiecewiseConstantDecay(boundaries=lr_boundary_list,
                                                                        values=learning_rates_list)
 
+    cluster_weights = tfmot.clustering.keras.cluster_weights
+    CentroidInitialization = tfmot.clustering.keras.CentroidInitialization
+
+    clustering_params = {
+        'number_of_clusters': 32,
+        'cluster_centroids_init': CentroidInitialization.KMEANS_PLUS_PLUS}
+
+    clustered_model = cluster_weights(model, **clustering_params)
+
     # Specify the optimizer configurations.
     optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
-    model.compile(optimizer=optimizer,
-                  loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-                  metrics=['accuracy'])
+    clustered_model.compile(optimizer=optimizer,
+                            loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+                            metrics=['accuracy'])
 
     train_data = audio_processor.get_data(audio_processor.Modes.TRAINING,
                                           FLAGS.background_frequency, FLAGS.background_volume,
@@ -63,29 +89,33 @@ def train():
     training_steps_max = np.sum(training_steps_list)
     training_epoch_max = int(np.ceil(training_steps_max / FLAGS.eval_step_interval))
 
-    # Callbacks.
-    train_dir = Path(FLAGS.train_dir) / "best"
+    # Train the model with clustering applied.
+    clustered_model.fit(x=train_data,
+                        steps_per_epoch=FLAGS.eval_step_interval,
+                        epochs=training_epoch_max,
+                        validation_data=val_data)
+
+    stripped_clustered_model = tfmot.clustering.keras.strip_clustering(clustered_model)
+
+    print_model_weight_clusters(stripped_clustered_model)
+
+    # Save the clustered model weights
+    train_dir = Path(FLAGS.train_dir) / "optimized"
     train_dir.mkdir(parents=True, exist_ok=True)
-    model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-        filepath=(train_dir / (FLAGS.model_architecture + "_{val_accuracy:.3f}_ckpt")),
-        save_weights_only=True,
-        monitor='val_accuracy',
-        mode='max',
-        save_best_only=True)
-    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=FLAGS.summaries_dir)
 
-    # Train the model.
-    model.fit(x=train_data,
-              steps_per_epoch=FLAGS.eval_step_interval,
-              epochs=training_epoch_max,
-              validation_data=val_data,
-              callbacks=[model_checkpoint_callback, tensorboard_callback])
+    stripped_clustered_model.save_weights((train_dir /
+                                          (FLAGS.model_architecture +
+                                           "_clustered_ckpt")))
 
-    # Test and save the model.
+    # Test the model.
     test_data = audio_processor.get_data(audio_processor.Modes.TESTING)
     test_data = test_data.batch(FLAGS.batch_size)
 
-    test_loss, test_acc = model.evaluate(x=test_data)
+    stripped_clustered_model.compile(optimizer=optimizer,
+                                     loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+                                     metrics=['accuracy'])
+
+    test_loss, test_acc = stripped_clustered_model.evaluate(x=test_data)
     print(f'Final test accuracy: {test_acc*100:.2f}%')
 
 
@@ -176,7 +206,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--how_many_training_steps',
         type=str,
-        default='15000,3000',
+        default='3750,750',
         help='How many training loops to run',)
     parser.add_argument(
         '--eval_step_interval',
@@ -194,11 +224,6 @@ if __name__ == "__main__":
         default=100,
         help='How many items to train with at once',)
     parser.add_argument(
-        '--summaries_dir',
-        type=str,
-        default='/tmp/retrain_logs',
-        help='Where to save summary logs for TensorBoard.')
-    parser.add_argument(
         '--wanted_words',
         type=str,
         default='yes,no,up,down,left,right,on,off,stop,go',
@@ -208,6 +233,15 @@ if __name__ == "__main__":
         type=str,
         default='/tmp/speech_commands_train',
         help='Directory to write event logs and checkpoint.')
+    parser.add_argument(
+        '--save_step_interval',
+        type=int,
+        default=100,
+        help='Save model checkpoint every save_steps.')
+    parser.add_argument(
+        '--checkpoint',
+        type=str,
+        help='Checkpoint to load the weights from before fine-tuning.')
     parser.add_argument(
         '--model_architecture',
         type=str,
@@ -221,4 +255,4 @@ if __name__ == "__main__":
         help='Model dimensions - different for various models')
 
     FLAGS, _ = parser.parse_known_args()
-    train()
+    optimize()
