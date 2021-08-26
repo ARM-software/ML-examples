@@ -39,7 +39,7 @@ def convert(model_settings, audio_processor, checkpoint, quantize, inference_typ
         inference_type: Input/output type of the quantized model.
         tflite_path: Output TFLite file save path.
     """
-    model = models.create_model(model_settings, FLAGS.model_architecture, FLAGS.model_size_info)
+    model = models.create_model(model_settings, FLAGS.model_architecture, FLAGS.model_size_info, False)
     model.load_weights(checkpoint).expect_partial()
 
     val_data = audio_processor.get_data(audio_processor.Modes.VALIDATION).batch(1)
