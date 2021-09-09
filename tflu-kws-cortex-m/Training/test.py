@@ -30,7 +30,7 @@ def test():
                                                    FLAGS.sample_rate, FLAGS.clip_duration_ms, FLAGS.window_size_ms,
                                                    FLAGS.window_stride_ms, FLAGS.dct_coefficient_count)
 
-    model = models.create_model(model_settings, FLAGS.model_architecture, FLAGS.model_size_info)
+    model = models.create_model(model_settings, FLAGS.model_architecture, FLAGS.model_size_info, False)
 
     audio_processor = data.AudioProcessor(data_url=FLAGS.data_url,
                                           data_dir=FLAGS.data_dir,

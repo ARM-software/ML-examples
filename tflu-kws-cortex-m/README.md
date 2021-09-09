@@ -16,7 +16,7 @@ development boards. In this case the main update is the use of
 
 ## Training and Quantization
 Code and instructions on how to train the keyword spotting models from the [paper](https://arxiv.org/pdf/1711.07128.pdf)
-is provided [here](Training). Currently only the DNN, CNN and DS-CNN architectures from the paper are supported.
+is provided [here](Training). Currently only the DNN, CNN, DS-CNN and Basic_LSTM architectures from the paper are supported.
 
 Code for doing quantization and producing models ready for deployment is also found in the same directory.
 
