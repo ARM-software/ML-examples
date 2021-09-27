@@ -7,11 +7,10 @@
 -   [Hardware](#hardware)
 -   [The model](#the-model)
 -   [Building the image recognition application](#building-the-image-recognition-application)
-    -   [Prerequisites](#prerequisites)
-        -   [Mbed CLI 2](#mbed-cli-2)
+    -   [Setup environment](#setup-environment)
+        -   [Virtual environment](#virtual-environment)
+        -   [Installation](#installation)
         -   [Arm GCC toolchain](#arm-gcc-toolchain)
-        -   [CMake](#cmake)
-        -   [Ninja](#ninja)
     -   [Compiling and flashing](#compiling-and-flashing)
         -   [CMSIS-NN Performance analysis](#cmsis-nn-performance-analysis)
         -   [Compiler configuration considerations](#compiler-configuration-considerations)
@@ -57,14 +56,39 @@ These instructions are tested on Ubuntu 20.04 with the following toolchains:\
 
 Instructions on how to install the Arm GCC toolchain are provided below.
 
-### Prerequisites
+### Setup environment
 
-#### Mbed CLI 2
-Install Mbed CLI 2:
+During development of this project, mbed-tools version 7.27.0 and Python 3.8.5 was used. See [Mbed-tools documentation](https://os.mbed.com/docs/mbed-os/v6.12/build-tools/install-or-upgrade.html) if any mbed-tools related problems arise.
 
-`$ pip install mbed-tools`
+Make sure to execute ALL following commands from the project root folder.
 
-See [Mbed-tools documentation](https://os.mbed.com/docs/mbed-os/v6.12/build-tools/install-or-upgrade.html) if any problems arise. During development of this project, mbed-tools version 7.27.0 and Python 3.8.5 was used.
+#### Virtual environment
+To avoid Python dependency conflicts, a virtual environment such as [venv](https://docs.python.org/3/library/venv.html) can be used, but is not required. Skip this section if you do not wish to use a virtual environment.
+
+Create the environment:
+
+`$ python3 -m venv <environment-name>`
+
+Enter the envionment:
+
+`$ source <environment-name>/bin/activate` , <br>
+and continue with [installation](#installation).
+
+Additionally, when you wish to exit the virtual environment, run:
+
+`$ deactivate`
+
+#### Installation
+
+The following steps apply with and without a virtual environment
+
+Install all the required pip packages:
+
+`$ pip3 install -r requirements.txt`
+
+Ninja 1.0, or later. Can be downloaded with
+
+`$ apt-get install ninja-build` [Note that sudo might be needed]
 
 #### Arm GCC toolchain
 Install the Arm GCC toolchain. The latest version can be found [here](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads). To install it, download the Linux x86_64 Tarball and extract it with
@@ -83,17 +107,6 @@ and add:
 
 `export PATH="$PATH:/<user path for gnu tools>/gcc-arm-none-eabi-<version-num>/bin/"`.
 
-#### CMake
-Cmake version 3.21.0, or later. Can be downloaded with
-
-`$ pip install cmake`,
-
-or following the instructions [here](https://cmake.org/install/).
-
-#### Ninja
-Ninja 1.0, or later. Can be downloaded with
-
-`$ apt-get install ninja-build` [Note that sudo might be needed]
 ### Compiling and flashing
 
 All commands should be executed in the project root folder.
