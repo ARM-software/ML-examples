@@ -28,7 +28,7 @@ def train():
                                                    FLAGS.window_stride_ms, FLAGS.dct_coefficient_count)
 
     # Create the model.
-    model = models.create_model(model_settings, FLAGS.model_architecture, FLAGS.model_size_info)
+    model = models.create_model(model_settings, FLAGS.model_architecture, FLAGS.model_size_info, True)
 
     audio_processor = data.AudioProcessor(data_url=FLAGS.data_url,
                                           data_dir=FLAGS.data_dir,

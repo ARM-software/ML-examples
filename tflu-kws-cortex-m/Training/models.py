@@ -55,7 +55,7 @@ def prepare_model_settings(label_count, sample_rate, clip_duration_ms,
     }
 
 
-def create_model(model_settings, model_architecture, model_size_info):
+def create_model(model_settings, model_architecture, model_size_info, is_training):
     """Builds a tf.keras model of the requested architecture compatible with the settings.
 
     Args:
@@ -79,10 +79,63 @@ def create_model(model_settings, model_architecture, model_size_info):
 
     elif model_architecture == 'ds_cnn':
         return create_ds_cnn_model(model_settings, model_size_info)
-
+    elif model_architecture == 'single_fc':
+        return create_single_fc_model(model_settings)
+    elif model_architecture == 'basic_lstm':
+        return create_basic_lstm_model(model_settings, model_size_info, is_training)
     else:
         raise Exception(f'model_architecture argument {model_architecture} not recognized'
                         f', should be one of, "dnn", "cnn", "ds_cnn" ')
+
+
+def create_single_fc_model(model_settings):
+    """Builds a model with a single fully-connected layer.
+
+    For details see https://arxiv.org/abs/1711.07128.
+
+    Args:
+        model_settings: Dict of different settings for model training.
+
+    Returns:
+        tf.keras Model of the 'SINGLE_FC' architecture.
+    """
+    inputs = tf.keras.Input(shape=(model_settings['fingerprint_size'],), name='input')
+    # Fully connected layer
+    output = tf.keras.layers.Dense(units=model_settings['label_count'], activation='softmax')(inputs)
+
+    return tf.keras.Model(inputs, output)
+
+
+def create_basic_lstm_model(model_settings, model_size_info, is_training):
+    """Builds a model with a basic lstm layer.
+
+        For details see https://arxiv.org/abs/1711.07128.
+
+        Args:
+            model_settings: Dict of different settings for model training.
+            model_size_info: Length of the array defines the number of hidden-layers and
+                each element in the array represent the number of neurons in that layer.
+            is_training: Determining whether the use of the model is for training or for something else.
+
+        Returns:
+            tf.keras Model of the 'Basic_LSTM' architecture.
+        """
+    inputs = tf.keras.Input(shape=(model_settings['fingerprint_size'], ), name='input')
+
+    input_frequency_size = model_settings['dct_coefficient_count']
+    input_time_size = model_settings['spectrogram_length']
+    x = tf.reshape(inputs, shape=(-1, input_time_size, input_frequency_size))
+
+    # LSTM layer, and unrolling depending on whether you are training or not
+    if is_training:
+        x = tf.keras.layers.LSTM(units=model_size_info[0], time_major=False, unroll=False)(x)
+    else:
+        x = tf.keras.layers.LSTM(units=model_size_info[0], time_major=False, unroll=True)(x)
+
+    # Outputs a fully connected layer
+    output = tf.keras.layers.Dense(units=model_settings['label_count'], activation='softmax')(x)
+
+    return tf.keras.Model(inputs, output)
 
 
 def create_dnn_model(model_settings, model_size_info):
