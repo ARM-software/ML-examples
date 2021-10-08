@@ -17,9 +17,11 @@ We will use a Raspberry Pi 3 / 4 device. Pi device is powered by an Arm CPU with
 
 •	A Raspberry Pi 3/4. I am testing with a Raspberry Pi 4 with Raspbian 10 OS. 
 
-•	Before you proceed with the project setup, you will need to check out and build Arm NN version 19.11 or newer for your Raspberry Pi. Instruction is at https://developer.arm.com/solutions/machine-learning-on-arm/developer-material/how-to-guides/configuring-the-arm-nn-sdk-build-environment-for-tensorflow-lite. Please enable Neon support when you build Arm NN. 
+•	You will need to ensure that python3-opencv is installed on the Raspberry Pi.
 
-•	PyArmNN package. Follow the instructions for PyArmNN here: https://git.mlplatform.org/ml/armnn.git/tree/python/pyarmnn/readme.md?h=experimental/pyarmnn
+•	Before you proceed with the project setup, you will need to check out and build Arm NN version 19.11 or newer for your Raspberry Pi. Instruction is at https://developer.arm.com/solutions/machine-learning-on-arm/developer-material/how-to-guides/configuring-the-arm-nn-sdk-build-environment-for-tensorflow-lite. Please enable Neon support when you build Arm NN.
+
+•	PyArmNN package. Follow the instructions for PyArmNN here: https://git.mlplatform.org/ml/armnn.git/tree/python/pyarmnn/README.md
 
 •	fire_detection.tflite, generated from this tutorial https://www.pyimagesearch.com/2019/11/18/fire-and-smoke-detection-with-keras-and-deep-learning/ and converted to a TensorFlow Lite model. For your convenience, we included the fire_detection.tflite model in this directory.
 
