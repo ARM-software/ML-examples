@@ -28,7 +28,7 @@ What do you need?
 
 •	An Android device running Android 9 or 10 
 
-•	An Android device that supports Camera 2 SDK. You can follow this online guide to confirm
+•	An Android device that supports Camera 2 SDK.
 
 •	Android Studio, including v24 or higher of the SDK build tools
 
@@ -52,33 +52,30 @@ Convert the output data of the interpreter to an image.
 
 
 ## Arm NN optimization 
-Arm NN uses Arm Compute Library(ACL) to provide a set of optimized operators, e.g, convolution, pooling etc. that target ARM specific accelerators, like the DSP(NEON) or the Mali GPU. ACL also provides a GPU tuner tool called CITuner. CLTuner tunes a set of hardware knobs to fully utilize all the computational horsepower the GPU provides. 
+Arm NN uses Arm Compute Library(ACL) to provide a set of optimized operators, e.g, convolution, pooling etc. that target ARM specific accelerators, like the DSP(NEON) or the Mali GPU. ACL also provides a GPU tuner tool called CLTuner. CLTuner tunes a set of hardware knobs to fully utilize all the computational horsepower the GPU provides. 
 
-Since Arm NN implements the Android NNAPI interface, developers only need to install the driver, and your Android application will seamlessly interact with the driver to exploit the aforementioned accelerations. 
-
-This part of the code is illustrated in TensorFlowImageStyleTranfer()function in TensorFlowImageStyleTransfer.java. In the code, we check Android version and decide if NN API can be enabled on the device, then create a delegate if NN API can be supported.
-
+This part of the code is illustrated in TensorFlowImageStyleTranfer() function in TensorFlowImageStyleTransfer.java. In the code, we check Android version and decide if NN API can be enabled on the device, then create a delegate if NN API can be supported.
 
     if (enableNNAPI && TensorFlowHelper.canNNAPIEnabled()){
         delegate = new NnApiDelegate();
         this.tfLiteOptions.addDelegate(delegate);
         this.tfLite = new Interpreter(TensorFlowHelper.loadModelFile(context, mModelFile), tfLiteOptions);
-    } else {    
+    } else {
        this.tfLite = new Interpreter(TensorFlowHelper.loadModelFile(context, mModelFile));
     }
 
-Since Arm NN implements the Android NNAPI interface, once developers have the driver installed, your Android application will seamlessly interact with the underlying APIs to exploit the aforementioned accelerators. 
+Toggle ArmNN checkbox to experience the performance enhancement the NN API provides.
 
-Toggle NN API checkbox to experience the performance enhancement NN API provides.
+Since Arm NN implements the Android NNAPI interface, once developers have a device with the driver installed, your Android application will seamlessly interact with the underlying APIs to exploit the aforementioned accelerators. 
 
-The NN driver is not bundled with Android releases, instead it is shipped by OEMs like Samsung, HiSilicon, MTK. E.g, All Samsung devices with Android O MR1 or later firmware releases have Arm NN driver pre-installed. However, if your Android device doesn’t have NN driver pre-installed or you want to build your own Arm NN driver and manually install the driver. 
+The NN driver is not bundled with any Android releases, instead it is shipped by OEMs like Samsung, HiSilicon, MTK. E.g, All Samsung devices with Android O MR1 or later firmware releases have the Arm NN driver pre-installed.
  
 ## Style transfer models
-In our Android application, we used pre-trained models from https://github.com/misgod/fast-neural-style-keras. We made few tweaks to the model architecture to make it fully compatible with Arm NN operators. The tweaks we made include:
+In our Android application, we used pre-trained models from https://github.com/misgod/fast-neural-style-keras. We made a few tweaks to the model architecture to make it fully compatible with Arm NN operators. The tweaks we made include:
 
-•	Replace all reflection padding with same padding.
+•	Replaced all reflection padding with same padding.
 
-•	Replace all instance normalization layers with batch normalization layers.
+•	Replaced all instance normalization layers with batch normalization layers.
 
 •	In un-pooling layers, use bilinear resize operation instead of nearest neighbor resize operation. 
 

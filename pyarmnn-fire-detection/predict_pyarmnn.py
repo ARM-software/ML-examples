@@ -56,8 +56,7 @@ runtime.EnqueueWorkload(0, input_tensors, output_tensors)
 end = timer()
 print('Elapsed time is ', (end - start) * 1000, 'ms')
 
-output, output_tensor_info = ann.from_output_tensor(output_tensors[0][1])
-print(f"Output tensor info: {output_tensor_info}")
+output = ann.workload_tensors_to_ndarray(output_tensors[0][1])
 print(output)
 j = np.argmax(output)
 if j == 0:
