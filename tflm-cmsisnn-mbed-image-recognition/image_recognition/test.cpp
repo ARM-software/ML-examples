@@ -102,8 +102,8 @@ int main(int argc, char** argv) {
       micro_profiler.Log();
       micro_profiler.ClearEvents();
       printf("-------------------------------------------\n");
-      printf("NUMBER OF ClOCK CYCLES = %ld\n", ticks_count);
-      printf("INFERENCE TIME = %ld ms\n", tflite::TicksToMs(ticks_count));
+      printf("NUMBER OF TICKS = %d\n", ticks_count);
+      printf("INFERENCE TIME = %d ms\n", tflite::TicksToMs(ticks_count));
       printf("===========================================\n");
     }
 
