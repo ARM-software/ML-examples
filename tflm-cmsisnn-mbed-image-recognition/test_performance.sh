@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #
 # Copyright (c) 2019-2021 Arm Limited. All rights reserved.
 #
@@ -17,33 +16,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-if ! [ $# -eq 2 ] ; then
-    echo "Wrong number of arguments (expected 2, SEED and TOOLCHAIN)"
+# Example usages:
+# ./test_performance.sh 42 DISCO_F746NG ARM
+# ./test_performance.sh 10 NUCLEO_F746ZG GCC_ARM
+if ! [ $# -eq 3 ] ; then
+    echo "Wrong number of arguments (expected 3, SEED, TARGET and TOOLCHAIN)"
     exit 1
 fi
-
 if ! [[ $1 =~ ^[0-9]+$ ]] ;  then
     echo "SEED should be a non-negative integer!"
     exit 1
 fi
-
-if ! [ "$2" = "GCC_ARM" ] && ! [ "$2" = "ARM" ] ; then
-    echo $2
+if ! [ "$3" = "GCC_ARM" ] && ! [ "$3" = "ARM" ] ; then
+    echo $3
     echo "Invalid toolchain. Should be GCC_ARM or ARM"
     exit 1
 fi
-
-TOOLCHAIN=$2
+TARGET=$2
+TOOLCHAIN=$3
 IMAGE_SIZE=3073
 RANDOM=$1
 OFFSET=$(( RANDOM % 200 ))
 BYTES_OFFSET=$(( OFFSET * 153650 ))
 xxd -s $BYTES_OFFSET -l 153650 -i test_batch.bin image_recognition/50_cifar_images.h
 sed -i -E "s/unsigned char/const unsigned char/g" image_recognition/50_cifar_images.h
-
-mbedtools configure -m DISCO_F746NG -t $TOOLCHAIN -o cmake_build/DISCO_F746NG/release/$TOOLCHAIN/
-cmake -S . -B cmake_build/DISCO_F746NG/release/$TOOLCHAIN -DCMAKE_BUILD_TYPE=RELEASE -DMAINFILE=test -GNinja
-ninja -C cmake_build/DISCO_F746NG/release/$TOOLCHAIN
+mbedtools configure -m $TARGET -t $TOOLCHAIN -o cmake_build/$TARGET/release/$TOOLCHAIN/
+cmake -S . -B cmake_build/$TARGET/release/$TOOLCHAIN -DCMAKE_BUILD_TYPE=RELEASE -DMAINFILE=test -GNinja
+ninja -C cmake_build/$TARGET/release/$TOOLCHAIN
 
 

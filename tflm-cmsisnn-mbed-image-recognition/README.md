@@ -20,7 +20,7 @@
     -   [Resetting the project](#resetting-the-project)
 
 ## Introduction
-This is a project to build a TensorFlow Lite for Microcontrollers (TFLM) and CMSIS-NN image recognition demo for the Discovery STM32F746G board using Mbed CLI 2. The core of the project is based on this [Image recognition example](https://github.com/tensorflow/tensorflow/tree/0acc4e3260266beb94469de434642b4f7f4985a0/tensorflow/lite/micro/examples/image_recognition_experimental). The model is trained on the [CIFAR-10 dataset](https://www.cs.toronto.edu/~kriz/cifar.html) and can classify 10 different classes:
+This is a project to build a TensorFlow Lite for Microcontrollers (TFLM) and CMSIS-NN image recognition demo for the Discovery STM32F746G board using Mbed CLI 2. It is also possible to run the [accuracy and performance test](#testing-performance) on any mbed-enabled device that can fit the final binary in memory. The core of the project is based on this [Image recognition example](https://github.com/tensorflow/tensorflow/tree/0acc4e3260266beb94469de434642b4f7f4985a0/tensorflow/lite/micro/examples/image_recognition_experimental). The model is trained on the [CIFAR-10 dataset](https://www.cs.toronto.edu/~kriz/cifar.html) and can classify 10 different classes:
 - plane
 - car
 - bird
@@ -134,15 +134,14 @@ The debug and develop profiles does not use the NDEBUG macro. This will define a
 
 ### Testing performance
 
-It is possible to test the accuracy of the model, on 50 images at a time. This will also produce a layer-by-layer profling where it is possible to see the amount cycles spent in each layer of the network.
-
-1. To run a test, execute\
-`$ ./test_performance.sh <SEED> <TOOLCHAIN>`,\
-where the `<SEED>` is any integer >= 0, and `<TOOLCHAIN>` is `GCC_ARM` or `ARM`. Running the command with the same seed will test the same set of images.
-
-2. Flash the binary file onto the board as described in step 3 in [Compiling and flashing](#compiling-and-flashing).
-
-3. To read the results, a serial terminal is needed, with the baud rate set to 9600. Running\
+Testing is possible on any mbed-enabled device that can fit the final binary in memory. It tests the accuracy of the model by classifying 50 images per run. This will also produce a layer-by-layer profling where it is possible to see the amount of cycles spent in each layer of the network. The time spent on each operator is calculated using the clock frequency of the Discovery board, which is 216MHz. If you use a device with a different clock frequency, then change `kClocksPerSecond` to match the frequency of your device in `tensorflow/lite/micro/micro_time.cc`.
+1. Run\
+`$ ./setup.sh`
+2. To run a test, execute\
+`$ ./test_performance.sh <SEED> <TARGET> <TOOLCHAIN>`,\
+where the `<SEED>` is any integer >= 0, `<TARGET>` is an mbed-enabled device such as `DISCO_F746NG`, and `<TOOLCHAIN>` is `GCC_ARM` or `ARM`. Running the command with the same seed will test the same set of images.
+3. Flash the binary file onto the board as described in step 3 in [Compiling and flashing](#compiling-and-flashing).
+4. To read the results, a serial terminal is needed, with the baud rate set to 9600. Running\
 `$ mbed-tools sterm --baudrate 9600`\
 will work, but any serial terminal is fine. Running one test after another has finished should work without any issues.
 
