@@ -17,7 +17,7 @@ from sys import argv, stderr, exit
 from os import getenv
 
 import numpy as np
-import keras
+from tensorflow import keras
 
 from camera import Camera
 
