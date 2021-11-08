@@ -20,7 +20,7 @@ from glob import glob
 from collections import defaultdict
 
 import numpy as np
-from keras.models import load_model
+from tensorflow.keras.models import load_model
 from PIL import Image
 
 

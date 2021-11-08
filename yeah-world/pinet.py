@@ -25,8 +25,8 @@ class PiNet(object):
     """ Load a feature extractor and provide a convenience function for 1-batch
         preprocessing and inference """
     def __init__(self):
-        with tf.gfile.GFile('mnet.pb', 'rb') as f:
-            graph_def = tf.GraphDef()
+        with tf.io.gfile.GFile('mnet.pb', 'rb') as f:
+            graph_def = tf.compat.v1.GraphDef()
             graph_def.ParseFromString(f.read())
 
         with tf.Graph().as_default() as graph:
@@ -34,7 +34,7 @@ class PiNet(object):
 
         self.x = graph.get_operations()[0].outputs[0]
         self.y = graph.get_operations()[-1].outputs[0]
-        self.session = tf.Session(graph=graph)
+        self.session = tf.compat.v1.Session(graph=graph)
         _ = self.features(np.zeros((128, 128, 3))) # warm up
 
     def features(self, image):

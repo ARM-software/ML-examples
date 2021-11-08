@@ -18,13 +18,11 @@ machine (e.g. laptop or desktop) and run it there.
 """
 from sys import argv, exit
 from glob import glob
-
-from keras.preprocessing.image import ImageDataGenerator
-from keras.models import Sequential
-from keras.layers import Conv2D, MaxPooling2D
-from keras.layers import Activation, Dropout, Flatten, Dense
-from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
-
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D
+from tensorflow.keras.layers import Activation, Dropout, Flatten, Dense
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 
 
 def main():

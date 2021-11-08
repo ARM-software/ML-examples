@@ -58,5 +58,5 @@ class Camera:
             awb_b = max(0., uniform(-.5, .5) + self.base_awb[1])
             self.camera.awb_gains = (awb_r, awb_b)
 
-        frame = self.stream.next().array
+        frame = next(self.stream).array
         return frame
