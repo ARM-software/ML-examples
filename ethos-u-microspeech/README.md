@@ -8,13 +8,15 @@ The Corstone-300 FVP with Ethos-U55 and Ethos-U65 and dependencies are available
 
 ###  Getting Started with Arm Virtual Hardware:
 
-- Log into your AWS account, and navigate to Elastic Compute Cloud (EC2)
+To take advantage of Arm Virtual Hardware, you would need to have an AWS account and follow the steps below:
+
+- Login to your AWS account
     
-- Locate Images in the sidebar
+- Navigate to Elastic Compute Cloud (EC2)
 
-- Search Public Images for Arm Virtual Hardware AMI
+- Select Launch instances
 
-- Subscribe to the AMI
+- Search for Arm Virtual Hardware AMI from AWS Marketplace
 
 - Select Instance type (recommend c5.large)
 
@@ -22,7 +24,9 @@ The Corstone-300 FVP with Ethos-U55 and Ethos-U65 and dependencies are available
 
 - Launch an EC2 instance based on the AVH Amazon Machine Image
 
-- Connect to the EC2 Instance using ssh (Public DNS and 'ubuntu' as user) Or Virtual Network Computing (VNC):
+- Connect to the EC2 Instance using
+    1. ssh (Public DNS and 'ubuntu' as user) 
+    2. Virtual Network Computing (VNC):
 
 1. Connecting to the AVH AMI using SSH:
 
