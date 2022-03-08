@@ -4,6 +4,8 @@
  */
 package com.arm.styletransfer;
 
+import com.arm.armnn.delegate.ArmnnDelegate;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.SystemClock;
@@ -67,8 +69,11 @@ public class TensorFlowImageStyleTranfer {
 
         mModelFile = modelFile;
         if (enableNNAPI && TensorFlowHelper.canNNAPIEnabled()){
-            delegate = new NnApiDelegate();
-            this.tfLiteOptions.addDelegate(delegate);
+            String[] options = {"logging-severity", "backends"};
+            String[] optionValues = {"info",   "GpuAcc,CpuAcc"};
+            ArmnnDelegate armnnDelegate = new ArmnnDelegate(options, optionValues);
+
+            this.tfLiteOptions.addDelegate(armnnDelegate);
             this.tfLite = new Interpreter(TensorFlowHelper.loadModelFile(context, mModelFile), tfLiteOptions);
         } else {
             this.tfLite = new Interpreter(TensorFlowHelper.loadModelFile(context, mModelFile));
