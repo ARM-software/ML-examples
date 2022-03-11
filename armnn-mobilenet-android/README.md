@@ -53,15 +53,15 @@ Arm NN uses Arm Compute Library(ACL) to provide a set of optimized operators, e.
 This part of the code is illustrated in prepareInterpretor() function in Recognizer.java. In the code, we check Android version and decide if NN API can be enabled on the device, then create a delegate if NN API can be supported.
 
     if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && this.useNNAPI) {
-        String[] armNNoptions = {"logging-severity", "backends"};
-        String[] optionValues = {"info",   "GpuAcc,CpuAcc"};
-        ArmnnDelegate armnnDelegate = new ArmnnDelegate(armNNoptions, optionValues);
-        options.addDelegate(armnnDelegate);
+        nnApiDelegate = new NnApiDelegate();
+        options.addDelegate(nnApiDelegate);
     }
 
 Toggle ArmNN checkbox to experience the performance enhancement the NN API provides.
 
-Since we use the Arm NN TensorFlow Lite delegate as a library dependency, which implements the Android NN API interface, we do not have to rely on a device with the NN driver installed, unlike previous versions of this app. Your Android application will still seamlessly interact with the underlying APIs to exploit the aforementioned accelerators.
+Since Arm NN implements the Android NNAPI interface, once developers have a device with the driver installed, your Android application will seamlessly interact with the underlying APIs to exploit the aforementioned accelerators. 
+
+The NN driver is not bundled with any Android releases, instead it is shipped by OEMs like Samsung, HiSilicon, MTK. E.g, All Samsung devices with Android O MR1 or later firmware releases have the Arm NN driver pre-installed.
  
 ## Image classification model
 In our Android application, we used a pre-trained model from https://github.com/ARM-software/ML-zoo. 

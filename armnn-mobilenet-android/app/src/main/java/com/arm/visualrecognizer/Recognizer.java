@@ -4,8 +4,6 @@
  */
 package com.arm.visualrecognizer;
 
-import com.arm.armnn.delegate.ArmnnDelegate;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Build;
@@ -119,16 +117,14 @@ public class Recognizer {
 void prepareInterpretor()  {
     Interpreter.Options options  = new Interpreter.Options();
     if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && this.useNNAPI) {
-        String[] armNNoptions = {"logging-severity", "backends"};
-        String[] optionValues = {"info",   "GpuAcc,CpuAcc"};
-        ArmnnDelegate armnnDelegate = new ArmnnDelegate(armNNoptions, optionValues);
-        options.addDelegate(armnnDelegate);
+        nnApiDelegate = new NnApiDelegate();
+        options.addDelegate(nnApiDelegate);
     }
     try {
         MappedByteBuffer tfLiteModel = FileUtil.loadMappedFile(context, MODEL_FILE_NAME);
         tfLiteInterpreter = new Interpreter(tfLiteModel, options);
         loadedSuccessfully = true;
-    } catch (IOException exc) {
+    }catch (IOException exc) {
         Log.e(TAG, exc.getMessage());
         exc.printStackTrace();
         loadedSuccessfully = false;

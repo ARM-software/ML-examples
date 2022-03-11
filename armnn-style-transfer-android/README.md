@@ -34,7 +34,7 @@ What do you need?
 
 
 ## Style transfer code 
-Import Live Style project into Android Studio and update the local.properties file to point at your local sdk path.
+Import Live Style project into Android Studio. 
 
 Our style transfer code is implemented in doStyleTransfer() function in TensorFlowImageStyleTransfer.java.
 
@@ -57,19 +57,18 @@ Arm NN uses Arm Compute Library(ACL) to provide a set of optimized operators, e.
 This part of the code is illustrated in TensorFlowImageStyleTranfer() function in TensorFlowImageStyleTransfer.java. In the code, we check Android version and decide if NN API can be enabled on the device, then create a delegate if NN API can be supported.
 
     if (enableNNAPI && TensorFlowHelper.canNNAPIEnabled()){
-            String[] options = {"logging-severity", "backends"};
-            String[] optionValues = {"info",   "GpuAcc,CpuAcc"};
-            ArmnnDelegate armnnDelegate = new ArmnnDelegate(options, optionValues);
-
-            this.tfLiteOptions.addDelegate(armnnDelegate);
-            this.tfLite = new Interpreter(TensorFlowHelper.loadModelFile(context, mModelFile), tfLiteOptions);
+        delegate = new NnApiDelegate();
+        this.tfLiteOptions.addDelegate(delegate);
+        this.tfLite = new Interpreter(TensorFlowHelper.loadModelFile(context, mModelFile), tfLiteOptions);
     } else {
-        this.tfLite = new Interpreter(TensorFlowHelper.loadModelFile(context, mModelFile));
+       this.tfLite = new Interpreter(TensorFlowHelper.loadModelFile(context, mModelFile));
     }
 
 Toggle ArmNN checkbox to experience the performance enhancement the NN API provides.
 
-Since we use the Arm NN TensorFlow Lite delegate as a library dependency, which implements the Android NN git guiAPI interface, we do not have to rely on a device with the NN driver installed, unlike previous versions of this app. Your Android application will still seamlessly interact with the underlying APIs to exploit the aforementioned accelerators.
+Since Arm NN implements the Android NNAPI interface, once developers have a device with the driver installed, your Android application will seamlessly interact with the underlying APIs to exploit the aforementioned accelerators. 
+
+The NN driver is not bundled with any Android releases, instead it is shipped by OEMs like Samsung, HiSilicon, MTK. E.g, All Samsung devices with Android O MR1 or later firmware releases have the Arm NN driver pre-installed.
  
 ## Style transfer models
 In our Android application, we used pre-trained models from https://github.com/misgod/fast-neural-style-keras. We made a few tweaks to the model architecture to make it fully compatible with Arm NN operators. The tweaks we made include:
