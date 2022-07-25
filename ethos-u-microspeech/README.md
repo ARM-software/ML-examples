@@ -73,11 +73,11 @@ To run the code on your local machine, ensure the following prerequisites are in
 
 
 - Corstone-300 FVP available on [armDeveloper](https://developer.arm.com/tools-and-software/simulation-models/fixed-virtual-platforms) 
-- GNU Arm embedded toolchain version 10.2.1 or higher  
+- GNU Arm embedded toolchain version 10.2.1 (or higher) or the Arm Compiler version 6.16 (or higher)  
     -If you are using the proprietary Arm Compiler, ensure that the compiler license has been correctly configured.
-- CMake version 3.15 or above 
+- CMake version 3.21 or above 
 - Make version 4.1 or above
-- Python 3.6 or above 
+- Python  3.7 or above  
 - Python virtual environment module 
 - latest pip and libsndfile
 - TensorFlow version 2.0 or above
