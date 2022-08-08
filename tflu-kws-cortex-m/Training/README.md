@@ -47,11 +47,11 @@ make quantization of the trained models super simple.
 
 To quantize your trained model (e.g. a DNN) run:
 ```
-python convert.py --model_architecture dnn --model_size_info 128 128 128 --checkpoint <checkpoint_path> [--inference_type int8]
+python convert.py --model_architecture dnn --model_size_info 128 128 128 --checkpoint <checkpoint_path> [--inference_type int8|int16]
 ```
 The parameters used here should match those used in the Training step.
 
-The inference_type parameter is *optional* and to be used if a fully quantized model with inputs and outputs of type int8 is needed. It defaults to fp32.
+The inference_type parameter is *optional* and to be used if a fully quantized model with inputs and outputs of type int8 or int16 is needed. It defaults to fp32.
 
 This step will produce a quantized TFLite file *dnn_quantized.tflite*.
 You can test the accuracy of this quantized model on the test set by running:
