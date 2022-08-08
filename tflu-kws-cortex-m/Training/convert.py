@@ -1,4 +1,4 @@
-# Copyright © 2021 Arm Ltd. All rights reserved.
+# Copyright © 2021-2022 Arm Ltd. All rights reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -88,10 +88,15 @@ def post_training_quantize(keras_model, inference_type, rep_dataset):
     if inference_type=='int8':
         converter.inference_input_type = tf.int8
         converter.inference_output_type = tf.int8
+        supported_ops = tf.lite.OpsSet.TFLITE_BUILTINS_INT8
+    if inference_type=='int16':
+        converter.inference_input_type = tf.int16
+        converter.inference_output_type = tf.int16
+        supported_ops = tf.lite.OpsSet.EXPERIMENTAL_TFLITE_BUILTINS_ACTIVATIONS_INT16_WEIGHTS_INT8
 
     # Int8 post training quantization needs representative dataset.
     converter.representative_dataset = rep_dataset
-    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+    converter.target_spec.supported_ops = [supported_ops]
 
     tflite_model = converter.convert()
 
@@ -223,7 +228,7 @@ if __name__ == '__main__':
         '--inference_type',
         type=str,
         default='fp32',
-        help='If quantize is true, whether the model input and output is float32 or int8')
+        help='If quantize is true, whether the model input and output is float32, int8 or int16')
 
     FLAGS, _ = parser.parse_known_args()
     main()

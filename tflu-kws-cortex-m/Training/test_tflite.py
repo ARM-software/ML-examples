@@ -1,4 +1,4 @@
-# Copyright © 2021 Arm Ltd. All rights reserved.
+# Copyright © 2021-2022 Arm Ltd. All rights reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -60,6 +60,7 @@ def tflite_inference(input_data, tflite_path):
     Returns:
         Output from inference.
     """
+    supported_quant_dtypes = (np.int8, np.int16)
     interpreter = tf.lite.Interpreter(model_path=tflite_path)
     interpreter.allocate_tensors()
 
@@ -71,15 +72,15 @@ def tflite_inference(input_data, tflite_path):
 
     # Check if the input/output type is quantized,
     # set scale and zero-point accordingly
-    if input_dtype == np.int8:
+    if input_dtype in supported_quant_dtypes:
         input_scale, input_zero_point = input_details[0]["quantization"]
     else:
         input_scale, input_zero_point = 1, 0
 
     input_data = input_data / input_scale + input_zero_point
-    input_data = np.round(input_data) if input_dtype == np.int8 else input_data
+    input_data = np.round(input_data) if input_dtype in supported_quant_dtypes else input_data
 
-    if output_dtype == np.int8:
+    if output_dtype in supported_quant_dtypes:
         output_scale, output_zero_point = output_details[0]["quantization"]
     else:
         output_scale, output_zero_point = 1, 0
