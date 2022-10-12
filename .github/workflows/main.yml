@@ -14,9 +14,8 @@ jobs:
       env:
         API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
       with:
-        source_file: 'README.md'
+        source_file: 'pytorch-to-tflite'
         destination_repo: 'Arm-Examples/ml-embedded-test-repo'
-        destination_folder: 'test-dir'
         user_email: 'nina.drozd@arm.com'
         user_name: 'nindro01'
-        commit_message: 'Adding readme'
+        commit_message: 'Example Sync'
