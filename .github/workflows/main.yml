@@ -1,0 +1,22 @@
+name: Push File
+
+on: push
+
+jobs:
+  copy-file:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Pushes test file
+      uses: dmnemec/copy_file_to_another_repo_action@main
+      env:
+        API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+      with:
+        source_file: 'README.md'
+        destination_repo: 'Arm-Examples/ml-embedded-test-repo'
+        destination_folder: 'test-dir'
+        user_email: 'nina.drozd@arm.com'
+        user_name: 'nindro01'
+        commit_message: 'Adding readme'
