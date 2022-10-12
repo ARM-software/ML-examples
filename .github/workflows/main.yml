@@ -15,7 +15,7 @@ jobs:
       - uses: actions/upload-artifact@v1
         with:
           name: my-artifact
-          path: ${{ github.workspace }}/result.zip
+          path: ${{ github.workspace }}/latest-pytorch-example.zip
   copy-file:
     runs-on: ubuntu-latest
     steps:
