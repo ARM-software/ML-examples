@@ -34,7 +34,6 @@ jobs:
             Changes in this Release
             - First Change
             - Second Change
-          draft: true
           prerelease: true
   copy-file:
     runs-on: ubuntu-latest
