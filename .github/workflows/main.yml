@@ -12,6 +12,10 @@ jobs:
           files: pytorch-to-tflite/
           recursive: true
           dest: latest-pytorch-example.zip
+      - uses: actions/upload-artifact@v1
+        with:
+          name: my-artifact
+          path: ${{ github.workspace }}/result.zip
   copy-file:
     runs-on: ubuntu-latest
     steps:
