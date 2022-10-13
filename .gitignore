@@ -94,6 +94,9 @@ ENV/
 # Rope project settings
 .ropeproject
 
+# vscode projet settings
+.vscode/
+
 # mkdocs documentation
 /site
 
@@ -103,3 +106,11 @@ ENV/
 # targets
 mnist
 mnist_caffe
+
+# CMSIS-tools or packs based:
+packlist.txt
+**/.clangd
+*.cprj
+RTE/
+out/
+tmp/
