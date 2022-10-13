@@ -16,12 +16,6 @@ jobs:
         with:
           name: cmsis-pack-examples.zip
           path: ${{ github.workspace }}/cmsis-pack-examples.zip
-  build:
-    name: Create Release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
