@@ -9,13 +9,13 @@ jobs:
       - uses: actions/checkout@v2
       - uses: vimtor/action-zip@v1
         with:
-          files: pytorch-to-tflite/
+          files: cmsis-pack-examples/
           recursive: true
-          dest: latest-pytorch-example.zip
+          dest: cmsis-pack-examples.zip
       - uses: actions/upload-artifact@v1
         with:
-          name: my-artifact
-          path: ${{ github.workspace }}/latest-pytorch-example.zip
+          name: cmsis-pack-examples.zip
+          path: ${{ github.workspace }}/cmsis-pack-examples.zip
   build:
     name: Create Release
     runs-on: ubuntu-latest
@@ -46,7 +46,7 @@ jobs:
       env:
         API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
       with:
-        source_file: 'pytorch-to-tflite'
+        source_file: 'cmsis-pack-examples'
         destination_repo: 'Arm-Examples/ml-embedded-test-repo'
         user_email: 'nina.drozd@arm.com'
         user_name: 'nindro01'
