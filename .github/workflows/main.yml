@@ -40,18 +40,11 @@ jobs:
           asset_path: ${{ github.workspace }}/cmsis-pack-examples.zip
           asset_name: cmsis-pack-examples.zip
           asset_content_type: application/zip
-  copy-file:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Pushes test file
-      uses: dmnemec/copy_file_to_another_repo_action@main
-      env:
-        API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
-      with:
-        source_file: cmsis-pack-examples/**
-        destination_repo: 'Arm-Examples/mlek-demos-on-Corstone-300'
-        user_email: 'github-actions@arm.com'
-        user_name: 'github-actions'
-        commit_message: 'Example Sync - ${{ github.run_id }}'
+      - name: Sync with repo
+        run: |
+          git clone https://.:${{ secrets.GITHUB_TOKEN }}@github.com/Arm-Examples/mlek-demos-on-Corstone-300 target
+          7z x ${{ github.workspace }}/cmsis-pack-examples.zip target/
+          cd target
+          git add .
+          git diff-index --quiet HEAD || git commit -m 'Example Sync - ${{ github.run_id }}'
+          git push target main
