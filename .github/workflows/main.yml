@@ -50,5 +50,5 @@ jobs:
         source_file: 'cmsis-pack-examples/**'
         destination_repo: 'Arm-Examples/mlek-demos-on-Corstone-300'
         user_email: nina.drozd@arm.com
-        user_name: nindro01
+        user_name: NinaARM
         commit_message: 'Example Sync - $GITHUB_RUN_ID'
