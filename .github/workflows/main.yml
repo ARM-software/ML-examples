@@ -56,7 +56,7 @@ jobs:
       env:
         API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
       with:
-        source_file: cmsis-pack-examples/mlek.csolution.yml cmsis-pack-examples/LICENSE cmsis-pack-examples/README.md cmsis-pack-examples/common cmsis-pack-examples/kws cmsis-pack-examples/object-detection
+        source_file: "cmsis-pack-examples/mlek.csolution.yml, cmsis-pack-examples/LICENSE, cmsis-pack-examples/README.md, cmsis-pack-examples/common, cmsis-pack-examples/kws, cmsis-pack-examples/object-detection"
         destination_repo: 'Arm-Examples/mlek-demos-on-Corstone-300'
         user_email: 'github-actions@arm.com'
         user_name: 'github-actions'
