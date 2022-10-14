@@ -50,7 +50,7 @@ jobs:
       env:
         API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
       with:
-        source_file: 'cmsis-pack-examples'
+        source_file: cmsis-pack-examples/**
         destination_repo: 'Arm-Examples/mlek-demos-on-Corstone-300'
         user_email: 'github-actions@arm.com'
         user_name: 'github-actions'
