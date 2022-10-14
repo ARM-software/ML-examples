@@ -1,6 +1,11 @@
-name: Push File
+name: Synchronize ML-Examples repo
 
-on: push
+on: 
+  push:
+    branches:
+      - main
+    paths:
+      - cmsis-pack-examples/**
 
 jobs:
   zip-files:
@@ -12,18 +17,14 @@ jobs:
           files: cmsis-pack-examples/
           recursive: true
           dest: cmsis-pack-examples.zip
-      - uses: actions/upload-artifact@v1
-        with:
-          name: cmsis-pack-examples.zip
-          path: ${{ github.workspace }}/cmsis-pack-examples.zip
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-          tag_name: "v4.0.0"
-          release_name: Release v4.0.0
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
           body: |
             Changes in this Release
             - First Change
