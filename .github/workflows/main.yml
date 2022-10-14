@@ -40,19 +40,18 @@ jobs:
           asset_path: ${{ github.workspace }}/cmsis-pack-examples.zip
           asset_name: cmsis-pack-examples.zip
           asset_content_type: application/zip
-  copy:
+  copy-file:
     runs-on: ubuntu-latest
     steps:
-    - name: Copycat
-      uses: andstor/copycat-action@v3
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Pushes test file
+      uses: dmnemec/copy_file_to_another_repo_action@main
+      env:
+        API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
       with:
-        personal_token: ${{ secrets.GITHUB_TOKEN }}
-        src_branch: main
-        src_path: /.
-        filter: cmsis-pack-examples/*
-        dst_branch: main
-        dst_owner: ''
-        dst_path: /.
-        dst_repo_name: Arm-Examples/mlek-demos-on-Corstone-300
-        username: github-actions
-        email: github-actions@arm.com
+        source_file: cmsis-pack-examples/**
+        destination_repo: 'Arm-Examples/mlek-demos-on-Corstone-300'
+        user_email: 'github-actions@arm.com'
+        user_name: 'github-actions'
+        commit_message: 'Example Sync - ${{ github.run_id }}'
