@@ -22,12 +22,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-          tag_name: "v3.0.0"
-          release_name: Release v3.0.0
+          tag_name: "v4.0.0"
+          release_name: Release v4.0.0
           body: |
             Changes in this Release
             - First Change
             - Second Change
+            - Added extra
           prerelease: true
       - name: Upload Release Asset
         id: upload-release-asset 
