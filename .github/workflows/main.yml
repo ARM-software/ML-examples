@@ -33,7 +33,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          upload_url: ${{ steps.create_release.outputs.upload_url }} 
           asset_path: ${{ github.workspace }}/cmsis-pack-examples.zip
           asset_name: cmsis-pack-examples.zip
           asset_content_type: application/zip
@@ -45,11 +45,9 @@ jobs:
 
     - name: Pushes test file
       uses: dmnemec/copy_file_to_another_repo_action@main
-      env:
-        API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
       with:
         source_file: 'cmsis-pack-examples'
         destination_repo: 'Arm-Examples/ml-embedded-test-repo'
-        user_email: 'nina.drozd@arm.com'
-        user_name: 'nindro01'
+        user_email: github-actions
+        user_name: github-actions@github.com
         commit_message: 'Example Sync - $GITHUB_RUN_ID'
