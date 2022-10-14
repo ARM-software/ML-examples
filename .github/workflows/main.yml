@@ -48,6 +48,6 @@ jobs:
       with:
         source_file: 'cmsis-pack-examples'
         destination_repo: 'Arm-Examples/ml-embedded-test-repo'
-        user_email: github-actions
-        user_name: github-actions@github.com
+        user_email: github-actions@github.com
+        user_name: github-actions
         commit_message: 'Example Sync - $GITHUB_RUN_ID'
