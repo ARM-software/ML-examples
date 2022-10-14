@@ -1,9 +1,12 @@
 name: Synchronize ML-Examples repo
 
 on: 
+  workflow_dispatch:
   push:
     branches:
       - main
+    paths:
+      - cmsis-pack-examples/**
 
 jobs:
   zip-files:
