@@ -42,13 +42,13 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-      env:
-        API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
     - name: Pushes test file
       uses: dmnemec/copy_file_to_another_repo_action@main
+      env:
+        API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
       with:
         source_file: 'cmsis-pack-examples/**'
         destination_repo: 'Arm-Examples/mlek-demos-on-Corstone-300'
-        user_email: nina.drozd@arm.com
-        user_name: NinaARM
+        user_email: 'github-actions@arm.com'
+        user_name: 'github-actions'
         commit_message: 'Example Sync - $GITHUB_RUN_ID'
