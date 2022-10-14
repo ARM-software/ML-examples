@@ -51,4 +51,4 @@ jobs:
         destination_repo: 'Arm-Examples/mlek-demos-on-Corstone-300'
         user_email: 'github-actions@arm.com'
         user_name: 'github-actions'
-        commit_message: 'Example Sync - $GITHUB_RUN_ID'
+        commit_message: 'Example Sync - ${{ github.run_id }}'
