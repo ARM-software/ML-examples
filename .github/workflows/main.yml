@@ -45,12 +45,18 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+    - name: Fetch action
+      id: get-cmsis-pack-files
+      uses: Rishabh510/Path-lister-action@master
+      with:
+        path: ".cmsis-pack-examples/"
+        type: ".yml"
     - name: Pushes test file
       uses: dmnemec/copy_file_to_another_repo_action@main
       env:
         API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
       with:
-        source_file: cmsis-pack-examples/**
+        source_file: ${{ steps.get-cmsis-pack-files.outputs.cmsis-pack-files }}
         destination_repo: 'Arm-Examples/mlek-demos-on-Corstone-300'
         user_email: 'github-actions@arm.com'
         user_name: 'github-actions'
