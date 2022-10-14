@@ -51,7 +51,7 @@ jobs:
         src_path: /.
         filter: cmsis-pack-examples/*
         dst_branch: main
-        dst_ownder: ''
+        dst_owner: ''
         dst_path: /.
         dst_repo_name: Arm-Examples/mlek-demos-on-Corstone-300
         username: github-actions
