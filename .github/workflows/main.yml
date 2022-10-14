@@ -40,11 +40,17 @@ jobs:
           asset_path: ${{ github.workspace }}/cmsis-pack-examples.zip
           asset_name: cmsis-pack-examples.zip
           asset_content_type: application/zip
-      - name: Sync with repo
-        run: |
-          git clone https://.:${{ secrets.GITHUB_TOKEN }}@github.com/Arm-Examples/mlek-demos-on-Corstone-300 target
-          7z x ${{ github.workspace }}/cmsis-pack-examples.zip target/
-          cd target
-          git add .
-          git diff-index --quiet HEAD || git commit -m 'Example Sync - ${{ github.run_id }}'
-          git push target main
+  copy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Copycat
+      uses: andstor/copycat-action@v3
+      with:
+        personal_token: ${{ secrets.GITHUB_TOKEN }}
+        src_path: /.
+        filter: cmsis-pack-examples/*
+        dst_path: /.
+        dst_owner: NinaARM
+        dst_repo_name: Arm-Examples/mlek-demos-on-Corstone-300
+        username: github-actions
+        email: github-actions@arm.com
