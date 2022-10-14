@@ -47,8 +47,10 @@ jobs:
       uses: andstor/copycat-action@v3
       with:
         personal_token: ${{ secrets.GITHUB_TOKEN }}
+        src_branch: main
         src_path: /.
         filter: cmsis-pack-examples/*
+        dst_branch: main
         dst_path: /.
         dst_owner: NinaARM
         dst_repo_name: Arm-Examples/mlek-demos-on-Corstone-300
