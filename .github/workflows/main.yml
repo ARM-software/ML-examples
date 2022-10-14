@@ -49,8 +49,8 @@ jobs:
       id: get-cmsis-pack-files
       uses: Rishabh510/Path-lister-action@master
       with:
-        path: ".cmsis-pack-examples/"
-        type: ".yml"
+        path: "cmsis-pack-examples/"
+        type: "*"
     - name: Pushes test file
       uses: dmnemec/copy_file_to_another_repo_action@main
       env:
