@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - cmsis-pack-examples/**
 
 jobs:
   zip-files:
