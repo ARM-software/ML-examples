@@ -21,8 +21,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          tag_name: $GITHUB_RUN_ID
+          release_name: Release $GITHUB_RUN_ID
           body: |
             Changes in this Release
             - First Change
@@ -54,4 +54,4 @@ jobs:
         destination_repo: 'Arm-Examples/ml-embedded-test-repo'
         user_email: 'nina.drozd@arm.com'
         user_name: 'nindro01'
-        commit_message: 'Example Sync'
+        commit_message: 'Example Sync - $GITHUB_RUN_ID'
