@@ -53,6 +53,6 @@ jobs:
         dst_branch: main
         dst_path: /.
         dst_owner: NinaARM
-        dst_repo_name: Arm-Examples/mlek-demos-on-Corstone-300
+        dst_repo_name: https://github.com/Arm-Examples/mlek-demos-on-Corstone-300.git
         username: github-actions
         email: github-actions@arm.com
