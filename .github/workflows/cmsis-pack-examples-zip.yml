@@ -1,6 +1,21 @@
-name: Synchronize ML-Examples repo
+#  Copyright (c) 2022 Arm Limited. All rights reserved.
+#  SPDX-License-Identifier: Apache-2.0
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
 
-on: 
+name: Publish CMSIS-pack example project zip file
+
+on:
   workflow_dispatch:
   push:
     branches:
@@ -31,33 +46,12 @@ jobs:
           prerelease: false
           draft: false
       - name: Upload Release Asset
-        id: upload-release-asset 
+        id: upload-release-asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} 
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ${{ github.workspace }}/cmsis-pack-examples.zip
           asset_name: cmsis-pack-examples.zip
           asset_content_type: application/zip
-  copy-file:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Fetch action
-      id: get-cmsis-pack-files
-      uses: Rishabh510/Path-lister-action@master
-      with:
-        path: "cmsis-pack-examples/"
-        type: ".yml"
-    - name: Pushes test file
-      uses: dmnemec/copy_file_to_another_repo_action@main
-      env:
-        API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
-      with:
-        source_file: "cmsis-pack-examples/mlek.csolution.yml, cmsis-pack-examples/LICENSE, cmsis-pack-examples/README.md, cmsis-pack-examples/common, cmsis-pack-examples/kws, cmsis-pack-examples/object-detection"
-        destination_repo: 'Arm-Examples/mlek-demos-on-Corstone-300'
-        user_email: 'github-actions@arm.com'
-        user_name: 'github-actions'
-        commit_message: 'Example Sync - ${{ github.run_id }}'
