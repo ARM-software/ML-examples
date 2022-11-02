@@ -45,18 +45,13 @@ solution:
     - pack: tensorflow::tensorflow-lite-micro@1.22.5-rc4
 
   build-types:                                # defines toolchain options for 'debug' and 'release'
-    # ---------------------------------------------------------------------------------------------
-    # Debug builds do not work with AVH deployment yet with debug flag as the size of the binary
-    # is limited to 10MB. The additional C-CPP flag can be uncommented once this file limit has
-    # been increased to support files sizes of up to 32MB.
-    # ---------------------------------------------------------------------------------------------
     - type: Debug
       compiler: AC6
       debug: on
       misc:
         - C*:
           - -O0
-          #- g
+          - -g
 
     - type: Release
       compiler: AC6
@@ -68,20 +63,14 @@ solution:
   target-types:
     - type: AVH-U55
       device: ARM::SSE-300-MPS3
-
-      # Note: Should be changed to "define" later.
-      # "For a transition period defines: is also accepted. However this will be deprecated."
-      defines:
+      define:
         - "ETHOSU55"
 
     # Currently Keil Studio doesn't allow to switch between targets. Uncomment when this is
     # fixed.
     # - type: AVH-U65
     #   device: ARM::SSE-300-MPS3
-
-    #   # Note: Should be changed to "define" later.
-    #   # "For a transition period defines: is also accepted. However this will be deprecated."
-    #   defines:
+    #   define:
     #     - "ETHOSU65"
 
   projects:
