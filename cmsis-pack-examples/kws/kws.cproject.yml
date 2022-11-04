@@ -33,13 +33,11 @@ project:
             - +AVH-U65
         - file: src/main.cpp
 
-  misc:
-    - Link:
-        - --scatter=./mps3-sse-300.sct
+    - group: Device Files
+      files:
+        - file: mps3-sse-300.sct
 
-  # Note: Should be changed to "define" later.
-  # "For a transition period defines: is also accepted. However this will be deprecated."
-  defines:
+  define:
     - "ACTIVATION_BUF_SZ=0x00100000"
 
   layers:
