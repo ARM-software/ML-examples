@@ -13,7 +13,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/1.0.0/tools/projmgr/schemas/csolution.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/0.9.6/tools/projmgr/schemas/csolution.schema.json
+
+# NOTE: For version 0.9.6 - we have to use property "defines" to add
+# compile time definitions. This will need to be updated with later
+# version of the tool (> 1.0.0)
+# > "For a transition period `defines:` is also accepted. However this will be deprecated."
 
 solution:
 
@@ -44,7 +49,8 @@ solution:
     - pack: tensorflow::ruy@1.22.5-rc4
     - pack: tensorflow::tensorflow-lite-micro@1.22.5-rc4
 
-  build-types:                                # defines toolchain options for 'debug' and 'release'
+  # defines toolchain options for 'debug' and 'release'
+  build-types:
     - type: Debug
       compiler: AC6
       debug: on
@@ -63,14 +69,14 @@ solution:
   target-types:
     - type: AVH-U55
       device: ARM::SSE-300-MPS3
-      define:
+      defines:
         - "ETHOSU55"
 
     # Currently Keil Studio doesn't allow to switch between targets. Uncomment when this is
     # fixed.
     # - type: AVH-U65
     #   device: ARM::SSE-300-MPS3
-    #   define:
+    #   defines:
     #     - "ETHOSU65"
 
   projects:
