@@ -49,7 +49,7 @@ bounding boxes for each detection.
 
 ### Keyword spotting
 
-This example can detect up to twelve keywords in the input audio stream. The audio file used
+This example can detect up to twelve keywords in the input audio stream. The [audio file used](./resources/sample_audio.wav)
 contains the keyword "down" being spoken.
 
 More details about the input for this example can be found [here](https://review.mlplatform.org/plugins/gitiles/ml/ethos-u/ml-embedded-evaluation-kit/+/refs/heads/main/docs/use_cases/kws.md#preprocessing-and-feature-extraction).
@@ -202,7 +202,7 @@ The output is different for the two example applications:
 
 ## Licenses
 
-The application samples are provided under the Apache 2.0 license, see [License](./LICENSE).
+The application samples and [resources](./resources) are provided under the Apache 2.0 license, see [License](./LICENSE).
 
 Application input data sample files (audio or image files) and the neural network model files have
 been converted into C/C++ type arrays and are distributed under Apache 2.0 license. The models have
@@ -212,4 +212,4 @@ into C/C++ arrays to be baked into the example applications.
 | Example | Licence | Provenance |
 |---------------|---------|---------|
 | Keyword Spotting | Apache 2.0 | [micronet_medium](https://github.com/ARM-software/ML-zoo/raw/9f506fe52b39df545f0e6c5ff9223f671bc5ae00/models/keyword_spotting/micronet_medium/tflite_int8/) |
-| Object Detection | Apache 2.0 | [object_detection](https://github.com/emza-vs/ModelZoo/blob/v1.0/object_detection/) |
+| Object Detection | Apache 2.0 | [yolo-fastest_192_face_v4](https://github.com/emza-vs/ModelZoo/blob/v1.0/object_detection/) |
