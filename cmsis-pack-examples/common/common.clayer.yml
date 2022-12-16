@@ -17,15 +17,10 @@
 
 layer:
 
-  description: Common files and components for examples based on Arm ML Embedded evaluation kit.
+  description: Common files and platform-agnostic components for examples based on Arm ML Embedded evaluation kit.
+
 
   groups:
-    - group: Retarget
-      files:
-        - file: src/retarget.c
-        - file: src/uart_cmsdk_apb.c
-        - file: include/uart_config.h
-        - file: include/uart_stdout.h
     - group: Common
       files:
         - file: include/BufAttributes.hpp
@@ -42,18 +37,6 @@ layer:
     - component: tensorflow::Data Processing:Math:gemmlowp fixed-point
     - component: tensorflow::Data Processing:Math:kissfft
     - component: tensorflow::Data Processing:Math:ruy
-    - component: ARM::Device:Definition
-    - component: ARM::Device:Startup&Baremetal
-    - component: ARM::Native Driver:Timeout
-    - component: ARM::Native Driver:SysCounter
-    - component: ARM::Native Driver:SysTimer
-    - component: Arm::Machine Learning:NPU Support:Ethos-U Driver&Generic U55
-      for-type:
-        - +AVH-U55
-    - component: Arm::Machine Learning:NPU Support:Ethos-U Driver&Generic U65
-      for-type:
-        - +AVH-U65
-    - component: tensorflow::Machine Learning:TensorFlow:Kernel&Ethos-U
     - component: tensorflow::Machine Learning:TensorFlow:Kernel Utils
     - component: tensorflow::Machine Learning:TensorFlow:Testing
     - component: ARM::ML Eval Kit:Common:API

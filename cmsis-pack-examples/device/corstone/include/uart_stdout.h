@@ -15,20 +15,36 @@
  * limitations under the License.
  */
 
-#ifndef _UART_STDOUT_H_
-#define _UART_STDOUT_H_
+#ifndef UART_STDOUT_H
+#define UART_STDOUT_H
 
 #if __cplusplus
 extern "C" {
 #endif
 
+/**
+ * @brief UART initialisation - to enable printf output redirection.
+ */
 void UartStdOutInit(void);
+
+/**
+ * @brief Sends a character over UART
+ *
+ * @param[in] my_ch Character to be sent.
+ * @return          Character sent.
+ * @note            This is a blocking function.
+ */
 unsigned char UartPutc(unsigned char my_ch);
+
+/**
+ * @brief   Reads a character over UART.
+ * @return  Character read.
+ * @note    This is a blocking function.
+ */
 unsigned char UartGetc(void);
-unsigned int GetLine(char *lp, unsigned int len);
 
 #if __cplusplus
 }
 #endif
 
-#endif
+#endif /* UART_STDOUT_H */

@@ -13,34 +13,29 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/0.9.6/tools/projmgr/schemas/csolution.schema.json
-
-# NOTE: For version 0.9.6 - we have to use property "defines" to add
-# compile time definitions. This will need to be updated with later
-# version of the tool (> 1.0.0)
-# > "For a transition period `defines:` is also accepted. However this will be deprecated."
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/1.2.0/tools/projmgr/schemas/csolution.schema.json
 
 solution:
 
+  # Note that we need AC6@6.18 or higher to compile for Corstone-310 target.
   compiler: AC6
 
   misc:
     - CPP:
-      - -std=c++14 -fno-exceptions
+      - -std=c++14 -fno-exceptions -Wno-license-management
     - C:
-      - -std=c99
+      - -std=c99 -Wno-license-management
     - Link:
       - --entry=Reset_Handler
       - --verbose
       - --callgraph_file='callgraph'
       - --map
-      - --info=sizes,totals,unused,compression,stack,inline,summarysizes
+      - --info=sizes,totals,unused,compression,inline,summarysizes
       - --list='diagnostics.map'
-      - --diag_suppress=L6439W,L6314W
+      - --diag_suppress=L6439W,L6314W,L9931W
 
   packs:
     - pack: ARM::CMSIS@5.9.0
-    - pack: ARM::V2M_MPS3_SSE_300_BSP@1.3.0
     - pack: Arm::ethos-u-core-driver@1.22.5-rc4
     - pack: ARM::ml-embedded-eval-kit-uc-api@22.8.0-Beta
     - pack: tensorflow::flatbuffers@1.22.5-rc4
@@ -49,7 +44,12 @@ solution:
     - pack: tensorflow::ruy@1.22.5-rc4
     - pack: tensorflow::tensorflow-lite-micro@1.22.5-rc4
 
-  # defines toolchain options for 'debug' and 'release'
+    - pack: ARM::V2M_MPS3_SSE_300_BSP@1.3.0
+    - pack: ARM::V2M_MPS3_SSE_310_BSP@1.0.0
+    - pack: NXP::FRDM-K64F_BSP@14.0.0
+    - pack: NXP::MK64F12_DFP@14.0.0
+    - pack: Keil::STM32F7xx_DFP@2.15.1
+
   build-types:
     - type: Debug
       compiler: AC6
@@ -64,21 +64,51 @@ solution:
       debug: off
       misc:
         - C*:
-          - -O3
+          - -Ofast
 
   target-types:
-    - type: AVH-U55
+    - type: AVH-SSE-300-U55
       device: ARM::SSE-300-MPS3
       defines:
         - "ETHOSU55"
 
-    # Currently Keil Studio doesn't allow to switch between targets. Uncomment when this is
-    # fixed.
-    # - type: AVH-U65
+    - type: AVH-SSE-310-U55
+      device: ARM::SSE-310-MPS3
+      defines:
+        - "ETHOSU55"
+
+    - type: FRDM-K64F
+      board: NXP::FRDM-K64F
+      device: MK64FN1M0VLL12
+
+    - type: STM32F746-DISCO
+      board: STMicroelectronics::STM32F746G-Discovery
+      device: STM32F746NGHx
+
+    # Currently Keil Studio doesn't allow switching between different NPU configurations.
+    # Uncomment when this is fixed.
+    # - type: AVH-SSE-300-U65
     #   device: ARM::SSE-300-MPS3
     #   defines:
+    #     - "ETHOSU65"
+    #
+    # - type: AVH-SSE-310-U65
+    #   device: ARM::SSE-310-MPS3
+    #   define:
     #     - "ETHOSU65"
 
   projects:
     - project: ./object-detection/object-detection.cproject.yml
+      for-type:
+        - +AVH-SSE-300-U65
+        - +AVH-SSE-310-U65
+        - +AVH-SSE-300-U55
+        - +AVH-SSE-310-U55
     - project: ./kws/kws.cproject.yml
+      for-type:
+        - +AVH-SSE-300-U65
+        - +AVH-SSE-310-U65
+        - +AVH-SSE-300-U55
+        - +AVH-SSE-310-U55
+        - +FRDM-K64F
+        - +STM32F746-DISCO

@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 /* Basic CMSDK APB UART driver */
 
 #include "uart_config.h"
@@ -47,10 +46,11 @@ typedef struct {
 } CMSDK_UART_TypeDef;
 
 #define CMSDK_UART0_BASE     UART0_BASE
-#define CMSDK_UART0          ((CMSDK_UART_TypeDef *)CMSDK_UART0_BASE)
+#define CMSDK_UART0          ((CMSDK_UART_TypeDef*)CMSDK_UART0_BASE)
 #define CMSDK_UART0_BAUDRATE UART0_BAUDRATE
 
-void UartStdOutInit(void) {
+void UartStdOutInit(void)
+{
     CMSDK_UART0->BAUDDIV = SYSTEM_CORE_CLOCK / CMSDK_UART0_BAUDRATE;
 
     CMSDK_UART0->CTRL = ((1ul << 0) | /* TX enable */
@@ -58,7 +58,8 @@ void UartStdOutInit(void) {
 }
 
 // Output a character
-unsigned char UartPutc(unsigned char my_ch) {
+unsigned char UartPutc(unsigned char my_ch)
+{
     while ((CMSDK_UART0->STATE & 1))
         ; // Wait if Transmit Holding register is full
 
@@ -74,7 +75,8 @@ unsigned char UartPutc(unsigned char my_ch) {
 }
 
 // Get a character
-unsigned char UartGetc(void) {
+unsigned char UartGetc(void)
+{
     unsigned char my_ch;
     // unsigned int  cnt;
 
@@ -91,7 +93,8 @@ unsigned char UartGetc(void) {
 }
 
 // Get line from terminal
-unsigned int GetLine(char *lp, unsigned int len) {
+unsigned int GetLine(char* lp, unsigned int len)
+{
     unsigned int cnt = 0;
     char c;
 

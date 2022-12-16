@@ -15,11 +15,20 @@
  * limitations under the License.
  */
 
-#ifndef _UART_CONFIG_H_
-#define _UART_CONFIG_H_
+#ifndef _UART_STDOUT_H_
+#define _UART_STDOUT_H_
 
-#define UART0_BASE          (0x49303000)
-#define UART0_BAUDRATE      (115200)
-#define SYSTEM_CORE_CLOCK   (25000000)
+#if __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief UART initialisation to enable printf output redirection.
+ */
+void UartStdOutInit(void);
+
+#if __cplusplus
+}
+#endif
 
 #endif
