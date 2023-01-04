@@ -13,12 +13,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/0.9.6/tools/projmgr/schemas/cproject.schema.json
-
-# NOTE: For version 0.9.6 - we have to use property "defines" to add
-# compile time definitions. This will need to be updated with later
-# version of the tool (> 1.0.0)
-# > "For a transition period defines: is also accepted. However this will be deprecated."
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/1.2.0/tools/projmgr/schemas/cproject.schema.json
 
 project:
 
@@ -30,21 +25,37 @@ project:
         - file: src/sample_image.cpp
         - file: src/yolo-fastest_192_face_v4_vela_H256.tflite.cpp
           for-type:
-            - +AVH-U55
+            - +AVH-SSE-300-U55
+            - +AVH-SSE-310-U55
         - file: src/yolo-fastest_192_face_v4_vela_Y256.tflite.cpp
           for-type:
-            - +AVH-U65
+            - +AVH-SSE-300-U65
+            - +AVH-SSE-310-U65
         - file: src/main.cpp
 
     - group: Device Files
       files:
-        - file: mps3-sse-300.sct
+        - file: linker/mps3-sse-300.sct
+          for-type:
+            - +AVH-SSE-300-U55
+            - +AVH-SSE-300-U65
+        - file: linker/mps3-sse-310.sct
+          for-type:
+            - +AVH-SSE-310-U55
+            - +AVH-SSE-310-U65
+
 
   defines:
-    - "ACTIVATION_BUF_SZ=0x00082000"
+    - "ACTIVATION_BUF_SZ=532480"
 
   layers:
     - layer: ../common/common.clayer.yml
+    - layer: ../device/corstone/corstone-device.clayer.yml
+      for-type:
+        - +AVH-SSE-300-U55
+        - +AVH-SSE-300-U65
+        - +AVH-SSE-310-U55
+        - +AVH-SSE-310-U65
 
   components:
     - component: ARM::ML Eval Kit:Vision:Object detection

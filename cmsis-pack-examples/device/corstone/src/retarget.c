@@ -28,7 +28,6 @@
 #include <rt_misc.h>
 #include <rt_sys.h>
 
-
 /* Standard IO device handles. */
 #define STDIN  0x8001
 #define STDOUT 0x8002
@@ -48,7 +47,7 @@ typedef int FILEHANDLE;
 /*
  * Open a file. May return -1 if the file failed to open.
  */
-extern FILEHANDLE _open(const char * /*name*/, int /*openmode*/);
+extern FILEHANDLE _open(const char* /*name*/, int /*openmode*/);
 
 /* Standard IO device handles. */
 #define STDIN  0x00
@@ -66,16 +65,18 @@ const char __stderr_name[] __attribute__((aligned(4))) = "STDERR";
 
 __attribute__((noreturn)) static void UartEndSimulation(int code)
 {
-    UartPutc((char) 0x4);  // End of simulation
-    UartPutc((char) code); // Exit code
-    while(1);
+    UartPutc((char)0x4);  // End of simulation
+    UartPutc((char)code); // Exit code
+    while (1)
+        ;
 }
 
-void _ttywrch(int ch) {
+void _ttywrch(int ch)
+{
     (void)fputc(ch, stdout);
 }
 
-FILEHANDLE RETARGET(_open)(const char *name, int openmode)
+FILEHANDLE RETARGET(_open)(const char* name, int openmode)
 {
     (void)(openmode);
 
@@ -94,7 +95,7 @@ FILEHANDLE RETARGET(_open)(const char *name, int openmode)
     return -1;
 }
 
-int RETARGET(_write)(FILEHANDLE fh, const unsigned char *buf, unsigned int len, int mode)
+int RETARGET(_write)(FILEHANDLE fh, const unsigned char* buf, unsigned int len, int mode)
 {
     (void)(mode);
 
@@ -117,7 +118,7 @@ int RETARGET(_write)(FILEHANDLE fh, const unsigned char *buf, unsigned int len, 
     }
 }
 
-int RETARGET(_read)(FILEHANDLE fh, unsigned char *buf, unsigned int len, int mode)
+int RETARGET(_read)(FILEHANDLE fh, unsigned char* buf, unsigned int len, int mode)
 {
     (void)(mode);
 
@@ -186,7 +187,7 @@ long RETARGET(_flen)(FILEHANDLE fh)
     return -1;
 }
 
-int RETARGET(_tmpnam)(char *name, int sig, unsigned int maxlen)
+int RETARGET(_tmpnam)(char* name, int sig, unsigned int maxlen)
 {
     (void)(name);
     (void)(sig);
@@ -195,7 +196,7 @@ int RETARGET(_tmpnam)(char *name, int sig, unsigned int maxlen)
     return 1;
 }
 
-char *RETARGET(_command_string)(char *cmd, int len)
+char* RETARGET(_command_string)(char* cmd, int len)
 {
     (void)(len);
 
@@ -205,17 +206,18 @@ char *RETARGET(_command_string)(char *cmd, int len)
 void RETARGET(_exit)(int return_code)
 {
     UartEndSimulation(return_code);
-    while(1);
+    while (1)
+        ;
 }
 
-int system(const char *cmd)
+int system(const char* cmd)
 {
     (void)(cmd);
 
     return 0;
 }
 
-time_t time(time_t *timer)
+time_t time(time_t* timer)
 {
     time_t current;
 
@@ -235,13 +237,14 @@ clock_t clock(void)
     return (clock_t)-1;
 }
 
-int remove(const char *arg) {
+int remove(const char* arg)
+{
     (void)(arg);
 
     return 0;
 }
 
-int rename(const char *oldn, const char *newn)
+int rename(const char* oldn, const char* newn)
 {
     (void)(oldn);
     (void)(newn);
@@ -249,14 +252,14 @@ int rename(const char *oldn, const char *newn)
     return 0;
 }
 
-int fputc(int ch, FILE *f)
+int fputc(int ch, FILE* f)
 {
     (void)(f);
 
     return UartPutc(ch);
 }
 
-int fgetc(FILE *f)
+int fgetc(FILE* f)
 {
     (void)(f);
 
@@ -266,7 +269,7 @@ int fgetc(FILE *f)
 #ifndef ferror
 
 /* arm-none-eabi-gcc with newlib uses a define for ferror */
-int ferror(FILE *f)
+int ferror(FILE* f)
 {
     (void)(f);
 
