@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 Arm Limited. All rights reserved.
+#  Copyright (c) 2022-2023 Arm Limited. All rights reserved.
 #  SPDX-License-Identifier: Apache-2.0
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,20 +29,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Fetch action
       id: get-cmsis-pack-files
       uses: Rishabh510/Path-lister-action@1.0
       with:
         path: "cmsis-pack-examples/"
         type: ".yml"
-    - name: Pushes test file
-      uses: nkoppel/push-files-to-another-repository@v1.1.1
+    - name: Pushes to another repository
+      uses: cpina/github-action-push-to-another-repository@v1.5.1
       env:
         API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
       with:
-          source-files: 'cmsis-pack-examples/*'
-          destination-username: 'Arm-Examples'
-          destination-repository: 'mlek-corstone-300-examples'
-          destination-branch: 'main'
-          commit-email: 'github-actions@arm.com'
+        source-directory: 'cmsis-pack-examples'
+        destination-github-username: 'Arm-Examples'
+        destination-repository-name: 'mlek-corstone-300-examples'
+        user-email: 'github-actions@arm.com'
+        target-branch: 'main'
+
