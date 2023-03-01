@@ -43,7 +43,7 @@ jobs:
       with:
         source-directory: 'cmsis-pack-examples'
         destination-github-username: 'Arm-Examples'
-        destination-repository-name: 'mlek-corstone-300-examples'
+        destination-repository-name: 'mlek-cmsis-pack-examples'
         user-email: 'github-actions@arm.com'
         target-branch: 'main'
 
