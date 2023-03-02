@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022, Arm Limited and affiliates.
+ * SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
+ * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,28 +16,12 @@
  * limitations under the License.
  */
 
-#ifndef _UART_STDOUT_H_
-#define _UART_STDOUT_H_
-
-#if __cplusplus
-extern "C" {
-#endif
-
-#include "stm32746g_discovery.h"
+#ifndef BOARD_INIT_HPP
+#define BOARD_INIT_HPP
 
 /**
- * @brief UART initialisation.
+ * @brief Board initialisation - sets up all peripherals required.
  */
-void UartStdOutInit(void);
-
-/**
- * @brief Gets the current UART handle object.
- * @return Pointer to the UART object handle.
- */
-UART_HandleTypeDef* GetUartHandle(void);
-
-#if __cplusplus
-}
-#endif
+void BoardInit(void);
 
 #endif

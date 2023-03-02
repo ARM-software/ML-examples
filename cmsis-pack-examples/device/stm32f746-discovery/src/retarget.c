@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022 Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
+ * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,12 +23,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-
 #if defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6100100)
 /* Arm compiler re-targeting */
 
 #include <rt_misc.h>
 #include <rt_sys.h>
+
 
 /* Standard IO device handles. */
 #define STDIN  0x8001
@@ -36,19 +37,25 @@
 
 #define RETARGET(fun) _sys##fun
 
+#if __ARMCLIB_VERSION >= 6190004
+#define TMPNAM_FUNCTION RETARGET(_tmpnam2)
+#else
+#define TMPNAM_FUNCTION RETARGET(_tmpnam)
+#endif
+
 #else
 /* GNU compiler re-targeting */
 
 /*
- * This type is used by the _ I/O functions to denote an open
- * file.
- */
+* This type is used by the _ I/O functions to denote an open
+* file.
+*/
 typedef int FILEHANDLE;
 
 /*
- * Open a file. May return -1 if the file failed to open.
- */
-extern FILEHANDLE _open(const char* /*name*/, int /*openmode*/);
+* Open a file. May return -1 if the file failed to open.
+*/
+extern FILEHANDLE _open(const char * /*name*/, int /*openmode*/);
 
 /* Standard IO device handles. */
 #define STDIN  0x00
@@ -56,6 +63,8 @@ extern FILEHANDLE _open(const char* /*name*/, int /*openmode*/);
 #define STDERR 0x02
 
 #define RETARGET(fun) fun
+
+#define TMPNAM_FUNCTION RETARGET(_tmpnam)
 
 #endif
 
@@ -181,7 +190,7 @@ long RETARGET(_flen)(FILEHANDLE fh)
     return -1;
 }
 
-int RETARGET(_tmpnam2)(char* name, int sig, unsigned int maxlen)
+int TMPNAM_FUNCTION(char* name, int sig, unsigned int maxlen)
 {
     (void)(name);
     (void)(sig);

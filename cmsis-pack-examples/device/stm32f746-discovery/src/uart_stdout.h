@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022, Arm Limited and affiliates.
+ * SPDX-FileCopyrightText: Copyright 2022 Arm Limited and/or its
+ * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,36 +16,28 @@
  * limitations under the License.
  */
 
-#ifndef UART_STDOUT_H
-#define UART_STDOUT_H
+#ifndef _UART_STDOUT_H_
+#define _UART_STDOUT_H_
 
 #if __cplusplus
 extern "C" {
 #endif
 
+#include "stm32746g_discovery.h"
+
 /**
- * @brief UART initialisation - to enable printf output redirection.
+ * @brief UART initialisation.
  */
 void UartStdOutInit(void);
 
 /**
- * @brief Sends a character over UART
- *
- * @param[in] my_ch Character to be sent.
- * @return          Character sent.
- * @note            This is a blocking function.
+ * @brief Gets the current UART handle object.
+ * @return Pointer to the UART object handle.
  */
-unsigned char UartPutc(unsigned char my_ch);
-
-/**
- * @brief   Reads a character over UART.
- * @return  Character read.
- * @note    This is a blocking function.
- */
-unsigned char UartGetc(void);
+UART_HandleTypeDef* GetUartHandle(void);
 
 #if __cplusplus
 }
 #endif
 
-#endif /* UART_STDOUT_H */
+#endif

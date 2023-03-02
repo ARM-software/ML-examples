@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022, Arm Limited and affiliates.
+ * SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
+ * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,7 +37,7 @@
 /* Platform dependent files */
 #include "RTE_Components.h"  /* Provides definition for CMSIS_device_header */
 #include CMSIS_device_header /* Gives us IRQ num, base addresses. */
-#include "board_init.h"      /* Board initialisation */
+#include "BoardInit.hpp"      /* Board initialisation */
 #include "log_macros.h"      /* Logging macros (optional) */
 
 namespace arm {

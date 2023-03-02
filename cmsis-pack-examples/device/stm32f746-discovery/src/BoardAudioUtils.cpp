@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2021-2022 Arm Limited and/or its
+ * SPDX-FileCopyrightText: Copyright 2021-2023 Arm Limited and/or its
  * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -58,7 +58,7 @@ void BSP_AUDIO_IN_Error_CallBack(void)
     assert(0);
 }
 
-void AudioUtils::StartAudioInRecord()
+void AudioUtils::StartAudioRecording()
 {
     if (!s_stereoBufferDMA) {
         return;
@@ -71,7 +71,7 @@ void AudioUtils::StartAudioInRecord()
     }
 }
 
-void AudioUtils::StopAudioInRecord()
+void AudioUtils::StopAudioRecording()
 {
     if (BSP_AUDIO_IN_Stop(CODEC_PDWN_SW) != AUDIO_OK) {
         printf("BSP_AUDIO_Stop error\r\n");
@@ -97,8 +97,8 @@ bool AudioUtils::AudioInit(audio_buf* audioBufferInStereo)
     s_stereoBufferDMA = audioBufferInStereo;
 
     /* Start and stop recording as a test */
-    this->StartAudioInRecord();
-    this->StopAudioInRecord();
+    this->StartAudioRecording();
+    this->StopAudioRecording();
 
     printf("AUDIO recording configured from digital microphones (U20 & U21)\r\n");
     return true;
@@ -135,6 +135,11 @@ void AudioUtils::SetAudioEmpty()
     HAL_NVIC_DisableIRQ(AUDIO_IN_SAIx_DMAx_IRQ);
     s_bufferState = BUFFER_EMPTY;
     HAL_NVIC_EnableIRQ(AUDIO_IN_SAIx_DMAx_IRQ);
+}
+
+bool AudioUtils::IsStereo()
+{
+    return true;
 }
 
 uint8_t AudioUtils::SetSysClock_PLL_HSE_200MHz()

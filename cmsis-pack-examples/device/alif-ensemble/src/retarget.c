@@ -17,13 +17,14 @@
  */
 #if !defined(SEMIHOSTING)
 
-#include "fsl_debug_console.h"
+#include "uart_stdout.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 
-#define UNUSED(x) (void)(x)
+#define UNUSED(x)    (void)(x)
+
 #if defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6100100)
 /* Arm compiler re-targeting */
 
@@ -74,211 +75,208 @@ const char __stdin_name[] __attribute__((aligned(4)))  = "STDIN";
 const char __stdout_name[] __attribute__((aligned(4))) = "STDOUT";
 const char __stderr_name[] __attribute__((aligned(4))) = "STDERR";
 
-void _ttywrch(int ch)
-{
-    (void)fputc(ch, stdout);
+void _ttywrch(int ch) {
+   (void)fputc(ch, stdout);
 }
 
-FILEHANDLE RETARGET(_open)(const char* name, int openmode)
+FILEHANDLE RETARGET(_open)(const char *name, int openmode)
 {
-    UNUSED(openmode);
+   UNUSED(openmode);
 
-    if (strcmp(name, __stdin_name) == 0) {
-        return (STDIN);
-    }
+   if (strcmp(name, __stdin_name) == 0) {
+       return (STDIN);
+   }
 
-    if (strcmp(name, __stdout_name) == 0) {
-        return (STDOUT);
-    }
+   if (strcmp(name, __stdout_name) == 0) {
+       return (STDOUT);
+   }
 
-    if (strcmp(name, __stderr_name) == 0) {
-        return (STDERR);
-    }
+   if (strcmp(name, __stderr_name) == 0) {
+       return (STDERR);
+   }
 
-    return -1;
+   return -1;
 }
 
-int RETARGET(_write)(FILEHANDLE fh, const unsigned char* buf, unsigned int len, int mode)
+int RETARGET(_write)(FILEHANDLE fh, const unsigned char *buf, unsigned int len, int mode)
 {
-    UNUSED(mode);
+   UNUSED(mode);
 
-    switch (fh) {
-    case STDOUT:
-    case STDERR: {
-        int c;
+   switch (fh) {
+   case STDOUT:
+   case STDERR: {
+       int c;
 
-        while (len-- > 0) {
-            c = fputc(*buf++, stdout);
-            if (c == EOF) {
-                return EOF;
-            }
-        }
+       while (len-- > 0) {
+           c = fputc(*buf++, stdout);
+           if (c == EOF) {
+               return EOF;
+           }
+       }
 
-        return 0;
-    }
-    default:
-        return EOF;
-    }
+       return 0;
+   }
+   default:
+       return EOF;
+   }
 }
 
-int RETARGET(_read)(FILEHANDLE fh, unsigned char* buf, unsigned int len, int mode)
+int RETARGET(_read)(FILEHANDLE fh, unsigned char *buf, unsigned int len, int mode)
 {
-    UNUSED(mode);
+   UNUSED(mode);
 
-    switch (fh) {
-    case STDIN: {
-        int c;
+   switch (fh) {
+   case STDIN: {
+       int c;
 
-        while (len-- > 0) {
-            c = fgetc(stdin);
-            if (c == EOF) {
-                return EOF;
-            }
+       while (len-- > 0) {
+           c = fgetc(stdin);
+           if (c == EOF) {
+               return EOF;
+           }
 
-            *buf++ = (unsigned char)c;
-        }
+           *buf++ = (unsigned char)c;
+       }
 
-        return 0;
-    }
-    default:
-        return EOF;
-    }
+       return 0;
+   }
+   default:
+       return EOF;
+   }
 }
 
 int RETARGET(_istty)(FILEHANDLE fh)
 {
-    switch (fh) {
-    case STDIN:
-    case STDOUT:
-    case STDERR:
-        return 1;
-    default:
-        return 0;
-    }
+   switch (fh) {
+   case STDIN:
+   case STDOUT:
+   case STDERR:
+       return 1;
+   default:
+       return 0;
+   }
 }
 
 int RETARGET(_close)(FILEHANDLE fh)
 {
-    if (RETARGET(_istty(fh))) {
-        return 0;
-    }
+   if (RETARGET(_istty(fh))) {
+       return 0;
+   }
 
-    return -1;
+   return -1;
 }
 
 int RETARGET(_seek)(FILEHANDLE fh, long pos)
 {
-    UNUSED(fh);
-    UNUSED(pos);
+   UNUSED(fh);
+   UNUSED(pos);
 
-    return -1;
+   return -1;
 }
 
 int RETARGET(_ensure)(FILEHANDLE fh)
 {
-    UNUSED(fh);
+   UNUSED(fh);
 
-    return -1;
+   return -1;
 }
 
 long RETARGET(_flen)(FILEHANDLE fh)
 {
-    if (RETARGET(_istty)(fh)) {
-        return 0;
-    }
+   if (RETARGET(_istty)(fh)) {
+       return 0;
+   }
 
-    return -1;
+   return -1;
 }
 
-int TMPNAM_FUNCTION(char* name, int sig, unsigned int maxlen)
+int TMPNAM_FUNCTION(char *name, int sig, unsigned int maxlen)
 {
-    UNUSED(name);
-    UNUSED(sig);
-    UNUSED(maxlen);
+   UNUSED(name);
+   UNUSED(sig);
+   UNUSED(maxlen);
 
-    return 1;
+   return 1;
 }
 
-char* RETARGET(_command_string)(char* cmd, int len)
+char *RETARGET(_command_string)(char *cmd, int len)
 {
-    UNUSED(len);
+   UNUSED(len);
 
-    return cmd;
+   return cmd;
 }
 
 void RETARGET(_exit)(int return_code)
 {
-    while (1) {
-        __WFI();
-    }
+   UartEndSimulation(return_code);
 }
 
-int system(const char* cmd)
+int system(const char *cmd)
 {
-    UNUSED(cmd);
+   UNUSED(cmd);
 
-    return 0;
+   return 0;
 }
 
-time_t time(time_t* timer)
+time_t time(time_t *timer)
 {
-    time_t current;
+   time_t current;
 
-    current = 0; // To Do !! No RTC implemented
+   current = 0; // To Do !! No RTC implemented
 
-    if (timer != NULL) {
-        *timer = current;
-    }
+   if (timer != NULL) {
+       *timer = current;
+   }
 
-    return current;
+   return current;
 }
 
 void _clock_init(void) {}
 
 clock_t clock(void)
 {
-    return (clock_t)-1;
+   return (clock_t)-1;
 }
 
-int remove(const char* arg)
-{
-    UNUSED(arg);
+int remove(const char *arg) {
+   UNUSED(arg);
 
-    return 0;
+   return 0;
 }
 
-int rename(const char* oldn, const char* newn)
+int rename(const char *oldn, const char *newn)
 {
-    UNUSED(oldn);
-    UNUSED(newn);
+   UNUSED(oldn);
+   UNUSED(newn);
 
-    return 0;
+   return 0;
 }
 
-int fputc(int ch, FILE* f)
+int fputc(int ch, FILE *f)
 {
-    UNUSED(f);
+   UNUSED(f);
 
-    return DbgConsole_Putchar(ch);
+   return UartPutc(ch);
 }
 
-int fgetc(FILE* f)
+int fgetc(FILE *f)
 {
-    UNUSED(f);
+   UNUSED(f);
 
-    return DbgConsole_Putchar(DbgConsole_Getchar());
+   return UartPutc(UartGetc());
 }
 
 #ifndef ferror
 
 /* arm-none-eabi-gcc with newlib uses a define for ferror */
-int ferror(FILE* f)
+int ferror(FILE *f)
 {
-    UNUSED(f);
+   UNUSED(f);
 
-    return EOF;
+   return EOF;
 }
 
 #endif /* #ifndef ferror */
 
 #endif /* !SEMIHOSTING */
+

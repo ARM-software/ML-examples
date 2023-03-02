@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022, Arm Limited and affiliates.
+ * SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
+ * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,11 +16,12 @@
  * limitations under the License.
  */
 
-#ifndef _UART_CONFIG_H_
-#define _UART_CONFIG_H_
+#ifndef BOARD_INIT_HPP
+#define BOARD_INIT_HPP
 
-#define UART0_BASE        (0x49303000)
-#define UART0_BAUDRATE    (115200)
-#define SYSTEM_CORE_CLOCK (25000000)
+/**
+ * @brief Board initialisation - sets up all peripherals required.
+ */
+void BoardInit(void);
 
 #endif

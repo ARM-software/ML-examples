@@ -16,17 +16,36 @@
  * limitations under the License.
  */
 
-#ifndef LABELS_HPP
-#define LABELS_HPP
+#ifndef UART_STDOUT_H
+#define UART_STDOUT_H
 
-#include <string>
-#include <vector>
+#if __cplusplus
+extern "C" {
+#endif
 
 /**
- * @brief       Gets the label vector corresponding to the model
- * @param[out]  labels   Vector of strings.
- * @return      true if successful, false otherwise.
+ * @brief UART initialisation - to enable printf output redirection.
  */
-extern bool GetLabelsVector(std::vector<std::string>& labels);
+void UartStdOutInit(void);
 
-#endif /* LABELS_HPP */
+/**
+ * @brief Sends a character over UART
+ *
+ * @param[in] my_ch Character to be sent.
+ * @return          Character sent.
+ * @note            This is a blocking function.
+ */
+unsigned char UartPutc(unsigned char my_ch);
+
+/**
+ * @brief   Reads a character over UART.
+ * @return  Character read.
+ * @note    This is a blocking function.
+ */
+unsigned char UartGetc(void);
+
+#if __cplusplus
+}
+#endif
+
+#endif /* UART_STDOUT_H */

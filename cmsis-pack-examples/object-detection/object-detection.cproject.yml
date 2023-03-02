@@ -1,4 +1,5 @@
-#  Copyright (c) 2022 Arm Limited. All rights reserved.
+#  SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
+#  affiliates <open-source-office@arm.com>
 #  SPDX-License-Identifier: Apache-2.0
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,11 +28,18 @@ project:
           for-type:
             - +AVH-SSE-300-U55
             - +AVH-SSE-310-U55
+            - +Alif-E7-M55-HP
         - file: src/yolo-fastest_192_face_v4_vela_Y256.tflite.cpp
           for-type:
             - +AVH-SSE-300-U65
             - +AVH-SSE-310-U65
-        - file: src/main.cpp
+        - file: src/main_static.cpp
+          for-type:
+            - +AVH-SSE-300-U55
+            - +AVH-SSE-310-U55
+        - file: src/main_live.cpp
+          for-type:
+            - +Alif-E7-M55-HP
 
     - group: Device Files
       files:
@@ -43,6 +51,8 @@ project:
           for-type:
             - +AVH-SSE-310-U55
             - +AVH-SSE-310-U65
+        - file: linker/alif-e7-m55-hp.sct
+          for-type: +Alif-E7-M55-HP
 
 
   defines:
@@ -50,12 +60,17 @@ project:
 
   layers:
     - layer: ../common/common.clayer.yml
+
     - layer: ../device/corstone/corstone-device.clayer.yml
       for-type:
         - +AVH-SSE-300-U55
         - +AVH-SSE-300-U65
         - +AVH-SSE-310-U55
         - +AVH-SSE-310-U65
+
+    - layer: ../device/alif-ensemble/alif-ensemble-E7-device.clayer.yml
+      for-type:
+        - +Alif-E7-M55-HP
 
   components:
     - component: ARM::ML Eval Kit:Vision:Object detection

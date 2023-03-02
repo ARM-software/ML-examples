@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022, Arm Limited and affiliates.
+ * SPDX-FileCopyrightText: Copyright 2023 Arm Limited and/or its
+ * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,21 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "BoardPlotUtils.hpp"
 
-#ifndef _UART_STDOUT_H_
-#define _UART_STDOUT_H_
+PlotUtils::PlotUtils()
+{}
 
-#if __cplusplus
-extern "C" {
-#endif
+void PlotUtils::ClearAll()
+{}
 
-/**
- * @brief UART initialisation to enable printf output redirection.
- */
-void UartStdOutInit(void);
+void PlotUtils::ClearStringLine(int line)
+{}
 
-#if __cplusplus
+void PlotUtils::DisplayStringAtLine(uint16_t line, std::string& text)
+{
+    (void)line;
+    (void)text;
 }
-#endif
 
-#endif
+void PlotUtils::PlotWaveform(const int16_t* data, uint32_t nElements)
+{
+    (void)data;
+    (void)nElements;
+}

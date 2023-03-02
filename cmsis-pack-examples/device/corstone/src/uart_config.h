@@ -16,17 +16,11 @@
  * limitations under the License.
  */
 
-#ifndef LABELS_HPP
-#define LABELS_HPP
+#ifndef _UART_CONFIG_H_
+#define _UART_CONFIG_H_
 
-#include <string>
-#include <vector>
+#define UART0_BASE        (0x49303000)
+#define UART0_BAUDRATE    (115200)
+#define SYSTEM_CORE_CLOCK (25000000)
 
-/**
- * @brief       Gets the label vector corresponding to the model
- * @param[out]  labels   Vector of strings.
- * @return      true if successful, false otherwise.
- */
-extern bool GetLabelsVector(std::vector<std::string>& labels);
-
-#endif /* LABELS_HPP */
+#endif

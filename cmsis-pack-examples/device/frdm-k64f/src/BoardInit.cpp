@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022, Arm Limited and affiliates.
+ * SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
+ * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,20 +16,18 @@
  * limitations under the License.
  */
 
-#ifndef BOARD_INIT_H
-#define BOARD_INIT_H
+#include "BoardInit.hpp"
 
-#if __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#endif
-
-/**
- * @brief Board initialisation - sets up all peripherals required.
- */
-void BoardInit(void);
-
-#if __cplusplus
+#include "board.h"
+#include "pin_mux.h"
+#include "uart_stdout.h"
 }
-#endif
+#endif // defined(__cplusplus)
 
-#endif
+void BoardInit(void)
+{
+    BOARD_InitBootPins();
+    UartStdOutInit();
+}
