@@ -1,5 +1,6 @@
-#  Copyright (c) 2022 Arm Limited. All rights reserved.
-#  SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
+# affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -22,7 +23,7 @@ solution:
 
   misc:
     - CPP:
-      - -std=c++14 -fno-exceptions -Wno-license-management
+      - -std=c++14 -fno-exceptions -Wno-license-management -fno-rtti
     - C:
       - -std=c99 -Wno-license-management
     - Link:
@@ -49,6 +50,7 @@ solution:
     - pack: NXP::FRDM-K64F_BSP@14.0.0
     - pack: NXP::MK64F12_DFP@14.0.0
     - pack: Keil::STM32F7xx_DFP@2.15.1
+    - pack: AlifSemiconductor::Ensemble@0.5.2
 
   build-types:
     - type: Debug
@@ -70,12 +72,12 @@ solution:
     - type: AVH-SSE-300-U55
       device: ARM::SSE-300-MPS3
       defines:
-        - "ETHOSU55"
+        - ETHOSU55
 
     - type: AVH-SSE-310-U55
       device: ARM::SSE-310-MPS3
       defines:
-        - "ETHOSU55"
+        - ETHOSU55
 
     - type: FRDM-K64F
       board: NXP::FRDM-K64F
@@ -84,6 +86,18 @@ solution:
     - type: STM32F746-DISCO
       board: STMicroelectronics::STM32F746G-Discovery
       device: STM32F746NGHx
+
+    - type: Alif-E7-M55-HP
+      device: AE722F80F55D5TE:M55_HP
+      defines:
+        - ETHOSU55
+        - USART_DRV_NUM=2
+
+    - type: Alif-E7-M55-HE
+      device: AE722F80F55D5TE:M55_HE
+      defines:
+        - ETHOSU55
+        - USART_DRV_NUM=4
 
     # Currently Keil Studio doesn't allow switching between different NPU configurations.
     # Uncomment when this is fixed.
@@ -97,6 +111,9 @@ solution:
     #   define:
     #     - "ETHOSU65"
 
+  output-dirs:
+    rtedir: ./$Project$/RTE
+
   projects:
     - project: ./object-detection/object-detection.cproject.yml
       for-type:
@@ -104,6 +121,7 @@ solution:
         - +AVH-SSE-310-U65
         - +AVH-SSE-300-U55
         - +AVH-SSE-310-U55
+        - +Alif-E7-M55-HP
     - project: ./kws/kws.cproject.yml
       for-type:
         - +AVH-SSE-300-U65
@@ -112,3 +130,4 @@ solution:
         - +AVH-SSE-310-U55
         - +FRDM-K64F
         - +STM32F746-DISCO
+        - +Alif-E7-M55-HE

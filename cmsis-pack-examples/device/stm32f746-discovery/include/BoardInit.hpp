@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022, Arm Limited and affiliates.
+ * SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
+ * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,20 +16,12 @@
  * limitations under the License.
  */
 
-#ifndef BOARD_INIT_H
-#define BOARD_INIT_H
-
-#if __cplusplus
-extern "C" {
-#endif
+#ifndef BOARD_INIT_HPP
+#define BOARD_INIT_HPP
 
 /**
  * @brief Board initialisation - sets up all peripherals required.
  */
 void BoardInit(void);
-
-#if __cplusplus
-}
-#endif
 
 #endif

@@ -38,6 +38,7 @@ Target platforms supported:
 |---------------------|---------------------|-----------------------------------------------|----------|
 | Arm® Corstone™-300  | Virtual or physical | Arm® Cortex®-M55 CPU with Arm® Ethos™-U55 NPU | All      |
 | Arm® Corstone™-310  | Virtual or physical | Arm® Cortex®-M85 CPU with Arm® Ethos™-U55 NPU | All      |
+| Alif Ensemble E7    | Physical board      | Arm® Cortex®-M55 CPU with Arm® Ethos™-U55 NPU | All      |
 | STM32F746G-Discovery| Physical board      | Arm® Cortex®-M7 CPU                           | KWS      |
 | NXP FRDM-K64F       | Physical board      | Arm® Cortex®-M4 CPU                           | KWS      |
 |                     |                     |                                               |          |
@@ -254,6 +255,24 @@ the application in `Output` window in Keil Studio Cloud. Currently, this include
   - Output of inference
   - Simulation information such as simulated time, user time, system time, etc
 
+Note that most applications will redirect their standard output and error streams to a UART module.
+Keil Sudio Cloud has an option to open a serial connection that can be used to monitor these
+streams.
+
+For the Alif Semiconductor's Ensemble DevKit boards, the output over UART is not wired though any
+USB. A 1.8V FTDI USART cable is recommended to view the serial output. By default, the high
+performance core uses UART device 4, and the high efficiency core uses UART device 2. Check the
+board schematic to see which pins these modules use. For the Rev1 version of the board the pins
+are:
+
+```
+UART2 RX_B on J413 pin 13 (P3_16) ↔ FTDI TX
+UART2 TX_B on J413 pin 14 (P3_17) ↔ FTDI RX
+UART4 RX_B on J412 pin 11 (P3_1)  ↔ FTDI TX
+UART4 TX_B on J412 pin 12 (P3_2)  ↔ FTDI RX
+```
+For all other targets, serial is available over USB from primary debug/connection port.
+
 Sample output for `STM32F746G-DISCO` target:
 
 ```
@@ -330,6 +349,7 @@ and targets from within VS Code, and also help with debugging and flashing.
 - TensorFlow™, the TensorFlow logo, and any related marks are trademarks of Google Inc.
 - ST®, STM32® are registered trademarks of companies belonging to the STMicroelectronics Group.
 - NXP® and the NXP logo are trademarks of NXP B.V.
+- Alif™, Alif Semiconductor™, Crescendo™ and Ensemble™ are all trademarks of Alif Semiconductors.
 
 ## Licenses
 

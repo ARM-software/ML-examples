@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2021-2023 Arm Limited and/or its
+ * SPDX-FileCopyrightText: Copyright 2023 Arm Limited and/or its
  * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -14,10 +14,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-
-/*
- * Description: Keyword spotting wrapper class.
  */
 
 #ifndef BOARD_AUDIO_UTILS_HPP
@@ -41,6 +37,7 @@ extern "C" typedef struct _audio_buf {
 class AudioUtils {
 public:
     AudioUtils();
+    ~AudioUtils();
 
     /**
      * @brief       Sets the input volume
@@ -56,10 +53,10 @@ public:
 
     /**
      * @brief       Initialises the audio input interface.
-     * @param[in]   audioBufferInStereo Buffer descriptor for the audio interface to use.
+     * @param[in]   audioBufferIn Buffer descriptor for the audio interface to use.
      * @return      True if successful, false otherwise.
      */
-    bool AudioInit(audio_buf* audioBufferInStereo);
+    bool AudioInit(audio_buf* audioBufferIn);
 
     /**
      * @brief   Checks if the audio buffer has been populated.
@@ -86,13 +83,7 @@ public:
     /**
      * @brief   Gets if the recorded audio is stereo
      */
-    bool IsStereo();
-
-private:
-    /**
-     * @brief   Low level initialisation required for audio streaming initialisation.
-     */
-    uint8_t SetSysClock_PLL_HSE_200MHz();
+    bool IsStereo() const;
 };
 
 #endif /* BOARD_AUDIO_UTILS_HPP */

@@ -1,4 +1,5 @@
-#  Copyright (c) 2022 Arm Limited. All rights reserved.
+#  SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
+#  affiliates <open-source-office@arm.com>
 #  SPDX-License-Identifier: Apache-2.0
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,6 +36,7 @@ project:
     - group: Live audio based example
       for-type:
         - +STM32F746-DISCO
+        - +Alif-E7-M55-HE
 
       files:
         - file: src/main_live.cpp
@@ -44,10 +46,15 @@ project:
         - file: include/Labels.hpp
         - file: src/Labels.cpp
 
+        - file: src/kws_micronet_m_vela_H128.tflite.cpp
+          for-type:
+            - +Alif-E7-M55-HE
+
         - file: src/kws_micronet_m_vela_H256.tflite.cpp
           for-type:
             - +AVH-SSE-300-U55
             - +AVH-SSE-310-U55
+
         - file: src/kws_micronet_m_vela_Y256.tflite.cpp
           for-type:
             - +AVH-SSE-300-U65
@@ -69,11 +76,11 @@ project:
             - +AVH-SSE-310-U55
             - +AVH-SSE-310-U65
         - file: linker/frdm-k64f.sct
-          for-type:
-            - +FRDM-K64F
+          for-type: +FRDM-K64F
         - file: linker/stm32f746-disco.sct
-          for-type:
-            - +STM32F746-DISCO
+          for-type: +STM32F746-DISCO
+        - file: linker/alif-e7-m55-he.sct
+          for-type: +Alif-E7-M55-HE
 
   defines:
     - ACTIVATION_BUF_SZ=131072
@@ -86,12 +93,18 @@ project:
         - +AVH-SSE-300-U65
         - +AVH-SSE-310-U55
         - +AVH-SSE-310-U65
+
     - layer: ../device/frdm-k64f/frdm-k64f-device.clayer.yml
       for-type:
         - +FRDM-K64F
+
     - layer: ../device/stm32f746-discovery/stm32f746-discovery-device.clayer.yml
       for-type:
         - +STM32F746-DISCO
+
+    - layer: ../device/alif-ensemble/alif-ensemble-E7-device.clayer.yml
+      for-type:
+        - +Alif-E7-M55-HE
 
   components:
     - component: ARM::ML Eval Kit:Voice:Keyword spotting

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022, Arm Limited and affiliates.
+ * SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
+ * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +16,11 @@
  * limitations under the License.
  */
 
-#include "board_init.h"
+#include "BoardInit.hpp"
+
+#if defined(__cplusplus)
+extern "C" {
+#endif // defined(__cplusplus)
 
 #include "log_macros.h"
 #include "uart_stdout.h"
@@ -47,38 +52,17 @@ static size_t get_cache_arena_size()
 #endif /* defined (ETHOS_U_CACHE_BUF_SZ) && (ETHOS_U_CACHE_BUF_SZ > 0) */
 }
 
-/** @brief   Defines the Ethos-U interrupt handler: just a wrapper around the default
- *           implementation. */
-static void arm_ethosu_npu_irq_handler(void);
-
-/** @brief  Initialises the NPU IRQ */
-static void arm_ethosu_npu_irq_init(void);
-
-/** @brief  Initialises the NPU */
-static int arm_ethosu_npu_init(void);
-
-#endif /* if defined(ETHOSU_ARCH) */
-
-void BoardInit(void)
-{
-    UartStdOutInit();
-
-#if defined(ETHOSU_ARCH)
-    /* Initialise the NPU */
-    arm_ethosu_npu_init();
-#endif /* defined(ETHOSU_ARCH) */
-}
-
-#if defined(ETHOSU_ARCH)
-
 struct ethosu_driver ethosu_drv; /* Default Ethos-U device driver */
 
+/** @brief   Defines the Ethos-U interrupt handler: just a wrapper around the default
+ *           implementation. */
 static void arm_ethosu_npu_irq_handler(void)
 {
     /* Call the default interrupt handler from the NPU driver */
     ethosu_irq_handler(&ethosu_drv);
 }
 
+/** @brief  Initialises the NPU IRQ */
 static void arm_ethosu_npu_irq_init(void)
 {
     const IRQn_Type ethosu_irqnum = (IRQn_Type)ETHOS_U55_IRQn;
@@ -93,6 +77,7 @@ static void arm_ethosu_npu_irq_init(void)
     debug("EthosU IRQ#: %u, Handler: 0x%p\n", ethosu_irqnum, arm_ethosu_npu_irq_handler);
 }
 
+/** @brief  Initialises the NPU */
 static int arm_ethosu_npu_init(void)
 {
     int err = 0;
@@ -138,4 +123,18 @@ static int arm_ethosu_npu_init(void)
     return 0;
 }
 
+#endif /* if defined(ETHOSU_ARCH) */
+
+#if defined(__cplusplus)
+}
+#endif // defined(__cplusplus)
+
+void BoardInit(void)
+{
+    UartStdOutInit();
+
+#if defined(ETHOSU_ARCH)
+    /* Initialise the NPU */
+    arm_ethosu_npu_init();
 #endif /* defined(ETHOSU_ARCH) */
+}

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2022 Arm Limited and/or its
+ * SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
  * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -37,7 +37,7 @@
 /* Platform dependent files */
 #include "RTE_Components.h"  /* Provides definition for CMSIS_device_header */
 #include CMSIS_device_header /* Gives us IRQ num, base addresses. */
-#include "board_init.h"      /* Board initialisation */
+#include "BoardInit.hpp"      /* Board initialisation */
 #include "log_macros.h"      /* Logging macros (optional) */
 
 #include "BoardAudioUtils.hpp" /* Board specific audio utilities - recording audio. */
@@ -48,16 +48,16 @@ namespace app {
 
     /* Tensor arena buffer */
     static uint8_t tensorArena[ACTIVATION_BUF_SZ] ACTIVATION_BUF_ATTRIBUTE;
-    static int16_t audioBufferDMA_Stereo[16000]; /* half a second worth of stereo audio */
-    static int16_t audioBufferForNN_Mono[16000]; /* one full second worth of mono audio */
+    static int16_t audioBufferDMA[16000]; /* half a second worth of stereo audio or full second worth of mono */
+    static int16_t audioBufferForNN[16000]; /* one full second worth of mono audio */
 
-    static audio_buf dmaBuf = {.data       = audioBufferDMA_Stereo,
-                               .n_elements = sizeof(audioBufferDMA_Stereo) >> 1,
-                               .n_bytes    = sizeof(audioBufferDMA_Stereo)};
+    static audio_buf dmaBuf = {.data       = audioBufferDMA,
+                               .n_elements = sizeof(audioBufferDMA) >> 1,
+                               .n_bytes    = sizeof(audioBufferDMA)};
 
-    static audio_buf monoBuf = {.data       = audioBufferForNN_Mono,
-                                .n_elements = sizeof(audioBufferForNN_Mono) >> 1,
-                                .n_bytes    = sizeof(audioBufferForNN_Mono)};
+    static audio_buf monoBuf = {.data       = audioBufferForNN,
+                                .n_elements = sizeof(audioBufferForNN) >> 1,
+                                .n_bytes    = sizeof(audioBufferForNN)};
 
     /* Optional getter function for the model pointer and its size. */
     namespace kws {
@@ -71,8 +71,16 @@ namespace app {
 __asm("  .global __ARM_use_no_argv\n");
 #endif
 
-static void
-ConvertToMono(audio_buf* stereo, audio_buf* mono, uint32_t stereoStartIdx, uint32_t monoStartIndex);
+static int32_t CalculateOffset(audio_buf* audioBuffer);
+
+static int32_t CalculateScale(audio_buf* audioBuffer);
+
+static void ApplyGainAndOffset(audio_buf* audioBuffer, int32_t audioOffset, int32_t audioScale);
+
+static void ConvertToMono(audio_buf* stereo,
+                          audio_buf* mono,
+                          uint32_t stereoStartIdx,
+                          uint32_t monoStartIndex);
 
 int main()
 {
@@ -148,7 +156,7 @@ int main()
 
     AudioUtils audio{};
     audio.AudioInit(&arm::app::dmaBuf);
-    audio.StartAudioInRecord();
+    audio.StartAudioRecording();
 
     PlotUtils plot{};
     uint32_t inferenceCount{0};
@@ -166,22 +174,35 @@ int main()
         while (!audio.IsAudioAvailable()) {
             __WFI();
         }
-        audio.StopAudioInRecord();
+        audio.StopAudioRecording();
+
+        if (0 == captureCount++ % scaleOffsetResetFreq) {
+            audioOffset = CalculateOffset(&arm::app::dmaBuf);
+            audioGain = CalculateScale(&arm::app::dmaBuf);
+        }
+
+        ApplyGainAndOffset(&arm::app::dmaBuf, audioOffset, audioGain);
 
         /* Copy over second half of previous audio buffer to the beginning */
         memcpy(arm::app::monoBuf.data,
                (void*)((uint8_t*)arm::app::monoBuf.data + arm::app::monoBuf.n_bytes / 2),
                arm::app::monoBuf.n_bytes / 2);
 
-        /* Populate the second half of the mono buffer from the freshly captured audio */
-        ConvertToMono(&arm::app::dmaBuf, &arm::app::monoBuf, 0, arm::app::monoBuf.n_elements / 2);
+        if (audio.IsStereo()) {
+            /* Populate the second half of the mono buffer from the freshly captured audio */
+            ConvertToMono(&arm::app::dmaBuf, &arm::app::monoBuf, 0, arm::app::monoBuf.n_elements / 2);
+        } else {
+            memcpy((void*)((uint8_t*)arm::app::monoBuf.data + arm::app::monoBuf.n_bytes / 2),
+                  arm::app::dmaBuf.data,
+                  arm::app::monoBuf.n_bytes / 2);
+        }
 
         plot.PlotWaveform(static_cast<int16_t*>(arm::app::monoBuf.data),
                           arm::app::monoBuf.n_elements);
 
         /* Restart audio capture */
         audio.SetAudioEmpty();
-        audio.StartAudioInRecord();
+        audio.StartAudioRecording();
 
         while (audioDataSlider.HasNext()) {
             const int16_t* inferenceWindow = audioDataSlider.Next();
@@ -247,10 +268,11 @@ int main()
     return 0;
 }
 
-static void
-ConvertToMono(audio_buf* stereo, audio_buf* mono, uint32_t stereoStartIdx, uint32_t monoStartIndex)
+static void ConvertToMono(audio_buf* stereo,
+                          audio_buf* mono,
+                          uint32_t stereoStartIdx,
+                          uint32_t monoStartIndex)
 {
-
     int16_t* pIn     = ((int16_t*)stereo->data) + stereoStartIdx;
     int16_t* pOut    = ((int16_t*)mono->data) + monoStartIndex;
     uint32_t sizeIn  = stereo->n_elements - stereoStartIdx;
