@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/1.2.0/tools/projmgr/schemas/clayer.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/1.5.0/tools/projmgr/schemas/clayer.schema.json
 
 layer:
 
@@ -30,10 +30,6 @@ layer:
         - file: src/BoardInit.cpp
         - file: include/uart_stdout.h
         - file: include/BoardInit.hpp
-
-  misc:
-    - ASM:
-      - -masm=gnu
 
   components:
     - component: NXP::Device:CMSIS:MK64F12_header
