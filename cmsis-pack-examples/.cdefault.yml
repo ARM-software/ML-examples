@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/1.5.0/tools/projmgr/schemas/cdefault.schema.json
+
+default:
+  # Note that we need AC6@6.18 or higher to compile for Corstone-310 target.
+  compiler: AC6
+
+  misc:
+    - for-compiler: AC6
+      CPP:
+        - -std=c++14 -fno-exceptions -Wno-license-management -fno-rtti
+      C:
+        - -std=c99 -Wno-license-management
+      Link:
+        - --entry=Reset_Handler
+        - --verbose
+        - --callgraph_file='callgraph'
+        - --map
+        - --info=sizes,totals,unused,compression,inline,summarysizes
+        - --list='diagnostics.map'
+        - --diag_suppress=L6439W,L6314W,L9931W

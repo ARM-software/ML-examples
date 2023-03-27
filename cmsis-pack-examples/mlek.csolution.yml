@@ -14,26 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/1.2.0/tools/projmgr/schemas/csolution.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/1.5.0/tools/projmgr/schemas/csolution.schema.json
 
 solution:
-
-  # Note that we need AC6@6.18 or higher to compile for Corstone-310 target.
-  compiler: AC6
-
-  misc:
-    - CPP:
-      - -std=c++14 -fno-exceptions -Wno-license-management -fno-rtti
-    - C:
-      - -std=c99 -Wno-license-management
-    - Link:
-      - --entry=Reset_Handler
-      - --verbose
-      - --callgraph_file='callgraph'
-      - --map
-      - --info=sizes,totals,unused,compression,inline,summarysizes
-      - --list='diagnostics.map'
-      - --diag_suppress=L6439W,L6314W,L9931W
 
   packs:
     - pack: ARM::CMSIS@5.9.0
@@ -56,17 +39,12 @@ solution:
     - type: Debug
       compiler: AC6
       debug: on
-      misc:
-        - C*:
-          - -O0
-          - -g
+      optimize: none
 
     - type: Release
       compiler: AC6
       debug: off
-      misc:
-        - C*:
-          - -Ofast
+      optimize: speed
 
   target-types:
     - type: AVH-SSE-300-U55

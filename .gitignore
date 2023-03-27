@@ -114,3 +114,5 @@ packlist.txt
 RTE/
 out/
 tmp/
+*.cbuild.yml
+*.cbuild-idx.yml
