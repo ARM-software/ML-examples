@@ -23,9 +23,13 @@ default:
   misc:
     - for-compiler: AC6
       CPP:
-        - -std=c++14 -fno-exceptions -Wno-license-management -fno-rtti
+        - -std=c++14
+        - -fno-exceptions
+        - -Wno-license-management
+        - -fno-rtti
       C:
-        - -std=c99 -Wno-license-management
+        - -std=c99
+        - -Wno-license-management
       Link:
         - --entry=Reset_Handler
         - --verbose
