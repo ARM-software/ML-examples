@@ -20,13 +20,15 @@ solution:
 
   packs:
     - pack: ARM::CMSIS@5.9.0
-    - pack: Arm::ethos-u-core-driver@1.22.5-rc4
+    - pack: ARM::CMSIS-DSP@1.14.4
+    - pack: ARM::CMSIS-NN@4.0.0
+    - pack: Arm::ethos-u-core-driver@1.22.8
     - pack: ARM::ml-embedded-eval-kit-uc-api@22.8.0-Beta
-    - pack: tensorflow::flatbuffers@1.22.5-rc4
-    - pack: tensorflow::gemmlowp@1.22.5-rc4
-    - pack: tensorflow::kissfft@1.22.5-rc4
-    - pack: tensorflow::ruy@1.22.5-rc4
-    - pack: tensorflow::tensorflow-lite-micro@1.22.5-rc4
+    - pack: tensorflow::flatbuffers@1.22.8
+    - pack: tensorflow::gemmlowp@1.22.8
+    - pack: tensorflow::kissfft@1.22.8
+    - pack: tensorflow::ruy@1.22.8
+    - pack: tensorflow::tensorflow-lite-micro@1.22.8
 
     - pack: ARM::V2M_MPS3_SSE_300_BSP@1.3.0
     - pack: ARM::V2M_MPS3_SSE_310_BSP@1.0.0

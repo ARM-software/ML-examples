@@ -1,4 +1,4 @@
-#  SPDX-FileCopyrightText: Copyright 2022 Arm Limited and/or its
+#  SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
 #  affiliates <open-source-office@arm.com>
 #  SPDX-License-Identifier: Apache-2.0
 #
@@ -26,9 +26,14 @@ layer:
       files:
         - file: include/BufAttributes.hpp
         - file: include/ethosu_mem_config.h
-    - group: CMSIS Extra
-      files:
-        - file: src/arm_nn_softmax_common_s8.c
+
+  # Workaround 4001: for TensorFlow's pack referring to
+  # CMSIS_DEVICE_ARM_CORTEX_M_XX_HEADER_FILE.
+  # Can be removed once the pack has been fixed.
+  misc:
+    - for-compiler: AC6
+      CPP:
+        - "-include \"RTE_Components.h\""
 
   components:
     - component: ARM::CMSIS:CORE
@@ -39,6 +44,9 @@ layer:
     - component: tensorflow::Data Processing:Math:kissfft
     - component: tensorflow::Data Processing:Math:ruy
     - component: tensorflow::Machine Learning:TensorFlow:Kernel Utils
+      # Workaround 4001 (see description above)
+      define:
+        - CMSIS_DEVICE_ARM_CORTEX_M_XX_HEADER_FILE=CMSIS_device_header
     - component: tensorflow::Machine Learning:TensorFlow:Testing
     - component: ARM::ML Eval Kit:Common:API
     - component: ARM::ML Eval Kit:Common:Log
