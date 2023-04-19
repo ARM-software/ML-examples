@@ -54,13 +54,6 @@ Deply an image recognition demo on a Discovery STM32F746G board using TensorFlow
 * [Tutorial on Arm's developer site](https://developer.arm.com/solutions/machine-learning-on-arm/developer-material/how-to-guides/image-recognition-on-arm-cortex-m-with-cmsis-nn)
 * [Source code on GitHub](https://github.com/ARM-software/ML-examples/tree/main/tflm-cmsisnn-mbed-image-recognition/README.md)
 
-
-### KWS on Cortex M using Tensorflow Lite Micro
-Deploy a KWS demo app on a Cortex-M device using TensorFlow Lite for Microcontrollers (TFLM).
-
-* Tutorial on Arm's developer site(Coming soon)
-* [Source code on GitHub](https://github.com/ARM-software/ML-examples/tree/main/tflu-kws-cortex-m/README.md)
-
 ### Yeah, World
 Explore gesture recognition with TensorFlow and transfer learning on the Raspberry Pi 4 Model B, Pi 3 and Pi Zero.
 
