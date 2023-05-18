@@ -1,0 +1,2 @@
+This repository contains a Jupyter notebook that will demonstrate how to train a Neural Network in TensorFlow
+and demonstrate the benefit of [pruning](https://blog.tensorflow.org/2019/05/tf-model-optimization-toolkit-pruning-API.html) and [clustering](https://www.tensorflow.org/model_optimization/guide/clustering) before deploying onto [Arm Ethos-U55](https://www.arm.com/products/silicon-ip-cpu/ethos/ethos-u55) and [Arm Ethos-U65 NPU](https://www.arm.com/products/silicon-ip-cpu/ethos/ethos-u65).
