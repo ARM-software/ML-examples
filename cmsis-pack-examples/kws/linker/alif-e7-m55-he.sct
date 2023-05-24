@@ -36,7 +36,7 @@
 #define MODEL_BASE              (SRAM1_BASE + SRAM1_USED_BY_HP)
 #define ARENA_SIZE              (0x00020000)
 #define MODEL_SIZE              (0x00026600)
-#define SPILL_OVER_CODE_SIZE    (0x00004000)
+#define SPILL_OVER_CODE_SIZE    (0x00008000)
 #define DATA_SIZE               (SRAM1_USABLE_SIZE - (ARENA_SIZE + MODEL_SIZE + SPILL_OVER_CODE_SIZE))
 
 
@@ -90,8 +90,9 @@ LOAD_REGION_1       MODEL_BASE           SRAM1_USABLE_SIZE
     ;-----------------------------------------------------
     he_sram1_1 +0         ALIGNALL 4  SPILL_OVER_CODE_SIZE
     {
-        micro_allocator.o (+RO-CODE)
+        *allocator.o  (+RO-CODE)
         flatbuffer*.o (+RO-CODE)
+        KwsProcessing.o (+RO-CODE)
     }
 
     ;-----------------------------------------------------

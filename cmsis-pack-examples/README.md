@@ -1,36 +1,36 @@
 # CMSIS-Pack based Machine Learning Examples
 
 - [CMSIS-Pack based Machine Learning Examples](#cmsis-pack-based-machine-learning-examples)
-  - [Introduction](#introduction)
-    - [Examples](#examples)
-    - [Target platforms](#target-platforms)
-  - [Overview](#overview)
-    - [Object detection](#object-detection)
-    - [Keyword spotting](#keyword-spotting)
-  - [Building the examples](#building-the-examples)
-    - [Prerequisites](#prerequisites)
-      - [Tools](#tools)
-      - [Packs](#packs)
-    - [Download Software Packs](#download-software-packs)
-    - [Generate and build the project](#generate-and-build-the-project)
-    - [Application output](#application-output)
-    - [Support for Visual Studio Code](#support-for-visual-studio-code)
-  - [Trademarks](#trademarks)
-  - [Licenses](#licenses)
-  - [Troubleshooting and known issues](#troubleshooting-and-known-issues)
+- [Introduction](#introduction)
+  - [Examples](#examples)
+  - [Target platforms](#target-platforms)
+- [Overview](#overview)
+  - [Object detection](#object-detection)
+  - [Keyword spotting](#keyword-spotting)
+- [Prerequisites](#prerequisites)
+  - [Support for Visual Studio Code](#support-for-visual-studio-code)
+  - [Tools](#tools)
+  - [Packs](#packs)
+- [Building the examples](#building-the-examples)
+  - [Download Software Packs](#download-software-packs)
+  - [Generate and build the project](#generate-and-build-the-project)
+  - [Application output](#application-output)
+- [Trademarks](#trademarks)
+- [Licenses](#licenses)
+- [Troubleshooting and known issues](#troubleshooting-and-known-issues)
 
-## Introduction
+# Introduction
 
 This repository contains Machine Learning (ML) examples using the CMSIS-Pack from
 [ML Embedded Evaluation Kit](https://review.mlplatform.org/plugins/gitiles/ml/ethos-u/ml-embedded-evaluation-kit/+/refs/heads/main).
 
-### Examples
+## Examples
 Currently, the following examples are supported:
 
 - **Object detection** - detects objects in the input image.
 - **Keyword spotting** - detects specific keywords in the input audio stream.
 
-### Target platforms
+## Target platforms
 
 Target platforms supported:
 
@@ -41,12 +41,11 @@ Target platforms supported:
 | Alif Ensemble E7    | Physical board      | Arm® Cortex®-M55 CPU with Arm® Ethos™-U55 NPU | All      |
 | STM32F746G-Discovery| Physical board      | Arm® Cortex®-M7 CPU                           | KWS      |
 | NXP FRDM-K64F       | Physical board      | Arm® Cortex®-M4 CPU                           | KWS      |
-|                     |                     |                                               |          |
 
 
 Use this import button to open the solution in Keil Studio Cloud: [![Open in Keil Studio](https://img.shields.io/badge/Keil%20Studio-Import-blue?logo=data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAyNS40LjEsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4NCjxzdmcgdmVyc2lvbj0iMS4xIiBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeD0iMHB4IiB5PSIwcHgiDQoJIHZpZXdCb3g9IjAgMCA0NyAxNCIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgNDcgMTQ7IiB4bWw6c3BhY2U9InByZXNlcnZlIj4NCjxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+DQoJLnN0MHtmaWxsOiNGRkZGRkY7fQ0KPC9zdHlsZT4NCjxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik00LjcsN2MwLDIuMiwxLjQsNC4xLDMuNSw0LjFjMS44LDAsMy42LTEuNCwzLjYtNC4xYzAtMi44LTEuNy00LjItMy42LTQuMkM2LjIsMi45LDQuNyw0LjcsNC43LDcgTTExLjYsMC41DQoJaDIuOXYxM2gtMi45di0xLjNjLTAuOSwxLjEtMi4zLDEuNy0zLjcsMS43QzQsMTMuOSwxLjgsMTAuNiwxLjgsN2MwLTQuMywyLjctNi45LDYuMS02LjljMS41LDAsMi44LDAuNywzLjcsMS45VjAuNXoiLz4NCjxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik0xOCwwLjVIMjF2MS4yYzAuMy0wLjQsMC43LTAuOCwxLjItMS4xYzAuNS0wLjMsMS4yLTAuNCwxLjctMC40YzAuOCwwLDEuNiwwLjIsMi4zLDAuNmwtMS4yLDIuOA0KCWMtMC40LTAuMy0xLTAuNC0xLjUtMC40Yy0wLjctMC4xLTEuMywwLjItMS44LDAuN0MyMSw0LjYsMjEsNS45LDIxLDYuOHY2LjdIMThWMC41eiIvPg0KPHBhdGggY2xhc3M9InN0MCIgZD0iTTI4LjIsMC41aDIuOXYxLjJjMC43LTAuOSwxLjktMS42LDMuMS0xLjZjMS4zLDAsMi42LDAuNywzLjIsMS45YzAuOS0xLjIsMi4yLTEuOSwzLjctMS45DQoJQzQyLjcsMCw0NCwwLjksNDQuNywyLjJjMC4yLDAuNCwwLjcsMS40LDAuNywzLjN2OC4xaC0yLjlWNi4zYzAtMS41LTAuMi0yLjEtMC4yLTIuM2MtMC4yLTAuNy0wLjktMS4yLTEuNy0xLjENCgljLTAuNywwLTEuMywwLjMtMS43LDAuOWMtMC41LDAuOC0wLjYsMS45LTAuNiwyLjl2Ni43aC0yLjlWNi4zYzAtMS41LTAuMi0yLjEtMC4yLTIuM2MtMC4yLTAuNy0wLjktMS4yLTEuNy0xLjENCgljLTAuNywwLTEuMywwLjMtMS43LDAuOWMtMC41LDAuOC0wLjYsMS45LTAuNiwyLjl2Ni43aC0yLjlMMjguMiwwLjV6Ii8+DQo8L3N2Zz4NCg==&logoWidth=47)](https://studio.keil.arm.com/?import=https://github.com/Arm-Examples/mlek-cmsis-pack-examples.git)
 
-## Overview
+# Overview
 
 The examples presented in this repository showcase how to build and deploy end-to-end Machine
 Learning applications using existing code from various CMSIS-packs. These examples are built
@@ -62,33 +61,45 @@ Therefore, the neural network model files used for Corstone™-300 and Corstone�
 pre-optimised by the [Vela compiler](https://pypi.org/project/ethos-u-vela/) while the files
 used for pure CPU targets are used as they are.
 
-### Object detection
+## Object detection
 
 This example uses a neural network model that specialises in detecting human faces in images.
 The input size for these images is 192x192 (monochrome) and the smallest face that can be
 detected is of size 20x20. The output of the application will be co-ordinates for rectangular
 bounding boxes for each detection.
 
-### Keyword spotting
+## Keyword spotting
 
 This example can detect up to twelve keywords in the input audio stream. The
 [audio file used](./resources/sample_audio.wav) contains the keyword "down" being spoken.
 
 More details about the input for this example can be found [here](https://review.mlplatform.org/plugins/gitiles/ml/ethos-u/ml-embedded-evaluation-kit/+/refs/heads/main/docs/use_cases/kws.md#preprocessing-and-feature-extraction).
 
-## Building the examples
 
-We recommend using [Keil Studio Cloud](https://studio.keil.arm.com/?import=https://github.com/Arm-Examples/mlek-cmsis-pack-examples.git) for building these examples.
-This is by far the easiest way to get started. However, it is possible to build these projects
-locally too and the following sections cover the requirements for such a set up.
+# Prerequisites
 
-### Prerequisites
+We recommend using [Visual Studio Code IDE](https://code.visualstudio.com/) with the
+[Keil Studio Pack Extension](https://marketplace.visualstudio.com/items?itemName=Arm.keil-studio-pack).
+Alternatively, [Keil Studio Cloud](https://studio.keil.arm.com/?import=https://github.com/Arm-Examples/mlek-cmsis-pack-examples.git) can also be used.
+
+These are the easiest ways to get started. However, it is also possible to build these projects
+locally via CLI and the following sections cover the requirements for such a set up.
+
+## Support for Visual Studio Code
+
+The [tools required](#tools) can also be used in addition to an extension pack for Visual Studio Code.
+See [Arm Keil Studio Pack](https://marketplace.visualstudio.com/items?itemName=Arm.keil-studio-pack)
+for details on installation and how to use it.
+
+Once the IDE has been set up with the extension, it presents an easy to use interface to build
+applications for specific configurations of the different projects and targets from within VS Code,
+and also helps with debugging and flashing.
 
 For developing on a local host machine, we recommend a Linux based system as we test
 the flow of the instructions in that environment, but a Windows based machine should
 also work.
 
-#### Tools
+## Tools
 
 The following tools are required if building on a local machine (and not using the project via
 Keil Studio Cloud):
@@ -99,9 +110,15 @@ Keil Studio Cloud):
 - Access to Arm Virtual Hardware for Corstone™-300 (or Corstone™-310) v11.18.1 or a local
   installation of the equivalent Fixed Virtual Platform.
 
-> **NOTE**: For Linux, we recommend using the script installer as this sets up the
-> basic paths required the the tools. Otherwise, paths like CMSIS_ROOT_PATH and the
-> toolchain root paths in the toolchain CMake files will need to be set manually.
+> **NOTE**: For Visual Studio Code, the project contains a
+> [vcpkg configuration file](./vcpkg-configuration.json) that helps the required tools to
+> be installed without user having to install them manually. We recommend letting the IDE
+> handle the installation and environment set up at start up.
+>
+> If you need to use the CLI tools locally, we recommend using the script
+> installer as this sets up the basic paths required for the tools. Otherwise, paths like
+> CMSIS_ROOT_PATH and the toolchain root paths in the toolchain CMake files will need to be
+> set manually.
 > The script installer will prompt for the different paths:
 > ```commandline
 > $ sudo chmod +x ~/Downloads/cbuild_install.sh
@@ -120,13 +137,16 @@ Keil Studio Cloud):
 > $ source /home/user/cmsis-toolbox-linux64/etc/setup
 > ```
 
-#### Packs
+## Packs
 
 CMSIS-Pack defines a standardized way to deliver software components, device parameters and board
 support information and code. A list of available CMSIS-Packs can be found
 [here](https://developer.arm.com/tools-and-software/embedded/cmsis/cmsis-packs).
 
-### Download Software Packs
+
+# Building the examples
+
+## Download Software Packs
 
 The [mlek.csolution.yml](./mlek.csolution.yml) file lists the software packs used in all projects. These can be
 downloaded using the following command:
@@ -143,9 +163,11 @@ downloaded using the following command:
 > $ source /home/user/cmsis-toolbox-linux64/etc/setup
 > ```
 
-### Generate and build the project
+## Generate and build the project
 
 1. Use the `csolution` command to create `.cprj` project files:
+   > **NOTE**: This step is automatically executed by the Keil Studio pack extension within VS Code if the tools have been
+   > set up correctly.
    ```
    $ csolution convert -s ./mlek.csolution.yml
     warning csolution: specified device 'MK64FN1M0VLL12' and board mounted device 'MK64FN1M0xxx12' are different
@@ -183,17 +205,18 @@ downloaded using the following command:
     /home/user/cmsis-pack-examples/kws/kws.Release+FRDM-K64F.cbuild.yml - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Release+STM32F746-DISCO.cbuild.yml - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/mlek.cbuild-idx.yml - info csolution: file generated successfully
+    ```
 
-   ```
-   > **NOTE**: A single project could also be generated using the context argument:
-   > ```commandline
-   > $ csolution convert -s ./mlek.csolution.yml -c object_detection.Release+AVH-SSE-300-U55
-   > object-detection/object_detection.Release+AVH-SSE-300-U55.cprj - info csolution: file generated successfully
-   > ```
-   ```
+    > **NOTE**: A single project could also be generated using the context argument:
+    > ```commandline
+    > $ csolution convert -s ./mlek.csolution.yml -c object_detection.Release+AVH-SSE-300-U55
+    > object-detection/object_detection.Release+AVH-SSE-300-U55.cprj - info csolution: file generated successfully
+    > ```
 
 2. Use the `cbuild` command to build an executable file, for example building KWS project in `Debug` type for
-   `Arm® Corstone™-300` target platform:
+   `Arm® Corstone™-300` target platform.
+   > **NOTE**: This step is also executed by the Keil Studio pack extension based on the selected user choices
+   > on the extension's landing pane within VS Code.
    ```
    $ cbuild ./kws/kws.Debug+AVH-SSE-300-U55.cprj -g "Unix Makefiles" -j 4
    info cbuild: Build Invocation 1.5.0 (C) 2023 ARM
@@ -213,7 +236,7 @@ downloaded using the following command:
 > 1. During the build process required packs may be downloaded.
 > 2. The generator specified depends on CMake and the host platform OS.
 
-### Execute project
+## Execute project
 
 The project is configured for execution on Arm Virtual Hardware which removes the requirement for
 a physical hardware board.
@@ -255,7 +278,7 @@ $ cbuild ./kws/kws.Release+STM32F746-DISCO.cprj -g "Unix Makefiles" -j 4
 $ cp ./out/kws/STM32F746-DISCO/Release/kws.Release+STM32F746-DISCO.bin /media/user/DIS_F746NG/ && sync
 ```
 
-### Application output
+## Application output
 
 Once the project can be built successfully, the execution on target hardware will show output of
 the application in `Output` window in Keil Studio Cloud. Currently, this includes the following:
@@ -339,16 +362,7 @@ The output is different for the two example applications:
 For STM32F746G-DISCO board, the LCD is also used to display the last keyword detected.
 
 
-### Support for Visual Studio Code
-
-The tools installed above can also be used in addition to an extension pack for VS Code.
-See [Arm Keil Studio Pack](https://marketplace.visualstudio.com/items?itemName=Arm.keil-studio-pack)
-for details on installation and how to use it.
-
-This can this be used to build applications for specific configurations of the different project
-and targets from within VS Code, and also help with debugging and flashing.
-
-## Trademarks
+# Trademarks
 
 - Arm® and Cortex® are registered trademarks of Arm® Limited (or its subsidiaries) in the US and/or elsewhere.
 - Arm® and Ethos™ are registered trademarks or trademarks of Arm® Limited (or its subsidiaries) in the US and/or
@@ -360,8 +374,9 @@ and targets from within VS Code, and also help with debugging and flashing.
 - ST®, STM32® are registered trademarks of companies belonging to the STMicroelectronics Group.
 - NXP® and the NXP logo are trademarks of NXP B.V.
 - Alif™, Alif Semiconductor™, Crescendo™ and Ensemble™ are all trademarks of Alif Semiconductors.
+- Visual Studio Code, VS Code, and the Visual Studio Code icon are trademarks of Microsoft Corporation.
 
-## Licenses
+# Licenses
 
 The application samples and [resources](./resources) are provided under the Apache 2.0 license, see [License](./LICENSE).
 
@@ -375,7 +390,7 @@ into C/C++ arrays to be baked into the example applications.
 | Keyword Spotting | Apache 2.0 | [micronet_medium](https://github.com/ARM-software/ML-zoo/raw/9f506fe52b39df545f0e6c5ff9223f671bc5ae00/models/keyword_spotting/micronet_medium/tflite_int8/) |
 | Object Detection | Apache 2.0 | [yolo-fastest_192_face_v4](https://github.com/emza-vs/ModelZoo/blob/v1.0/object_detection/) |
 
-## Troubleshooting and known issues
+# Troubleshooting and known issues
 
 Many of the tools we have used are still in beta testing phase and there can be issues we don't
 spot immediately. Please help us improve this section by reporting them via GitHub.
