@@ -1,0 +1,25 @@
+{
+    "default-registry": {
+      "kind": "git",
+      "baseline": "032d9d0820db290ce9ff644dabfdf564343013ae",
+      "repository": "https://github.com/microsoft/vcpkg"
+    },
+    "registries": [
+      {
+        "kind": "artifact",
+        "location": "https://aka.ms/vcpkg-ce-default",
+        "name": "microsoft"
+      },
+      {
+        "kind": "artifact",
+        "location": "https://aka.ms/vcpkg-artifacts-arm",
+        "name": "arm"
+      }
+    ],
+    "requires": {
+      "microsoft:tools/kitware/cmake": "^3.25.2",
+      "microsoft:tools/ninja-build/ninja": "^1.10.2",
+      "arm:tools/open-cmsis-pack/ctools": "^1.5.0",
+      "arm:compilers/arm/armclang": "^6.18.0"
+    }
+  }
