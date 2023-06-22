@@ -51,12 +51,12 @@ solution:
   target-types:
     - type: AVH-SSE-300-U55
       device: ARM::SSE-300-MPS3
-      defines:
+      define:
         - ETHOSU55
 
     - type: AVH-SSE-310-U55
       device: ARM::SSE-310-MPS3
-      defines:
+      define:
         - ETHOSU55
 
     - type: FRDM-K64F
@@ -69,27 +69,27 @@ solution:
 
     - type: Alif-E7-M55-HP
       device: AE722F80F55D5TE:M55_HP
-      defines:
+      define:
         - ETHOSU55
         - USART_DRV_NUM=2
 
     - type: Alif-E7-M55-HE
       device: AE722F80F55D5TE:M55_HE
-      defines:
+      define:
         - ETHOSU55
         - USART_DRV_NUM=4
 
-    # Currently Keil Studio doesn't allow switching between different NPU configurations.
-    # Uncomment when this is fixed.
-    # - type: AVH-SSE-300-U65
-    #   device: ARM::SSE-300-MPS3
-    #   defines:
-    #     - "ETHOSU65"
-    #
-    # - type: AVH-SSE-310-U65
-    #   device: ARM::SSE-310-MPS3
-    #   define:
-    #     - "ETHOSU65"
+    # NOTE: Currently Keil Studio Cloud doesn't allow switching between different NPU configurations.
+    #       Applicatons produced by this build will only work if the FVP is run manually.
+    - type: AVH-SSE-300-U65
+      device: ARM::SSE-300-MPS3
+      define:
+        - ETHOSU65
+
+    - type: AVH-SSE-310-U65
+      device: ARM::SSE-310-MPS3
+      define:
+        - ETHOSU65
 
   output-dirs:
     rtedir: ./$Project$/RTE

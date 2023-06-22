@@ -36,8 +36,8 @@ Target platforms supported:
 
 | Name                | Type                | IP                                            | Examples |
 |---------------------|---------------------|-----------------------------------------------|----------|
-| Arm® Corstone™-300  | Virtual or physical | Arm® Cortex®-M55 CPU with Arm® Ethos™-U55 NPU | All      |
-| Arm® Corstone™-310  | Virtual or physical | Arm® Cortex®-M85 CPU with Arm® Ethos™-U55 NPU | All      |
+| Arm® Corstone™-300  | Virtual or physical | Arm® Cortex®-M55 CPU with Arm® Ethos™-U55 or Arm® Ethos™-U65 NPU | All      |
+| Arm® Corstone™-310  | Virtual or physical | Arm® Cortex®-M85 CPU with Arm® Ethos™-U55 or Arm® Ethos™-U65 NPU | All      |
 | Alif Ensemble E7    | Physical board      | Arm® Cortex®-M55 CPU with Arm® Ethos™-U55 NPU | All      |
 | STM32F746G-Discovery| Physical board      | Arm® Cortex®-M7 CPU                           | KWS      |
 | NXP FRDM-K64F       | Physical board      | Arm® Cortex®-M4 CPU                           | KWS      |
@@ -173,34 +173,50 @@ downloaded using the following command:
     warning csolution: specified device 'MK64FN1M0VLL12' and board mounted device 'MK64FN1M0xxx12' are different
     warning csolution: specified device 'MK64FN1M0VLL12' and board mounted device 'MK64FN1M0xxx12' are different
     /home/user/cmsis-pack-examples/object-detection/object-detection.Debug+AVH-SSE-300-U55.cprj - info csolution: file generated successfully
+    /home/user/cmsis-pack-examples/object-detection/object-detection.Debug+AVH-SSE-300-U65.cprj - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/object-detection/object-detection.Debug+AVH-SSE-310-U55.cprj - info csolution: file generated successfully
+    /home/user/cmsis-pack-examples/object-detection/object-detection.Debug+AVH-SSE-310-U65.cprj - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/object-detection/object-detection.Debug+Alif-E7-M55-HP.cprj - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/object-detection/object-detection.Release+AVH-SSE-300-U55.cprj - info csolution: file generated successfully
+    /home/user/cmsis-pack-examples/object-detection/object-detection.Release+AVH-SSE-300-U65.cprj - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/object-detection/object-detection.Release+AVH-SSE-310-U55.cprj - info csolution: file generated successfully
+    /home/user/cmsis-pack-examples/object-detection/object-detection.Release+AVH-SSE-310-U65.cprj - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/object-detection/object-detection.Release+Alif-E7-M55-HP.cprj - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Debug+AVH-SSE-300-U55.cprj - info csolution: file generated successfully
+    /home/user/cmsis-pack-examples/kws/kws.Debug+AVH-SSE-300-U65.cprj - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Debug+AVH-SSE-310-U55.cprj - info csolution: file generated successfully
+    /home/user/cmsis-pack-examples/kws/kws.Debug+AVH-SSE-310-U65.cprj - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Debug+Alif-E7-M55-HE.cprj - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Debug+FRDM-K64F.cprj - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Debug+STM32F746-DISCO.cprj - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Release+AVH-SSE-300-U55.cprj - info csolution: file generated successfully
+    /home/user/cmsis-pack-examples/kws/kws.Release+AVH-SSE-300-U65.cprj - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Release+AVH-SSE-310-U55.cprj - info csolution: file generated successfully
+    /home/user/cmsis-pack-examples/kws/kws.Release+AVH-SSE-310-U65.cprj - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Release+Alif-E7-M55-HE.cprj - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Release+FRDM-K64F.cprj - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Release+STM32F746-DISCO.cprj - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/object-detection/object-detection.Debug+AVH-SSE-300-U55.cbuild.yml - info csolution: file generated successfully
+    /home/user/cmsis-pack-examples/object-detection/object-detection.Debug+AVH-SSE-300-U65.cbuild.yml - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/object-detection/object-detection.Debug+AVH-SSE-310-U55.cbuild.yml - info csolution: file generated successfully
+    /home/user/cmsis-pack-examples/object-detection/object-detection.Debug+AVH-SSE-310-U65.cbuild.yml - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/object-detection/object-detection.Debug+Alif-E7-M55-HP.cbuild.yml - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/object-detection/object-detection.Release+AVH-SSE-300-U55.cbuild.yml - info csolution: file generated successfully
+    /home/user/cmsis-pack-examples/object-detection/object-detection.Release+AVH-SSE-300-U65.cbuild.yml - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/object-detection/object-detection.Release+AVH-SSE-310-U55.cbuild.yml - info csolution: file generated successfully
+    /home/user/cmsis-pack-examples/object-detection/object-detection.Release+AVH-SSE-310-U65.cbuild.yml - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/object-detection/object-detection.Release+Alif-E7-M55-HP.cbuild.yml - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Debug+AVH-SSE-300-U55.cbuild.yml - info csolution: file generated successfully
+    /home/user/cmsis-pack-examples/kws/kws.Debug+AVH-SSE-300-U65.cbuild.yml - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Debug+AVH-SSE-310-U55.cbuild.yml - info csolution: file generated successfully
+    /home/user/cmsis-pack-examples/kws/kws.Debug+AVH-SSE-310-U65.cbuild.yml - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Debug+Alif-E7-M55-HE.cbuild.yml - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Debug+FRDM-K64F.cbuild.yml - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Debug+STM32F746-DISCO.cbuild.yml - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Release+AVH-SSE-300-U55.cbuild.yml - info csolution: file generated successfully
+    /home/user/cmsis-pack-examples/kws/kws.Release+AVH-SSE-300-U65.cbuild.yml - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Release+AVH-SSE-310-U55.cbuild.yml - info csolution: file generated successfully
+    /home/user/cmsis-pack-examples/kws/kws.Release+AVH-SSE-310-U65.cbuild.yml - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Release+Alif-E7-M55-HE.cbuild.yml - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Release+FRDM-K64F.cbuild.yml - info csolution: file generated successfully
     /home/user/cmsis-pack-examples/kws/kws.Release+STM32F746-DISCO.cbuild.yml - info csolution: file generated successfully
@@ -431,3 +447,10 @@ spot immediately. Please help us improve this section by reporting them via GitH
    test against. While we try to develop using the latest versions of the CMSIS toolbox, Keil
    Studio Cloud can be using older versions. If you find an issue, please report it via
    [GitHub](https://github.com/Arm-Examples/mlek-cmsis-pack-examples/issues).
+
+6. Issues running with Arm® Ethos™-U65 NPU on Keil Studio Cloud
+
+   Currently Keil Studio Cloud only supports running with the Arm® Ethos™-U55 on AVH
+   virtual targets.
+   You can build the project but will have to run it on your local machine on an
+   installation of the equivalent Fixed Virtual Platform containing Arm® Ethos™-U65 NPU.

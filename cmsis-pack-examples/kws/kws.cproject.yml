@@ -82,7 +82,7 @@ project:
         - file: linker/alif-e7-m55-he.sct
           for-type: +Alif-E7-M55-HE
 
-  defines:
+  define:
     - ACTIVATION_BUF_SZ=131072
 
   layers:
