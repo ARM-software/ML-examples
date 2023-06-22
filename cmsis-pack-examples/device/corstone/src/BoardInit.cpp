@@ -30,7 +30,8 @@ extern "C" {
 #include CMSIS_device_header /* Gives us IRQ num, base addresses. */
 
 #if defined(ETHOSU_ARCH)
-#include "ethosu_driver.h" /* Arm Ethos-U driver header */
+#include "ethosu_driver.h" /* Arm Ethos-U NPU driver header */
+#include "ethosu_mem_config.h" /* Arm Ethos-U NPU memory config */
 
 #if defined(ETHOS_U_CACHE_BUF_SZ) && (ETHOS_U_CACHE_BUF_SZ > 0)
 static uint8_t cache_arena[ETHOS_U_CACHE_BUF_SZ] CACHE_BUF_ATTRIBUTE;
@@ -87,6 +88,8 @@ static int arm_ethosu_npu_init(void)
 
     /* Initialise Ethos-U device */
     const void* ethosu_base_address = (void*)(ETHOS_U55_APB_BASE_S);
+
+    debug("Cache arena: 0x%p\n", get_cache_arena());
 
     if (0 != (err = ethosu_init(&ethosu_drv,         /* Ethos-U driver device pointer */
                                 ethosu_base_address, /* Ethos-U NPU's base address. */

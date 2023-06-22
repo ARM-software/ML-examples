@@ -63,18 +63,22 @@
             }
         },
         {
-            "type": "cmsis-csolution.build",
-            "project": "${command:cmsis-csolution.getCprjPath}",
-            "problemMatcher": [],
-            "label": "cmsis-csolution.build: Build"
-        },
-        {
             "type": "embedded-debug.flash",
             "serialNumber": "${command:device-manager.getSerialNumber}",
             "program": "${command:cmsis-csolution.getBinaryFile}",
             "cmsisPack": "${command:device-manager.getDevicePack}",
             "problemMatcher": [],
             "label": "embedded-debug.flash: Flash Device"
+        },
+        {
+            "type": "cmsis-csolution.build",
+            "solution": "${command:cmsis-csolution.getSolutionPath}",
+            "project": "${command:cmsis-csolution.getProjectPath}",
+            "buildType": "${command:cmsis-csolution.getBuildType}",
+            "targetType": "${command:cmsis-csolution.getTargetType}",
+            "rebuild": false,
+            "problemMatcher": [],
+            "label": "cmsis-csolution.build: Build"
         }
     ],
 

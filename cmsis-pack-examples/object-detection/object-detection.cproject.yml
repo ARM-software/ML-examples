@@ -36,7 +36,9 @@ project:
         - file: src/main_static.cpp
           for-type:
             - +AVH-SSE-300-U55
+            - +AVH-SSE-300-U65
             - +AVH-SSE-310-U55
+            - +AVH-SSE-310-U65
         - file: src/main_live.cpp
           for-type:
             - +Alif-E7-M55-HP
@@ -55,7 +57,7 @@ project:
           for-type: +Alif-E7-M55-HP
 
 
-  defines:
+  define:
     - "ACTIVATION_BUF_SZ=532480"
 
   layers:

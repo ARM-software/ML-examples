@@ -130,6 +130,8 @@ int main()
                                                       preProcess.m_audioDataWindowSize,
                                                       preProcess.m_audioDataStride);
 
+    debug("Using audio data from %s\n", get_filename(0));
+
     while (audioDataSlider.HasNext()) {
         const int16_t* inferenceWindow = audioDataSlider.Next();
 
