@@ -22,7 +22,7 @@ layer:
 
   groups:
     - group: Retarget
-      for-type:
+      for-context:
         - +STM32F746-DISCO
       files:
         - file: src/retarget.c
@@ -30,7 +30,7 @@ layer:
         - file: src/uart_stdout.h
 
     - group: Device
-      for-type:
+      for-context:
         - +STM32F746-DISCO
       files:
         - file: src/BoardInit.cpp
@@ -42,7 +42,7 @@ layer:
         - file: include/BoardPlotUtils.hpp
 
     - group: Startup
-      for-type:
+      for-context:
         - +STM32F746-DISCO
 
       files:

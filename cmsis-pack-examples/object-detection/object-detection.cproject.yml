@@ -24,38 +24,48 @@ project:
         - file: include/InputFiles.hpp
         - file: src/InputFiles.cpp
         - file: src/sample_image.cpp
+        - file: src/yolo-fastest_192_face_v4.tflite.cpp
+          for-context:
+            - +AVH-SSE-300
+            - +AVH-SSE-310
         - file: src/yolo-fastest_192_face_v4_vela_H256.tflite.cpp
-          for-type:
+          for-context:
             - +AVH-SSE-300-U55
             - +AVH-SSE-310-U55
             - +Alif-E7-M55-HP
         - file: src/yolo-fastest_192_face_v4_vela_Y256.tflite.cpp
-          for-type:
+          for-context:
             - +AVH-SSE-300-U65
             - +AVH-SSE-310-U65
         - file: src/main_static.cpp
-          for-type:
+          for-context:
+            - +AVH-SSE-300
             - +AVH-SSE-300-U55
             - +AVH-SSE-300-U65
+            - +AVH-SSE-310
             - +AVH-SSE-310-U55
             - +AVH-SSE-310-U65
         - file: src/main_live.cpp
-          for-type:
+          for-context:
             - +Alif-E7-M55-HP
 
     - group: Device Files
       files:
         - file: linker/mps3-sse-300.sct
-          for-type:
+          for-context:
+            - +AVH-SSE-300
             - +AVH-SSE-300-U55
             - +AVH-SSE-300-U65
         - file: linker/mps3-sse-310.sct
-          for-type:
+          for-context:
+            - +AVH-SSE-310
             - +AVH-SSE-310-U55
             - +AVH-SSE-310-U65
         - file: linker/alif-e7-m55-hp.sct
-          for-type: +Alif-E7-M55-HP
+          for-context: +Alif-E7-M55-HP
 
+  rte:
+    base-dir: ./RTE
 
   define:
     - "ACTIVATION_BUF_SZ=532480"
@@ -64,14 +74,16 @@ project:
     - layer: ../common/common.clayer.yml
 
     - layer: ../device/corstone/corstone-device.clayer.yml
-      for-type:
+      for-context:
+        - +AVH-SSE-300
         - +AVH-SSE-300-U55
         - +AVH-SSE-300-U65
+        - +AVH-SSE-310
         - +AVH-SSE-310-U55
         - +AVH-SSE-310-U65
 
     - layer: ../device/alif-ensemble/alif-ensemble-E7-device.clayer.yml
-      for-type:
+      for-context:
         - +Alif-E7-M55-HP
 
   components:

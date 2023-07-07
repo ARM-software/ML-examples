@@ -49,10 +49,16 @@ solution:
       optimize: speed
 
   target-types:
+    - type: AVH-SSE-300
+      device: ARM::SSE-300-MPS3
+
     - type: AVH-SSE-300-U55
       device: ARM::SSE-300-MPS3
       define:
         - ETHOSU55
+
+    - type: AVH-SSE-310
+      device: ARM::SSE-310-MPS3
 
     - type: AVH-SSE-310-U55
       device: ARM::SSE-310-MPS3
@@ -91,23 +97,24 @@ solution:
       define:
         - ETHOSU65
 
-  output-dirs:
-    rtedir: ./$Project$/RTE
-
   projects:
     - project: ./object-detection/object-detection.cproject.yml
-      for-type:
+      for-context:
         - +AVH-SSE-300-U65
         - +AVH-SSE-310-U65
         - +AVH-SSE-300-U55
         - +AVH-SSE-310-U55
+        - +AVH-SSE-300
+        - +AVH-SSE-310
         - +Alif-E7-M55-HP
     - project: ./kws/kws.cproject.yml
-      for-type:
+      for-context:
         - +AVH-SSE-300-U65
         - +AVH-SSE-310-U65
         - +AVH-SSE-300-U55
         - +AVH-SSE-310-U55
+        - +AVH-SSE-300
+        - +AVH-SSE-310
         - +FRDM-K64F
         - +STM32F746-DISCO
         - +Alif-E7-M55-HE

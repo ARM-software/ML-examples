@@ -22,7 +22,7 @@ layer:
 
   groups:
     - group: Retarget
-      for-type:
+      for-context:
         - +FRDM-K64F
       files:
         - file: src/retarget.c

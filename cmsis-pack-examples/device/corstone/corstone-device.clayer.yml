@@ -22,7 +22,9 @@ layer:
 
   groups:
     - group: Retarget
-      for-type:
+      for-context:
+        - +AVH-SSE-300
+        - +AVH-SSE-310
         - +AVH-SSE-300-U55
         - +AVH-SSE-310-U55
         - +AVH-SSE-300-U65
@@ -42,11 +44,20 @@ layer:
     - component: ARM::Native Driver:SysCounter
     - component: ARM::Native Driver:SysTimer
     - component: Arm::Machine Learning:NPU Support:Ethos-U Driver&Generic U55
-      for-type:
+      for-context:
         - +AVH-SSE-300-U55
         - +AVH-SSE-310-U55
     - component: Arm::Machine Learning:NPU Support:Ethos-U Driver&Generic U65
-      for-type:
+      for-context:
         - +AVH-SSE-300-U65
         - +AVH-SSE-310-U65
     - component: tensorflow::Machine Learning:TensorFlow:Kernel&Ethos-U
+      for-context:
+        - +AVH-SSE-300-U55
+        - +AVH-SSE-310-U55
+        - +AVH-SSE-300-U65
+        - +AVH-SSE-310-U65
+    - component: tensorflow::Machine Learning:TensorFlow:Kernel&CMSIS-NN
+      for-context:
+        - +AVH-SSE-300
+        - +AVH-SSE-310
