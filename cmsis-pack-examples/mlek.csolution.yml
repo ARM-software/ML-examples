@@ -17,7 +17,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/2.0.0/tools/projmgr/schemas/csolution.schema.json
 
 solution:
-
+  cdefault:                       # use default setup of toolchain specific controls.
   packs:
     - pack: ARM::CMSIS@5.9.0
     - pack: ARM::CMSIS-DSP@1.14.4
