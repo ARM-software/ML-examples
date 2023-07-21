@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/1.5.0/tools/projmgr/schemas/clayer.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/2.0.0/tools/projmgr/schemas/clayer.schema.json
 
 layer:
 
@@ -46,7 +46,7 @@ layer:
     - component: tensorflow::Machine Learning:TensorFlow:Kernel Utils
       # Workaround 4001 (see description above)
       define:
-        - CMSIS_DEVICE_ARM_CORTEX_M_XX_HEADER_FILE=CMSIS_device_header
+        - CMSIS_DEVICE_ARM_CORTEX_M_XX_HEADER_FILE: CMSIS_device_header
     - component: tensorflow::Machine Learning:TensorFlow:Testing
     - component: ARM::ML Eval Kit:Common:API
     - component: ARM::ML Eval Kit:Common:Log

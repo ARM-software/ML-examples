@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/1.5.0/tools/projmgr/schemas/clayer.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/2.0.0/tools/projmgr/schemas/clayer.schema.json
 
 layer:
   description: Alif Ensemble E7 ML islands' CPU device layer (High-Performance and High-Efficiency Arm Cortex-M55 CPUs).
@@ -29,7 +29,7 @@ layer:
         - file: ./src/gpio.c
 
     - group: AudioHelpers
-      for-type: +Alif-E7-M55-HE
+      for-context: +Alif-E7-M55-HE
       files:
         - file: ./src/BoardAudioUtils.cpp
         - file: ./src/BoardPlotUtils.cpp
@@ -37,12 +37,12 @@ layer:
         - file: ./include/BoardPlotUtils.hpp
 
     - group: CameraHelpers
-      for-type: +Alif-E7-M55-HP
+      for-context: +Alif-E7-M55-HP
       files:
         - file: ./src/CameraCapture.cpp
 
     - group: Display
-      for-type: +Alif-E7-M55-HP
+      for-context: +Alif-E7-M55-HP
       files:
         - file: ./src/LcdDisplay.cpp
 
@@ -71,28 +71,28 @@ layer:
     - component: AlifSemiconductor::Device:SE Services:MHU Driver
 
     - component: AlifSemiconductor::Device:SOC Peripherals:DMA
-      for-type: +Alif-E7-M55-HE
+      for-context: +Alif-E7-M55-HE
 
     - component: AlifSemiconductor::Device:SOC Peripherals:I2S
-      for-type: +Alif-E7-M55-HE
+      for-context: +Alif-E7-M55-HE
 
     - component: AlifSemiconductor::Device:SOC Peripherals:I3C
-      for-type: +Alif-E7-M55-HP
+      for-context: +Alif-E7-M55-HP
 
     - component: AlifSemiconductor::Device:SOC Peripherals:CDC200
-      for-type: +Alif-E7-M55-HP
+      for-context: +Alif-E7-M55-HP
 
     - component: AlifSemiconductor::Device:SOC Peripherals:MIPI CSI2
-      for-type: +Alif-E7-M55-HP
+      for-context: +Alif-E7-M55-HP
 
     - component: AlifSemiconductor::Device:SOC Peripherals:MIPI DSI
-      for-type: +Alif-E7-M55-HP
+      for-context: +Alif-E7-M55-HP
 
     - component: AlifSemiconductor::Device:SOC Peripherals:CAMERA Controller
-      for-type: +Alif-E7-M55-HP
+      for-context: +Alif-E7-M55-HP
 
     - component: AlifSemiconductor::BSP:External peripherals:ILI9806E LCD panel
-      for-type: +Alif-E7-M55-HP
+      for-context: +Alif-E7-M55-HP
 
     - component: AlifSemiconductor::BSP:External peripherals:CAMERA Sensor ARX3A0
-      for-type: +Alif-E7-M55-HP
+      for-context: +Alif-E7-M55-HP

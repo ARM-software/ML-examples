@@ -78,18 +78,11 @@ More details about the input for this example can be found [here](https://review
 
 # Prerequisites
 
+## Visual Studio Code
+
 We recommend using [Visual Studio Code IDE](https://code.visualstudio.com/) with the
 [Keil Studio Pack Extension](https://marketplace.visualstudio.com/items?itemName=Arm.keil-studio-pack).
 Alternatively, [Keil Studio Cloud](https://studio.keil.arm.com/?import=https://github.com/Arm-Examples/mlek-cmsis-pack-examples.git) can also be used.
-
-These are the easiest ways to get started. However, it is also possible to build these projects
-locally via CLI and the following sections cover the requirements for such a set up.
-
-## Support for Visual Studio Code
-
-The [tools required](#tools) can also be used in addition to an extension pack for Visual Studio Code.
-See [Arm Keil Studio Pack](https://marketplace.visualstudio.com/items?itemName=Arm.keil-studio-pack)
-for details on installation and how to use it.
 
 Once the IDE has been set up with the extension, it presents an easy to use interface to build
 applications for specific configurations of the different projects and targets from within VS Code,
@@ -98,44 +91,6 @@ and also helps with debugging and flashing.
 For developing on a local host machine, we recommend a Linux based system as we test
 the flow of the instructions in that environment, but a Windows based machine should
 also work.
-
-## Tools
-
-The following tools are required if building on a local machine (and not using the project via
-Keil Studio Cloud):
-
-- [CMSIS-Toolbox](https://github.com/Open-CMSIS-Pack/devtools/releases) version `1.5.0` or higher.
-- Arm Compiler 6.18 (part of Keil MDK or Arm Development Studio, evaluation version sufficient
-  for compilation).
-- Access to Arm Virtual Hardware for Corstone™-300 (or Corstone™-310) v11.18.1 or a local
-  installation of the equivalent Fixed Virtual Platform.
-
-> **NOTE**: For Visual Studio Code, the project contains a
-> [vcpkg configuration file](./vcpkg-configuration.json) that helps the required tools to
-> be installed without user having to install them manually. We recommend letting the IDE
-> handle the installation and environment set up at start up.
->
-> If you need to use the CLI tools locally, we recommend using the script
-> installer as this sets up the basic paths required for the tools. Otherwise, paths like
-> CMSIS_ROOT_PATH and the toolchain root paths in the toolchain CMake files will need to be
-> set manually.
-> The script installer will prompt for the different paths:
-> ```commandline
-> $ sudo chmod +x ~/Downloads/cbuild_install.sh
-> $ ~/Downloads/cbuild_install.sh
-> ./cbuild_install.sh
-> (cbuild_install.sh): CMSIS Build Installer 1.5.0 (C) 2021-2022 ARM
-> [INFO] Installing for architecture: amd64
-> [INFO] Linux platform detected
-> Enter base directory for CMSIS command line build tools [./cbuild]: /home/user/cmsis-toolbox-linux64/
-> Enter the CMSIS_PACK_ROOT directory [/home/user/.cache/arm/packs]:
-> Enter the installed Arm Compiler 6.18 directory [/home/user/ArmCompilerforEmbedded6.18/bin]: /home/user/toolchains/ArmCompilerforEmbedded6.18/bin
-> ...
-> Installing CMSIS Toolbox to /home/user/cmsis-toolbox-linux64...
-> CMSIS Toolbox installation completed!
-> To setup the bash environment run:
-> $ source /home/user/cmsis-toolbox-linux64/etc/setup
-> ```
 
 ## Packs
 
@@ -146,111 +101,77 @@ support information and code. A list of available CMSIS-Packs can be found
 
 # Building the examples
 
+## Launch project in Visual Studio Code
+
+Upon opening the project in Visual Studio Code, `vcpkg` will automatically install the required packages as specified in the manifest file [vcpkg-configuration.json](vcpkg-configuration.json).
+
 ## Download Software Packs
 
-The [mlek.csolution.yml](./mlek.csolution.yml) file lists the software packs used in all projects. These can be
-downloaded using the following command:
+Once `vcpkg` has finished configuring the environment, a prompt will appear to install the required CMSIS packs for this project:
+
+![](docs/01-install-cmsis-packs.png)
+
+Alternatively, the packs can be installed manually be opening up a Terminal in Visual Studio Code (Ctrl + Shift + `) and running the following commands:
 
 ```
-> csolution list packs -s mlek.csolution.yml -m > packlist.txt
-> cpackget add -f packlist.txt
+$ csolution list packs -s mlek.csolution.yml -m > packlist.txt
+$ cpackget add -f packlist.txt
 ```
-
-> **NOTE**: The above commands expect CMSIS_PACK_ROOT to be defined as the path
-> where the packs are, or will be, installed. The environment setup script for
-> CMSIS-Toolbox should set this up automatically:
-> ```commandline
-> $ source /home/user/cmsis-toolbox-linux64/etc/setup
-> ```
 
 ## Generate and build the project
 
-1. Use the `csolution` command to create `.cprj` project files:
-   > **NOTE**: This step is automatically executed by the Keil Studio pack extension within VS Code if the tools have been
-   > set up correctly.
-   ```
-   $ csolution convert -s ./mlek.csolution.yml
-    warning csolution: specified device 'MK64FN1M0VLL12' and board mounted device 'MK64FN1M0xxx12' are different
-    warning csolution: specified device 'MK64FN1M0VLL12' and board mounted device 'MK64FN1M0xxx12' are different
-    /home/user/cmsis-pack-examples/object-detection/object-detection.Debug+AVH-SSE-300-U55.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/object-detection/object-detection.Debug+AVH-SSE-300-U65.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/object-detection/object-detection.Debug+AVH-SSE-310-U55.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/object-detection/object-detection.Debug+AVH-SSE-310-U65.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/object-detection/object-detection.Debug+Alif-E7-M55-HP.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/object-detection/object-detection.Release+AVH-SSE-300-U55.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/object-detection/object-detection.Release+AVH-SSE-300-U65.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/object-detection/object-detection.Release+AVH-SSE-310-U55.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/object-detection/object-detection.Release+AVH-SSE-310-U65.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/object-detection/object-detection.Release+Alif-E7-M55-HP.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Debug+AVH-SSE-300-U55.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Debug+AVH-SSE-300-U65.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Debug+AVH-SSE-310-U55.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Debug+AVH-SSE-310-U65.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Debug+Alif-E7-M55-HE.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Debug+FRDM-K64F.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Debug+STM32F746-DISCO.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Release+AVH-SSE-300-U55.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Release+AVH-SSE-300-U65.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Release+AVH-SSE-310-U55.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Release+AVH-SSE-310-U65.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Release+Alif-E7-M55-HE.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Release+FRDM-K64F.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Release+STM32F746-DISCO.cprj - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/object-detection/object-detection.Debug+AVH-SSE-300-U55.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/object-detection/object-detection.Debug+AVH-SSE-300-U65.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/object-detection/object-detection.Debug+AVH-SSE-310-U55.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/object-detection/object-detection.Debug+AVH-SSE-310-U65.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/object-detection/object-detection.Debug+Alif-E7-M55-HP.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/object-detection/object-detection.Release+AVH-SSE-300-U55.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/object-detection/object-detection.Release+AVH-SSE-300-U65.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/object-detection/object-detection.Release+AVH-SSE-310-U55.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/object-detection/object-detection.Release+AVH-SSE-310-U65.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/object-detection/object-detection.Release+Alif-E7-M55-HP.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Debug+AVH-SSE-300-U55.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Debug+AVH-SSE-300-U65.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Debug+AVH-SSE-310-U55.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Debug+AVH-SSE-310-U65.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Debug+Alif-E7-M55-HE.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Debug+FRDM-K64F.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Debug+STM32F746-DISCO.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Release+AVH-SSE-300-U55.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Release+AVH-SSE-300-U65.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Release+AVH-SSE-310-U55.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Release+AVH-SSE-310-U65.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Release+Alif-E7-M55-HE.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Release+FRDM-K64F.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/kws/kws.Release+STM32F746-DISCO.cbuild.yml - info csolution: file generated successfully
-    /home/user/cmsis-pack-examples/mlek.cbuild-idx.yml - info csolution: file generated successfully
-    ```
+Use the CMSIS tab in the Activity Bar to build, run and debug the use case samples for a particular target type.
 
-    > **NOTE**: A single project could also be generated using the context argument:
-    > ```commandline
-    > $ csolution convert -s ./mlek.csolution.yml -c object_detection.Release+AVH-SSE-300-U55
-    > object-detection/object_detection.Release+AVH-SSE-300-U55.cprj - info csolution: file generated successfully
-    > ```
+![](docs/02-build-run.png)
 
-2. Use the `cbuild` command to build an executable file, for example building KWS project in `Debug` type for
-   `Arm® Corstone™-300` target platform.
-   > **NOTE**: This step is also executed by the Keil Studio pack extension based on the selected user choices
-   > on the extension's landing pane within VS Code.
-   ```
-   $ cbuild ./kws/kws.Debug+AVH-SSE-300-U55.cprj -g "Unix Makefiles" -j 4
-   info cbuild: Build Invocation 1.5.0 (C) 2023 ARM
-      :    // output of the build steps
-   info cbuild: build finished successfully!
-   ```
+Simply use the drop-down menus to specify your build, then click the Build button.  The output should look similar to the following:
 
-   Alternatively, to build the same project for `STM32F746G-DISCO` board in `Release` configuration:
-   ```
-   $ cbuild ./kws/kws.Release+STM32F746-DISCO.cprj -g "Unix Makefiles" -j 4
-   info cbuild: Build Invocation 1.5.0 (C) 2023 ARM
-      :    // output of the build steps
-   info cbuild: build finished successfully!
-   ```
+```log
+ *  Executing task: Workspace: cmsis-csolution.build: Build
 
-> **Note:**
-> 1. During the build process required packs may be downloaded.
-> 2. The generator specified depends on CMake and the host platform OS.
+info cbuild: Build Invocation 2.0.0 (C) 2023 Arm Ltd. and Contributors
+/home/armuser/Development/ML-examples/cmsis-pack-examples/object-detection/object-detection.Debug+AVH-SSE-300-U55.cprj - info csolution: file generated successfully
+/home/armuser/Development/ML-examples/cmsis-pack-examples/object-detection/object-detection.Debug+AVH-SSE-300-U55.cbuild.yml - info csolution: file is already up-to-date
+/home/armuser/Development/ML-examples/cmsis-pack-examples/mlek.cbuild-idx.yml - info csolution: file is already up-to-date
+info cbuild: Processing 1 context(s)
+===============================================================================
+info cbuild: (1/1) Processing context: "object-detection.Debug+AVH-SSE-300-U55"
+info cbuild: clean finished successfully!
+
+M650: Command completed successfully.
+
+M652: Generated file for project build: '/home/armuser/Development/ML-examples/cmsis-pack-examples/tmp/object-detection/AVH-SSE-300-U55/Debug/CMakeLists.txt'
+-- The C compiler identification is ARMClang 6.20.2
+-- The CXX compiler identification is ARMClang 6.20.2
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /home/armuser/.config/Code/User/globalStorage/ms-vscode.vscode-embedded-tools/vcpkg/root/downloads/artifacts/vcpkg-artifacts-arm/compilers.arm.armclang/6.20.0/bin/armclang - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /home/armuser/.config/Code/User/globalStorage/ms-vscode.vscode-embedded-tools/vcpkg/root/downloads/artifacts/vcpkg-artifacts-arm/compilers.arm.armclang/6.20.0/bin/armclang - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Registered toolchain version 6.20.0 does not match running version 6.20.2
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/armuser/Development/ML-examples/cmsis-pack-examples/tmp/object-detection/AVH-SSE-300-U55/Debug
+[1/257] Building C object CMakeFiles/object-detection.dir/home/armuser/.cache/arm/packs/ARM/V2M_MPS3_SSE_300_BSP/1.3.0/Native_Driver/systimer_armv8-m_timeout.o
+...
+...
+[257/257] Linking CXX executable /home/armuser/Development/ML-examples/cmsis-pack-examples/out/object-detection/AVH-SSE-300-U55/Debug/object-detection.axf
+Warning: L6439W: Multiply defined Global Symbol flatbuffers::flatbuffer_version_string defined in .data._ZN11flatbuffers25flatbuffer_version_stringE(Model.o) rejected in favor of Symbol defined in .data._ZN11flatbuffers25flatbuffer_version_stringE(Classifier.o).
+...
+...
+"/home/armuser/Development/ML-examples/cmsis-pack-examples/object-detection/linker/mps3-sse-300.sct", line 104 (column 14): Warning: L6314W: No section matches pattern *.o(activation_buf_dram).
+Finished: 0 information, 129 warning and 0 error messages.
+info cbuild: build finished successfully!
+Build complete
+ *  Terminal will be reused by tasks, press any key to close it.
+```
+
+The built artifacts will be located under the `out/` directory in the project root.
 
 ## Execute project
 
@@ -258,8 +179,8 @@ The project is configured for execution on Arm Virtual Hardware which removes th
 a physical hardware board.
 
 - When using a Fixed Virtual Platform installed locally:
-  ```
-  > <path_to_installed_FVP> -a ./out/kws/AVH-SSE-300-U55/Debug/kws.Debug+AVH-SSE-300-U55.axf -C ethosu.num_macs=256
+  ```shell
+  $ <path_to_installed_FVP> -a ./out/kws/AVH-SSE-300-U55/Debug/kws.Debug+AVH-SSE-300-U55.axf -C ethosu.num_macs=256
   ```
   > **NOTE**: The FVP defaults to running 128 MAC configuration for Arm® Ethos™-U55 NPU.
   > However, our default neural network model for the NPU is for 256 MAC configuration.
@@ -285,12 +206,7 @@ re-enumerate and start the program it has been just flashed with.
 
 For example:
 
-```sh
-$ cbuild ./kws/kws.Release+STM32F746-DISCO.cprj -g "Unix Makefiles" -j 4
-   info cbuild: Build Invocation 1.5.0 (C) 2023 ARM
-      :    // output of the build steps
-   [100%] Built target kws.Release+STM32F746-DISCO
-   info cbuild: build finished successfully!
+```shell
 $ cp ./out/kws/STM32F746-DISCO/Release/kws.Release+STM32F746-DISCO.bin /media/user/DIS_F746NG/ && sync
 ```
 
