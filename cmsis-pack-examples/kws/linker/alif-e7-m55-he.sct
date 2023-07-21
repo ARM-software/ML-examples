@@ -1,6 +1,6 @@
 #! armclang -E --target=arm-arm-none-eabi -mcpu=cortex-m55 -xc
 ; command above MUST be in first line (no comment above!)
-#include "../RTE/Device/AE722F80F55D5TE_M55_HE/M55_HE_map.h"
+#include "../../device/alif-ensemble/RTE/Device/AE722F80F55D5TE_M55_HE/M55_HE_map.h"
 
 ;  SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
 ;  affiliates <open-source-office@arm.com>
@@ -53,7 +53,6 @@ LOAD_REGION_0       ROM_BASE                    SRAM4_SIZE
         *.o (RESET, +First)
         * (InRoot$$Sections)
         .ANY (+RO-CODE)
-        Driver_*.o (+RO +RW +ZI)
     }
 
     ;-----------------------------------------------------
@@ -102,6 +101,7 @@ LOAD_REGION_1       MODEL_BASE           SRAM1_USABLE_SIZE
     {
         .ANY        (+RO-DATA)
         .ANY        (+RW +ZI)
+        Driver_*.o (+RO +RW +ZI)
     }
 
     ;-----------------------------------------------------
