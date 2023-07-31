@@ -21,6 +21,8 @@ project:
   groups:
     - group: Wav file based example
       for-context:
+        - +AVH-SSE-300
+        - +AVH-SSE-310
         - +AVH-SSE-300-U65
         - +AVH-SSE-310-U65
         - +AVH-SSE-300-U55
@@ -64,15 +66,19 @@ project:
           for-context:
             - +FRDM-K64F
             - +STM32F746-DISCO
+            - +AVH-SSE-300
+            - +AVH-SSE-310
 
     - group: Device Files
       files:
         - file: linker/mps3-sse-300.sct
           for-context:
+            - +AVH-SSE-300
             - +AVH-SSE-300-U55
             - +AVH-SSE-300-U65
         - file: linker/mps3-sse-310.sct
           for-context:
+            - +AVH-SSE-310
             - +AVH-SSE-310-U55
             - +AVH-SSE-310-U65
         - file: linker/frdm-k64f.sct
@@ -89,8 +95,10 @@ project:
     - layer: ../common/common.clayer.yml
     - layer: ../device/corstone/corstone-device.clayer.yml
       for-context:
+        - +AVH-SSE-300
         - +AVH-SSE-300-U55
         - +AVH-SSE-300-U65
+        - +AVH-SSE-310
         - +AVH-SSE-310-U55
         - +AVH-SSE-310-U65
 

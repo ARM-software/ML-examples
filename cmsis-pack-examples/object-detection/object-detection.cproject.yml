@@ -24,6 +24,10 @@ project:
         - file: include/InputFiles.hpp
         - file: src/InputFiles.cpp
         - file: src/sample_image.cpp
+        - file: src/yolo-fastest_192_face_v4.tflite.cpp
+          for-context:
+            - +AVH-SSE-300
+            - +AVH-SSE-310
         - file: src/yolo-fastest_192_face_v4_vela_H256.tflite.cpp
           for-context:
             - +AVH-SSE-300-U55
@@ -35,8 +39,10 @@ project:
             - +AVH-SSE-310-U65
         - file: src/main_static.cpp
           for-context:
+            - +AVH-SSE-300
             - +AVH-SSE-300-U55
             - +AVH-SSE-300-U65
+            - +AVH-SSE-310
             - +AVH-SSE-310-U55
             - +AVH-SSE-310-U65
         - file: src/main_live.cpp
@@ -47,10 +53,12 @@ project:
       files:
         - file: linker/mps3-sse-300.sct
           for-context:
+            - +AVH-SSE-300
             - +AVH-SSE-300-U55
             - +AVH-SSE-300-U65
         - file: linker/mps3-sse-310.sct
           for-context:
+            - +AVH-SSE-310
             - +AVH-SSE-310-U55
             - +AVH-SSE-310-U65
         - file: linker/alif-e7-m55-hp.sct
@@ -65,8 +73,10 @@ project:
 
     - layer: ../device/corstone/corstone-device.clayer.yml
       for-context:
+        - +AVH-SSE-300
         - +AVH-SSE-300-U55
         - +AVH-SSE-300-U65
+        - +AVH-SSE-310
         - +AVH-SSE-310-U55
         - +AVH-SSE-310-U65
 

@@ -23,6 +23,8 @@ layer:
   groups:
     - group: Retarget
       for-context:
+        - +AVH-SSE-300
+        - +AVH-SSE-310
         - +AVH-SSE-300-U55
         - +AVH-SSE-310-U55
         - +AVH-SSE-300-U65
@@ -50,3 +52,12 @@ layer:
         - +AVH-SSE-300-U65
         - +AVH-SSE-310-U65
     - component: tensorflow::Machine Learning:TensorFlow:Kernel&Ethos-U
+      for-context:
+        - +AVH-SSE-300-U55
+        - +AVH-SSE-310-U55
+        - +AVH-SSE-300-U65
+        - +AVH-SSE-310-U65
+    - component: tensorflow::Machine Learning:TensorFlow:Kernel&CMSIS-NN
+      for-context:
+        - +AVH-SSE-300
+        - +AVH-SSE-310
