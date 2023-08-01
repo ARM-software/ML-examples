@@ -53,6 +53,7 @@ LOAD_REGION_0       ROM_BASE                    SRAM4_SIZE
         *.o (RESET, +First)
         * (InRoot$$Sections)
         .ANY (+RO-CODE)
+        Driver_*.o (+RO +RW +ZI)
     }
 
     ;-----------------------------------------------------
@@ -101,7 +102,6 @@ LOAD_REGION_1       MODEL_BASE           SRAM1_USABLE_SIZE
     {
         .ANY        (+RO-DATA)
         .ANY        (+RW +ZI)
-        Driver_*.o (+RO +RW +ZI)
     }
 
     ;-----------------------------------------------------
