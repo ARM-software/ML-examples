@@ -17,6 +17,10 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/2.0.0/tools/projmgr/schemas/cproject.schema.json
 
 project:
+  output:
+    type:
+      - elf
+      - bin
 
   groups:
     - group: Wav file based example
