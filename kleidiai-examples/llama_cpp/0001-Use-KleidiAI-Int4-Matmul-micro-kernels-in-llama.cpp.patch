@@ -1,0 +1,850 @@
+From 3eaa2789f0099dbdd2f36efce4d1eeb6edfda033 Mon Sep 17 00:00:00 2001
+From: Gian Marco Iodice <gianmarco.iodice@arm.com>
+Date: Fri, 14 Jun 2024 14:55:47 +0100
+Subject: [PATCH] Use KleidiAI Int4 Matmul micro-kernels in llama.cpp
+
+- Update CMake file to fetch the Int4 micro-kernels from the KleidiAI
+repository
+- Implement a KleidiAI backend for llama.cpp
+
+Signed-off-by: Gian Marco Iodice <gianmarco.iodice@arm.com>
+---
+ CMakeLists.txt    |  48 ++++
+ ggml-alloc.c      |  13 ++
+ ggml-kleidiai.cpp | 561 ++++++++++++++++++++++++++++++++++++++++++++++
+ ggml-kleidiai.h   |  45 ++++
+ ggml.c            |  27 +++
+ llama.cpp         |  19 +-
+ 6 files changed, 712 insertions(+), 1 deletion(-)
+ create mode 100644 ggml-kleidiai.cpp
+ create mode 100644 ggml-kleidiai.h
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 08481334..5c0458e9 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -548,6 +548,53 @@ if (LLAMA_VULKAN)
+     endif()
+ endif()
+ 
++if (LLAMA_KLEIDIAI)
++
++    # Fetch KleidiAI sources:
++    include(FetchContent)
++    set(KLEIDIAI_COMMIT_SHA "b0911c80b35e41dc9c22075a63e83c217fd0a106")
++    set(KLEIDIAI_DOWNLOAD_URL "https://gitlab.arm.com/kleidi/kleidiai/-/archive/${KLEIDIAI_COMMIT_SHA}/kleidiai-${KLEIDIAI_COMMIT_SHA}.tar.gz")
++    set(KLEIDIAI_ARCHIVE_MD5  "8b54226586eb18957c374a6d1434f4f2")
++
++    if (POLICY CMP0135)
++        cmake_policy(SET CMP0135 NEW)
++    endif()
++
++    FetchContent_Declare(KleidiAI_Download
++        URL ${KLEIDIAI_DOWNLOAD_URL}
++        DOWNLOAD_EXTRACT_TIMESTAMP NEW
++        URL_HASH MD5=${KLEIDIAI_ARCHIVE_MD5})
++
++    FetchContent_MakeAvailable(KleidiAI_Download)
++    FetchContent_GetProperties(KleidiAI_Download
++        SOURCE_DIR  KLEIDIAI_SRC
++        POPULATED   KLEIDIAI_POPULATED)
++
++    if (NOT KLEIDIAI_POPULATED)
++        message(FATAL_ERROR "KleidiAI source downloaded failed.")
++    endif()
++
++    list(APPEND GGML_SOURCES_KLEIDIAI ggml-kleidiai.cpp)
++    list(APPEND GGML_HEADERS_KLEIDIAI ggml-kleidiai.h)
++
++    # KleidiAI
++    include_directories(
++        ${KLEIDIAI_SRC}/
++        ${KLEIDIAI_SRC}/kai/ukernels/
++        ${KLEIDIAI_SRC}/kai/ukernels/matmul/
++        ${KLEIDIAI_SRC}/kai/ukernels/matmul/matmul_clamp_f32_qsi8d32p_qsi4c32p/
++        ${KLEIDIAI_SRC}/kai/ukernels/matmul/pack/)
++
++    list(APPEND GGML_SOURCES_KLEIDIAI ${KLEIDIAI_SRC}/kai/ukernels/matmul/pack/kai_lhs_quant_pack_qsi8d32p_f32.c)
++    list(APPEND GGML_SOURCES_KLEIDIAI ${KLEIDIAI_SRC}/kai/ukernels/matmul/pack/kai_rhs_pack_nxk_qsi4c32f16scalep_qsu4c32s16s0.c)
++    list(APPEND GGML_SOURCES_KLEIDIAI ${KLEIDIAI_SRC}/kai/ukernels/matmul/matmul_clamp_f32_qsi8d32p_qsi4c32p/kai_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod.c)
++    list(APPEND GGML_SOURCES_KLEIDIAI ${KLEIDIAI_SRC}/kai/ukernels/matmul/matmul_clamp_f32_qsi8d32p_qsi4c32p/kai_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm.c)
++
++    add_compile_definitions(GGML_USE_KLEIDIAI)
++    add_compile_definitions(GGML_KLEIDIAI_REUSE_MEMORY)
++
++endif()
++
+ if (LLAMA_HIPBLAS)
+     if (NOT EXISTS $ENV{ROCM_PATH})
+         if (NOT EXISTS /opt/rocm)
+@@ -1268,6 +1315,7 @@ add_library(ggml OBJECT
+             ${GGML_SOURCES_ROCM}      ${GGML_HEADERS_ROCM}
+             ${GGML_SOURCES_BLAS}      ${GGML_HEADERS_BLAS}
+             ${GGML_SOURCES_LLAMAFILE} ${GGML_HEADERS_LLAMAFILE}
++            ${GGML_SOURCES_KLEIDIAI}  ${GGML_HEADERS_KLEIDIAI}
+             )
+ 
+ target_include_directories(ggml PUBLIC . ${LLAMA_EXTRA_INCLUDES})
+diff --git a/ggml-alloc.c b/ggml-alloc.c
+index bd367c42..ac099392 100644
+--- a/ggml-alloc.c
++++ b/ggml-alloc.c
+@@ -9,6 +9,10 @@
+ #include <stdlib.h>
+ #include <string.h>
+ 
++#if defined(GGML_USE_KLEIDIAI)
++#include "ggml-kleidiai.h"
++#endif
++
+ #define MAX(a, b) ((a) > (b) ? (a) : (b))
+ #define MAX_FREE_BLOCKS 256
+ 
+@@ -986,6 +990,15 @@ ggml_backend_buffer_t ggml_backend_alloc_ctx_tensors_from_buft(struct ggml_conte
+         size_t this_size = 0;
+         if (t->data == NULL && t->view_src == NULL) {
+             this_size = GGML_PAD(ggml_backend_buft_get_alloc_size(buft, t), alignment);
++#if defined(GGML_USE_KLEIDIAI)
++            // Temporary solution to allocate more memore if needed for packing the weights.
++            // This method is not sufficient as we assume that the weights are for matmul only.
++            // However, weights could belong to other operations
++            const int64_t iai_diff = (ggml_kai_get_const_workspace_size_matmul(t) - this_size);
++            if (iai_diff > 0) {
++                this_size += iai_diff;
++            }
++#endif
+         }
+ 
+         if (this_size > max_size) {
+diff --git a/ggml-kleidiai.cpp b/ggml-kleidiai.cpp
+new file mode 100644
+index 00000000..9e343c86
+--- /dev/null
++++ b/ggml-kleidiai.cpp
+@@ -0,0 +1,561 @@
++/*
++ * Copyright (c) 2024 Arm Limited.
++ *
++ * SPDX-License-Identifier: MIT
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to
++ * deal in the Software without restriction, including without limitation the
++ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
++ * sell copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in all
++ * copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++ * SOFTWARE.
++ */
++
++#if defined(__aarch64__) && defined(__ANDROID__)
++#include "ggml-kleidiai.h"
++
++#include "ggml.h"
++#include "ggml-quants.h"
++#include "ggml-backend-impl.h"
++
++#include <arm_neon.h>
++#include <assert.h>
++#include <cfloat>
++#include <stdint.h>
++#include <string.h>
++#include <asm/hwcap.h>
++#include <sys/auxv.h>
++
++// KleidiAI micro-kernels
++#include "kai_matmul_clamp_f32_qsi8d32p_qsi4c32p_interface.h"
++#include "kai_lhs_quant_pack_qsi8d32p_f32.h"
++#include "kai_rhs_pack_nxk_qsi4c32f16scalep_qsu4c32s16s0.h"
++#include "kai_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod.h"
++#include "kai_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm.h"
++
++#define GGML_KAI_UNUSED(x) (void)(x)
++#define MAX_EXTRA_BUFFERS 4096
++
++static const size_t k_q4_0_block_size = 32;
++
++static bool g_kai_loaded = false;
++
++// Basic backend memory allocator
++static uint8_t* extra_mem[MAX_EXTRA_BUFFERS];
++static int32_t extra_mem_idx = 0;
++
++typedef void (*kai_matmul_func_t)(const struct ggml_compute_params * params, const ggml_tensor * src0, const ggml_tensor * src1, ggml_tensor * dst);
++
++struct ggml_kai_matmul_lhs_packing_params {
++    size_t mr          = 1;
++    size_t kr          = 1;
++    size_t sr          = 1;
++    size_t packed_size = 1;
++};
++
++struct ggml_kai_matmul_rhs_packing_params {
++    size_t nr          = 1;
++    size_t kr          = 1;
++    size_t sr          = 1;
++    size_t packed_size = 1;
++};
++
++struct ggml_kai_matmul_function {
++    kai_matmul_func_t matmul = nullptr;
++};
++
++struct cpu_features {
++    bool neon{false};
++    bool dot{false};
++    bool i8mm{false};
++};
++
++#define KAI_FEATURE_HWCAP_ASIMD     (1 << 1)
++#define KAI_FEATURE_HWCAP_ASIMDDP   (1 << 20)
++#define KAI_FEATURE_HWCAP2_I8MM     (1 << 13)
++
++#if __ANDROID_API__ >= 18
++unsigned long int getauxval(unsigned long int __type) __INTRODUCED_IN(18);
++#endif
++
++inline bool is_feature_supported(uint64_t features, uint64_t feature_mask) {
++    return (features & feature_mask);
++}
++
++static void get_cpu_features(cpu_features &isa) {
++    const uint32_t hwcaps   = getauxval(AT_HWCAP);
++    const uint32_t hwcaps2  = getauxval(AT_HWCAP2);
++
++    isa.neon = is_feature_supported(hwcaps, KAI_FEATURE_HWCAP_ASIMD);
++    isa.dot  = is_feature_supported(hwcaps, KAI_FEATURE_HWCAP_ASIMDDP);
++    isa.i8mm = is_feature_supported(hwcaps2, KAI_FEATURE_HWCAP2_I8MM);
++}
++
++typedef void (*ggml_kai_func_t)(const struct ggml_compute_params * params, const ggml_tensor * src0, const ggml_tensor * src1, ggml_tensor * dst);
++
++GGML_CALL bool ggml_kai_loaded(void) {
++    return g_kai_loaded;
++}
++
++GGML_CALL void ggml_kai_init(void) {
++    static bool initialized = false;
++
++    if (!initialized) {
++        // Free previously allocated memory
++        ggml_kai_free_extra_mem();
++        initialized = true;
++        g_kai_loaded = true;
++    }
++}
++
++GGML_CALL bool ggml_kai_can_accelerate_matmul(const struct ggml_tensor * src0, const struct ggml_tensor * src1, struct ggml_tensor * dst) {
++    if(!g_kai_loaded) {
++        return false;
++    }
++
++    cpu_features cpu;
++    get_cpu_features(cpu);
++
++    // Check whether the target platfom has i8mm and dotprod features
++    if(!(cpu.i8mm && cpu.dot)) {
++        return false;
++    }
++
++    // Check data type support for matmul
++    // At the moment, it only works for Q4
++    if ((src1->type == GGML_TYPE_F32) && (src0->type == GGML_TYPE_Q4_0) && (dst->type == GGML_TYPE_F32)) {
++
++        // Check whether matmul is for token_embd layer. If so, the weights are required by other functions
++        // and cannot be packed
++#if defined(GGML_KLEIDIAI_REUSE_MEMORY)
++        if (!strcmp (src0->name, "token_embd.weight")) {
++            return false;
++        }
++#endif
++
++        // Check whether it batched matrix multiplication
++        if(src1->ne[2] == 1 && src1->ne[3]) {
++            const size_t n = src0->ne[1];
++            const size_t k = src1->ne[0];
++
++            // Check whether K is multiple of k_q4_0_block_size (32)
++            if(k % k_q4_0_block_size != 0) {
++                return false;
++            }
++
++            // Check whether N is multiple of 4
++            // Attention; n0 should be returned by the KleidiAI heuristic
++            const size_t n0 = 4;
++            if(n % n0 != 0) {
++                return false;
++            }
++
++            return true;
++        } else {
++            return false;
++        }
++    } else {
++        return false;
++    }
++}
++
++static kai_matmul_clamp_f32_qsi8d32p_qsi4c32p_ukernel ggml_kai_select_matmul_ukernel(size_t m, size_t n, size_t k) {
++    kai_matmul_clamp_f32_qsi8d32p_qsi4c32p_ukernel v;
++
++    GGML_KAI_UNUSED(n);
++    GGML_KAI_UNUSED(k);
++
++    // Get CPU features
++    cpu_features cpu;
++    get_cpu_features(cpu);
++
++#if defined(__ARM_FEATURE_MATMUL_INT8) && defined(__ARM_FEATURE_DOTPROD)
++    if(cpu.i8mm && cpu.dot) {
++        if(m == 1) {
++            v.get_m_step = kai_get_m_step_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++            v.get_n_step = kai_get_n_step_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++            v.get_mr = kai_get_mr_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++            v.get_nr = kai_get_nr_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++            v.get_kr = kai_get_kr_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++            v.get_sr = kai_get_sr_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++            v.get_lhs_packed_offset = kai_get_lhs_packed_offset_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++            v.get_rhs_packed_offset = kai_get_rhs_packed_offset_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++            v.get_dst_offset = kai_get_dst_offset_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++            v.get_dst_size = kai_get_dst_size_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++            v.run_matmul = kai_run_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++        } else {
++            v.get_m_step = kai_get_m_step_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
++            v.get_n_step = kai_get_n_step_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
++            v.get_mr = kai_get_mr_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
++            v.get_nr = kai_get_nr_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
++            v.get_kr = kai_get_kr_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
++            v.get_sr = kai_get_sr_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
++            v.get_lhs_packed_offset = kai_get_lhs_packed_offset_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
++            v.get_rhs_packed_offset = kai_get_rhs_packed_offset_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
++            v.get_dst_offset = kai_get_dst_offset_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
++            v.get_dst_size = kai_get_dst_size_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
++            v.run_matmul = kai_run_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
++        }
++    }
++    else if(cpu.dot) {
++        v.get_m_step = kai_get_m_step_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++        v.get_n_step = kai_get_n_step_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++        v.get_mr = kai_get_mr_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++        v.get_nr = kai_get_nr_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++        v.get_kr = kai_get_kr_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++        v.get_sr = kai_get_sr_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++        v.get_lhs_packed_offset = kai_get_lhs_packed_offset_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++        v.get_rhs_packed_offset = kai_get_rhs_packed_offset_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++        v.get_dst_offset = kai_get_dst_offset_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++        v.get_dst_size = kai_get_dst_size_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++        v.run_matmul = kai_run_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++    }
++    else {
++        GGML_ASSERT(false);
++    }
++#else
++    GGML_ASSERT(false);
++#endif
++    return v;
++}
++
++static ggml_kai_matmul_lhs_packing_params ggml_kai_init_matmul_lhs_packing_params(
++    const kai_matmul_clamp_f32_qsi8d32p_qsi4c32p_ukernel* ukernel,
++    size_t m,
++    size_t k) {
++
++    ggml_kai_matmul_lhs_packing_params v;
++
++    v.mr          = ukernel->get_mr();
++    v.kr          = ukernel->get_kr();
++    v.sr          = ukernel->get_sr();
++    v.packed_size = kai_get_lhs_packed_size_lhs_quant_pack_qsi8d32p_f32(m, k, k_q4_0_block_size /* 32 */ , v.mr, v.kr, v.sr);
++
++    return v;
++}
++
++static ggml_kai_matmul_rhs_packing_params ggml_kai_init_matmul_rhs_packing_params(
++    const kai_matmul_clamp_f32_qsi8d32p_qsi4c32p_ukernel* ukernel,
++    size_t n,
++    size_t k) {
++
++    ggml_kai_matmul_rhs_packing_params v;
++    v.nr          = ukernel->get_nr();
++    v.kr          = ukernel->get_kr();
++    v.sr          = ukernel->get_sr();
++    v.packed_size = kai_get_rhs_packed_size_rhs_pack_nxk_qsi4c32f16scalep_qsu4c32s16s0(n, k, v.nr, v.kr, k_q4_0_block_size /* 32 */);
++
++    return v;
++}
++
++static void ggml_kai_matmul_f32_q8c_q4c(
++    const struct ggml_compute_params * params,
++    const ggml_tensor * src0,
++    const ggml_tensor * src1,
++    ggml_tensor * dst) {
++
++    GGML_TENSOR_BINARY_OP_LOCALS
++
++    const int ith = params->ith;
++    const int nth = params->nth;
++
++    const enum ggml_type type = src0->type;
++
++    GGML_ASSERT(ne0 == ne01);
++    GGML_ASSERT(ne1 == ne11);
++    GGML_ASSERT(ne2 == ne12);
++    GGML_ASSERT(ne3 == ne13);
++
++    // we don't support permuted src0 or src1
++    GGML_ASSERT(nb00 == ggml_type_size(type));
++    GGML_ASSERT(nb10 == ggml_type_size(src1->type));
++
++    // dst cannot be transposed or permuted
++    GGML_ASSERT(nb0 == sizeof(float));
++    GGML_ASSERT(nb0 <= nb1);
++    GGML_ASSERT(nb1 <= nb2);
++    GGML_ASSERT(nb2 <= nb3);
++
++    const size_t m = ne11;
++    const size_t n = ne01;
++    const size_t k = ne00;
++
++    const kai_matmul_clamp_f32_qsi8d32p_qsi4c32p_ukernel ukernel            = ggml_kai_select_matmul_ukernel(m, n, k);
++    const ggml_kai_matmul_lhs_packing_params            lhs_packing_params  = ggml_kai_init_matmul_lhs_packing_params(&ukernel, m, k);
++    const ggml_kai_matmul_rhs_packing_params            rhs_packing_params  = ggml_kai_init_matmul_rhs_packing_params(&ukernel, n, k);
++
++    GGML_ASSERT(lhs_packing_params.kr == rhs_packing_params.kr);
++    GGML_ASSERT(lhs_packing_params.sr == rhs_packing_params.sr);
++
++    // Get packing parameters
++    const size_t n_step = ukernel.get_n_step();
++
++    // Calculate number of columns to be processed per thread
++    const size_t num_n_per_thread = n / nth;
++    const size_t n_start = ith * num_n_per_thread;
++
++    const uint8_t* lhs        = (const uint8_t*)src1->data;
++    uint8_t* lhs_packed       = (uint8_t*)params->wdata;
++    const uint8_t* rhs_packed = (const uint8_t*)src0->extra;
++
++    if (params->type == GGML_TASK_TYPE_INIT) {
++        if (ith != 0) {
++            return;
++        }
++
++        const size_t mr = lhs_packing_params.mr;
++        const size_t kr = lhs_packing_params.kr;
++        const size_t sr = lhs_packing_params.sr;
++
++        GGML_ASSERT(src1->type == GGML_TYPE_F32);
++
++        const size_t src_stride = src1->nb[1];
++
++        const size_t t_size = lhs_packing_params.packed_size;
++        GGML_ASSERT(params->wsize >= t_size);
++
++        const size_t lhs_offset = kai_get_lhs_offset_lhs_quant_pack_qsi8d32p_f32(0, src_stride);
++        const size_t lhs_packed_offset = kai_get_lhs_packed_offset_lhs_quant_pack_qsi8d32p_f32(0, k, k_q4_0_block_size /* 32 */, mr, kr, sr);
++
++        const float* src_ptr = (const float*)((const uint8_t*)lhs + lhs_offset);
++        void*        dst_ptr = (void *)((uint8_t*)lhs_packed + lhs_packed_offset);
++
++        kai_run_lhs_quant_pack_qsi8d32p_f32(
++            m, k,               // Dimensions
++            k_q4_0_block_size,  // Block length (32)
++            mr, kr, sr,         // Packing arguments
++            0,                  // M first index
++            src_ptr,            // LHS
++            src_stride,         // LHS stride
++            dst_ptr);           // LHS packed
++
++        return;
++    }
++
++    if (params->type == GGML_TASK_TYPE_FINALIZE) {
++        return;
++    }
++
++    const size_t dst_stride = dst->nb[1];
++
++    // For now, each thread must perform an equal number of output elements.
++    // If this is not satisfied, we must trigger an error
++    GGML_ASSERT(n % nth == 0);
++    GGML_ASSERT(num_n_per_thread % n_step == 0);
++
++    const size_t lhs_packed_offset = ukernel.get_lhs_packed_offset(0, k, k_q4_0_block_size /* 32 */);
++    const size_t rhs_packed_offset = ukernel.get_rhs_packed_offset(n_start, k, k_q4_0_block_size /* 32 */);
++    const size_t dst_offset        = ukernel.get_dst_offset(0, n_start, dst_stride);
++
++    const void* lhs_ptr = (const void*)((const char *)lhs_packed + lhs_packed_offset);
++    const void* rhs_ptr = (const void*)((const char *)rhs_packed + rhs_packed_offset);
++    float* dst_ptr = (float*)((uint8_t*)dst->data + dst_offset);
++
++    ukernel.run_matmul(
++        m, num_n_per_thread, k,     // Dimensions
++        k_q4_0_block_size,          // Block length (32)
++        lhs_ptr,                    // LHS packed
++        rhs_ptr,                    // RHS packed
++        dst_ptr,                    // Destination
++        dst_stride,                 // Destination row stride
++        sizeof(float),              // Destination column stride
++        -FLT_MAX, FLT_MAX);         // Min and max values for the clamping operation
++}
++
++static void ggml_kai_matmul(const struct ggml_compute_params * params, const ggml_tensor * src0, const ggml_tensor * src1, ggml_tensor * dst) {
++
++    if((src1->type == GGML_TYPE_F32) && (dst->type == GGML_TYPE_F32)) {
++        switch (src0->type) {
++            case GGML_TYPE_Q4_0:
++                ggml_kai_matmul_f32_q8c_q4c(params, src0, src1, dst);
++                break;
++            default:
++                GGML_ASSERT(false);
++                break;
++        }
++    } else {
++        GGML_ASSERT(false);
++    }
++}
++
++static void ggml_kai_matmul_rhs_pack(ggml_tensor * cur) {
++    const size_t n = cur->ne[1];
++    const size_t k = cur->ne[0];
++
++    const kai_matmul_clamp_f32_qsi8d32p_qsi4c32p_ukernel ukernel = ggml_kai_select_matmul_ukernel(1, n, k);
++    const ggml_kai_matmul_rhs_packing_params rhs_packing_params = ggml_kai_init_matmul_rhs_packing_params(&ukernel, n, k);
++
++    if (cur->extra == NULL) {
++        if(cur->type == GGML_TYPE_Q4_0) {
++
++            const size_t original_data_size = ggml_nbytes(cur);
++            const size_t reshaped_data_sz = rhs_packing_params.packed_size;
++
++            // Temporary memory for the computation.
++            uint8_t *reshaped_data = (uint8_t*)malloc(reshaped_data_sz);
++
++            struct kai_rhs_pack_nxk_qsi4c32f16scalep_qsu4c32s16s0_params params;
++            params.lhs_zero_point = 1;
++            params.rhs_zero_point = 8;
++
++            kai_run_rhs_pack_nxk_qsi4c32f16scalep_qsu4c32s16s0(
++                1, n, k,                    // Dimensions
++                rhs_packing_params.nr,      // Nr
++                rhs_packing_params.kr,      // Kr
++                rhs_packing_params.sr,      // Sr
++                k_q4_0_block_size,          // Block length (32)
++                (const uint8_t*)cur->data,  // RHS
++                NULL,                       // Bias
++                reshaped_data,              // RHS PACKED
++                0,
++                &params);
++
++#if defined(GGML_KLEIDIAI_REUSE_MEMORY)
++            GGML_ASSERT(reshaped_data_sz <= original_data_size);
++            memcpy(cur->data, (void *)reshaped_data, ggml_nbytes(cur));
++            free(reshaped_data);
++            cur->extra = cur->data;
++#else
++            extra_mem[extra_mem_idx++] = reshaped_data;
++            cur->extra = reshaped_data;
++#endif
++        } else {
++            GGML_ASSERT(false);
++        }
++    }
++}
++
++GGML_CALL bool ggml_kai_compute_forward(struct ggml_compute_params * params, struct ggml_tensor * tensor) {
++    if (!g_kai_loaded) return false;
++
++    // tensor refers to the destination tensor and has the "src" member to get the pointers
++    // to the source tensors required to perform the operation
++    // tensor         = destination
++    // tensor->src[0] = first source tensor
++    // tensor->src[1] = second source tensor
++
++    ggml_kai_func_t func;
++    const bool is_cpu_only = tensor->backend == GGML_BACKEND_TYPE_CPU
++        || (tensor->src[0] != nullptr && (tensor->src[0]->backend == GGML_BACKEND_TYPE_CPU))
++        || (tensor->src[1] != nullptr && tensor->src[1]->backend == GGML_BACKEND_TYPE_CPU);
++
++    if (!is_cpu_only) {
++        return false;
++    }
++
++    switch (tensor->op) {
++        case GGML_OP_MUL_MAT:
++            if (!ggml_kai_can_accelerate_matmul(tensor->src[0], tensor->src[1], tensor)) {
++                return false;
++            }
++
++            func = ggml_kai_matmul;
++            break;
++        default:
++            return false;
++    }
++
++    func(params, tensor->src[0], tensor->src[1], tensor);
++
++    return true;
++}
++
++GGML_CALL bool ggml_kai_prepare_const_data(struct ggml_tensor * tensor) {
++    if (!g_kai_loaded) return false;
++
++    // tensor refers to the destination tensor and has the "src" member to get the pointers
++    // to the source tensors required to perform the operation
++    // tensor         = destination
++    // tensor->src[0] = first source tensor
++    // tensor->src[1] = second source tensor
++
++    const bool is_cpu_only = tensor->backend == GGML_BACKEND_TYPE_CPU
++        || (tensor->src[0] != nullptr && (tensor->src[0]->backend == GGML_BACKEND_TYPE_CPU))
++        || (tensor->src[1] != nullptr && tensor->src[1]->backend == GGML_BACKEND_TYPE_CPU);
++
++    if (!is_cpu_only) {
++        return false;
++    }
++
++    switch (tensor->op) {
++        case GGML_OP_MUL_MAT:
++            if (!ggml_kai_can_accelerate_matmul(tensor->src[0], tensor->src[1], tensor)) {
++                return false;
++            }
++            ggml_kai_matmul_rhs_pack(tensor->src[0]);
++            break;
++        default:
++            return false;
++    }
++
++    return true;
++}
++
++size_t ggml_kai_get_temp_workspace_size_matmul(const struct ggml_tensor * src0, const struct ggml_tensor * src1, struct ggml_tensor * dst) {
++
++    const size_t m = src1->ne[1];
++    const size_t k = src1->ne[0];
++
++    if (ggml_kai_can_accelerate_matmul(src0, src1, dst)) {
++        const kai_matmul_clamp_f32_qsi8d32p_qsi4c32p_ukernel ukernel = ggml_kai_select_matmul_ukernel(m, 1, k);
++        const ggml_kai_matmul_lhs_packing_params lhs_packing_params = ggml_kai_init_matmul_lhs_packing_params(&ukernel, m, k);
++        return lhs_packing_params.packed_size;
++    }
++    return 0;
++}
++
++size_t ggml_kai_get_const_workspace_size_matmul(const struct ggml_tensor * cur) {
++
++    if(cur->type == GGML_TYPE_Q4_0) {
++        const int32_t n = cur->ne[1];
++        const int32_t k = cur->ne[0];
++        const int32_t b = cur->ne[2];
++
++        // Temporary solution as we should check whether we can run the kleidiai matmul micro-kernels
++        cpu_features cpu;
++        get_cpu_features(cpu);
++
++        // Check whether the target platfom has i8mm and dotprod features
++        if(!(cpu.i8mm && cpu.dot)) {
++            return false;
++        }
++
++        const kai_matmul_clamp_f32_qsi8d32p_qsi4c32p_ukernel ukernel = ggml_kai_select_matmul_ukernel(1, n, k);
++        const ggml_kai_matmul_rhs_packing_params rhs_packing_params = ggml_kai_init_matmul_rhs_packing_params(&ukernel, n, k);
++
++        // Attention: It is not sufficient to check the weights name to know whether or not
++        // we should run the optimized micro-kernel. This approach is temporary.
++        // The right approach should check whether the weights are used in the other layers.
++        // If the weights are only only used for the matmul operator, we should use the optimized micro-kernel.
++        #if defined(GGML_KLEIDIAI_REUSE_MEMORY)
++        if (!strcmp (cur->name, "token_embd.weight")) {
++            return 0;
++        }
++        #endif
++        if ((b == 1)) {
++            return rhs_packing_params.packed_size;
++        }
++    }
++
++    return 0;
++}
++
++GGML_CALL void ggml_kai_free_extra_mem(void) {
++    for(int32_t i = extra_mem_idx - 1; i >= 0; i--) {
++        free(extra_mem[i]);
++    }
++    extra_mem_idx = 0;
++}
++
++#endif // defined(__aarch64__) && defined(__ANDROID__)
+diff --git a/ggml-kleidiai.h b/ggml-kleidiai.h
+new file mode 100644
+index 00000000..a4cdf1fb
+--- /dev/null
++++ b/ggml-kleidiai.h
+@@ -0,0 +1,45 @@
++/*
++ * Copyright (c) 2024 Arm Limited.
++ *
++ * SPDX-License-Identifier: MIT
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to
++ * deal in the Software without restriction, including without limitation the
++ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
++ * sell copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in all
++ * copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++ * SOFTWARE.
++ */
++
++#pragma once
++
++#include "ggml.h"
++#include "ggml-backend.h"
++
++#ifdef  __cplusplus
++extern "C" {
++#endif
++
++GGML_CALL bool ggml_kai_loaded(void);
++GGML_CALL void ggml_kai_init(void);
++GGML_CALL bool ggml_kai_can_accelerate_matmul(const struct ggml_tensor * src0, const struct ggml_tensor * src1, struct ggml_tensor * dst);
++GGML_CALL bool ggml_kai_compute_forward(struct ggml_compute_params * params, struct ggml_tensor * tensor);
++GGML_CALL bool ggml_kai_prepare_const_data(struct ggml_tensor * tensor);
++GGML_CALL void ggml_kai_free_extra_mem(void);
++size_t ggml_kai_get_temp_workspace_size_matmul(const struct ggml_tensor * src0, const struct ggml_tensor * src1, struct ggml_tensor * dst);
++size_t ggml_kai_get_const_workspace_size_matmul(const struct ggml_tensor * cur);
++
++#ifdef  __cplusplus
++}
++#endif
+diff --git a/ggml.c b/ggml.c
+index d5d33c2b..84bfd3b1 100644
+--- a/ggml.c
++++ b/ggml.c
+@@ -29,6 +29,10 @@
+ #include <syscall.h>
+ #endif
+ 
++#ifdef GGML_USE_KLEIDIAI
++#include "ggml-kleidiai.h"
++#endif
++
+ #ifdef GGML_USE_OPENMP
+ #include <omp.h>
+ #endif
+@@ -3376,6 +3380,10 @@ struct ggml_context * ggml_init(struct ggml_init_params params) {
+             GGML_PRINT_DEBUG("%s: g_state initialized in %f ms\n", __func__, (t_end - t_start)/1000.0f);
+         }
+ 
++#if defined(GGML_USE_KLEIDIAI)
++        ggml_kai_init();
++#endif
++
+         ggml_setup_op_has_task_pass();
+ 
+         is_first_call = false;
+@@ -16929,6 +16937,13 @@ static void ggml_compute_forward(struct ggml_compute_params * params, struct ggm
+         return;
+     }
+ 
++#ifdef GGML_USE_KLEIDIAI
++    bool can_use_kai = ggml_kai_compute_forward(params, tensor);
++    if (can_use_kai) {
++        return;
++    }
++#endif // GGML_USE_KLEIDIAI
++
+     switch (tensor->op) {
+         case GGML_OP_DUP:
+             {
+@@ -19206,6 +19221,12 @@ struct ggml_cplan ggml_graph_plan(const struct ggml_cgraph * cgraph, int n_threa
+                 {
+                     const enum ggml_type vec_dot_type = type_traits[node->src[0]->type].vec_dot_type;
+ 
++#if defined(GGML_USE_KLEIDIAI)
++                    if (ggml_kai_can_accelerate_matmul(node->src[0], node->src[1], node)) {
++                        cur = ggml_kai_get_temp_workspace_size_matmul(node->src[0], node->src[1], node);
++                        break;
++                    }
++#endif
+                     if (node->src[1]->type != vec_dot_type) {
+                         cur = ggml_row_size(vec_dot_type, ggml_nelements(node->src[1]));
+                     }
+@@ -19387,6 +19408,12 @@ enum ggml_status ggml_graph_compute(struct ggml_cgraph * cgraph, struct ggml_cpl
+         }
+     }
+ 
++#if GGML_USE_KLEIDIAI
++    for (int i = 0; i < cgraph->n_nodes; i++) {
++        ggml_kai_prepare_const_data(cgraph->nodes[i]);
++    }
++#endif
++
+     int n_threads = cplan->n_threads;
+ 
+ #if defined(GGML_USE_OPENMP)
+diff --git a/llama.cpp b/llama.cpp
+index 05591aa4..735dde04 100644
+--- a/llama.cpp
++++ b/llama.cpp
+@@ -19,6 +19,8 @@
+ #  include "ggml-sycl.h"
+ #elif defined(GGML_USE_KOMPUTE)
+ #   include "ggml-kompute.h"
++#elif defined(GGML_USE_KLEIDIAI)
++#   include "ggml-kleidiai.h"
+ #endif
+ 
+ #ifdef GGML_USE_BLAS
+@@ -1360,8 +1362,19 @@ struct llama_mmap {
+ 
+     llama_mmap(const llama_mmap &) = delete;
+ 
+-#ifdef _POSIX_MAPPED_FILES
++#ifdef GGML_USE_KLEIDIAI
++    // With KleidiAI, we disable mmap to allow the backend
++    // to re-use the memory allocated for the weights.
++    // KleidiAI requires to pack the weights in a different format from the original one
++    // to improve the overall computational efficiency.
++    // However, since RAM is very limited on some devices, we want to re-use the original
++    // storage to avoid allocating additional memory.
++    static constexpr bool SUPPORTED = false;
++#elif _POSIX_MAPPED_FILES
+     static constexpr bool SUPPORTED = true;
++#endif
++
++#ifdef _POSIX_MAPPED_FILES
+ 
+     // list of mapped fragments (first_offset, last_offset)
+     std::vector<std::pair<size_t, size_t>> mapped_fragments;
+@@ -2295,6 +2308,10 @@ struct llama_context {
+             ggml_backend_free(backend);
+         }
+ 
++#if GGML_USE_KLEIDIAI
++        ggml_kai_free_extra_mem();
++#endif
++
+         ggml_backend_buffer_free(buf_output);
+     }
+ 
+-- 
+2.25.1
+
