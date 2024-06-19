@@ -34,13 +34,13 @@ Currently, the following examples are supported:
 
 Target platforms supported:
 
-| Name                | Type                | IP                                            | Examples |
-|---------------------|---------------------|-----------------------------------------------|----------|
-| Arm® Corstone™-300  | Virtual or physical | Arm® Cortex®-M55 CPU with Arm® Ethos™-U55 or Arm® Ethos™-U65 NPU | All      |
-| Arm® Corstone™-310  | Virtual or physical | Arm® Cortex®-M85 CPU with Arm® Ethos™-U55 or Arm® Ethos™-U65 NPU | All      |
-| Alif Ensemble E7    | Physical board      | Arm® Cortex®-M55 CPU with Arm® Ethos™-U55 NPU | All      |
-| STM32F746G-Discovery| Physical board      | Arm® Cortex®-M7 CPU                           | KWS      |
-| NXP FRDM-K64F       | Physical board      | Arm® Cortex®-M4 CPU                           | KWS      |
+| Name                  | Type                | IP                                            | Examples |
+|-----------------------|---------------------|-----------------------------------------------|----------|
+| Arm® Corstone™-300    | Virtual or physical | Arm® Cortex®-M55 CPU with Arm® Ethos™-U55 or Arm® Ethos™-U65 NPU | All      |
+| Arm® Corstone™-310    | Virtual or physical | Arm® Cortex®-M85 CPU with Arm® Ethos™-U55 or Arm® Ethos™-U65 NPU | All      |
+| Alif™ Ensemble™ E7 AI/ML Kit | Physical board      | Arm® Cortex®-M55 CPU with Arm® Ethos™-U55 NPU | All      |
+| STM32® F746G-Discovery| Physical board      | Arm® Cortex®-M7 CPU                           | KWS      |
+| NXP® FRDM-K64F        | Physical board      | Arm® Cortex®-M4 CPU                           | KWS      |
 
 
 Use this import button to open the solution in Keil Studio Cloud: [![Open in Keil Studio](https://img.shields.io/badge/Keil%20Studio-Import-blue?logo=data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAyNS40LjEsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4NCjxzdmcgdmVyc2lvbj0iMS4xIiBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeD0iMHB4IiB5PSIwcHgiDQoJIHZpZXdCb3g9IjAgMCA0NyAxNCIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgNDcgMTQ7IiB4bWw6c3BhY2U9InByZXNlcnZlIj4NCjxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+DQoJLnN0MHtmaWxsOiNGRkZGRkY7fQ0KPC9zdHlsZT4NCjxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik00LjcsN2MwLDIuMiwxLjQsNC4xLDMuNSw0LjFjMS44LDAsMy42LTEuNCwzLjYtNC4xYzAtMi44LTEuNy00LjItMy42LTQuMkM2LjIsMi45LDQuNyw0LjcsNC43LDcgTTExLjYsMC41DQoJaDIuOXYxM2gtMi45di0xLjNjLTAuOSwxLjEtMi4zLDEuNy0zLjcsMS43QzQsMTMuOSwxLjgsMTAuNiwxLjgsN2MwLTQuMywyLjctNi45LDYuMS02LjljMS41LDAsMi44LDAuNywzLjcsMS45VjAuNXoiLz4NCjxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik0xOCwwLjVIMjF2MS4yYzAuMy0wLjQsMC43LTAuOCwxLjItMS4xYzAuNS0wLjMsMS4yLTAuNCwxLjctMC40YzAuOCwwLDEuNiwwLjIsMi4zLDAuNmwtMS4yLDIuOA0KCWMtMC40LTAuMy0xLTAuNC0xLjUtMC40Yy0wLjctMC4xLTEuMywwLjItMS44LDAuN0MyMSw0LjYsMjEsNS45LDIxLDYuOHY2LjdIMThWMC41eiIvPg0KPHBhdGggY2xhc3M9InN0MCIgZD0iTTI4LjIsMC41aDIuOXYxLjJjMC43LTAuOSwxLjktMS42LDMuMS0xLjZjMS4zLDAsMi42LDAuNywzLjIsMS45YzAuOS0xLjIsMi4yLTEuOSwzLjctMS45DQoJQzQyLjcsMCw0NCwwLjksNDQuNywyLjJjMC4yLDAuNCwwLjcsMS40LDAuNywzLjN2OC4xaC0yLjlWNi4zYzAtMS41LTAuMi0yLjEtMC4yLTIuM2MtMC4yLTAuNy0wLjktMS4yLTEuNy0xLjENCgljLTAuNywwLTEuMywwLjMtMS43LDAuOWMtMC41LDAuOC0wLjYsMS45LTAuNiwyLjl2Ni43aC0yLjlWNi4zYzAtMS41LTAuMi0yLjEtMC4yLTIuM2MtMC4yLTAuNy0wLjktMS4yLTEuNy0xLjENCgljLTAuNywwLTEuMywwLjMtMS43LDAuOWMtMC41LDAuOC0wLjYsMS45LTAuNiwyLjl2Ni43aC0yLjlMMjguMiwwLjV6Ii8+DQo8L3N2Zz4NCg==&logoWidth=47)](https://studio.keil.arm.com/?import=https://github.com/Arm-Examples/mlek-cmsis-pack-examples.git)
@@ -224,17 +224,18 @@ Note that most applications will redirect their standard output and error stream
 Keil Sudio Cloud has an option to open a serial connection that can be used to monitor these
 streams.
 
-For the Alif Semiconductor's Ensemble DevKit boards, the output over UART is not wired though any
-USB. A 1.8V FTDI USART cable is recommended to view the serial output. By default, the high
-performance core uses UART device 4, and the high efficiency core uses UART device 2. Check the
-board schematic to see which pins these modules use. For the Rev1 version of the board the pins
-are:
+For the Alif Semiconductor™ Ensemble™ AI/ML kit boards, the output over UART is wired though port
+J2 (maked PRG_USB). This port exposes two UARTs - one for SE (Secure Enclave) and the other is
+confirable to pass through either UART2 or UART4 using jumpers on J15. For the applications built,
+the high performance core uses UART4, and the high efficiency core uses UART2.
+
+J15 setup is shown below:
 
 ```
-UART2 RX_B on J413 pin 13 (P3_16) ↔ FTDI TX
-UART2 TX_B on J413 pin 14 (P3_17) ↔ FTDI RX
-UART4 RX_B on J412 pin 11 (P3_1)  ↔ FTDI TX
-UART4 TX_B on J412 pin 12 (P3_2)  ↔ FTDI RX
+J15-1-3 & 2-4:  SE UART
+J15-3-5 & 4-6:  UART2
+J15-5-7 & 6-8:  UART2
+J15-7-9 & 8-10: UART4
 ```
 For all other targets, serial is available over USB from primary debug/connection port.
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2021-2023 Arm Limited and/or its
+ * SPDX-FileCopyrightText: Copyright 2021-2024 Arm Limited and/or its
  * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -40,7 +40,6 @@
 #include "BoardInit.hpp"      /* Board initialisation */
 #include "log_macros.h"      /* Logging macros (optional) */
 
-
 #define CROPPED_IMAGE_WIDTH     192
 #define CROPPED_IMAGE_HEIGHT    192
 #define CROPPED_IMAGE_SIZE      (CROPPED_IMAGE_WIDTH * CROPPED_IMAGE_HEIGHT * 3)
@@ -57,7 +56,7 @@ namespace app {
     static uint8_t rawImage[CAMERA_IMAGE_RAW_SIZE] __attribute__((section("raw_buf"), aligned(16)));
 
     /* LCD image buffer */
-    static uint8_t lcdImage[DIMAGE_Y][DIMAGE_X][RGB_BYTES] __attribute__((section("lcd_buf"), aligned(16)));
+    static uint8_t lcdImage[DIMAGE_Y][DIMAGE_X][LCD_BYTES_PER_PIXEL] __attribute__((section("lcd_buf"), aligned(16)));
 
     /* Optional getter function for the model pointer and its size. */
     namespace object_detection {
@@ -137,7 +136,7 @@ int main()
     const size_t imgSz = inputTensor->bytes < CROPPED_IMAGE_SIZE ?
                          inputTensor->bytes : CROPPED_IMAGE_SIZE;
 
-    if (0 != arm::app::CameraCaptureInit(CAMERA_RESOLUTION)) {
+    if (0 != arm::app::CameraCaptureInit()) {
         printf_err("Failed to initalise camera\n");
         return 2;
     }
@@ -151,13 +150,15 @@ int main()
     arm::app::LcdDisplayInit(&arm::app::lcdImage[0][0][0], DIMAGE_X, DIMAGE_Y);
 
     /* LCD initialisation */
-     arm::app::GpioSignal statusLED {arm::app::SignalPort::Port1,
-                                     arm::app::SignalPin::Port1_StatusLED2,
-                                     arm::app::SignalDirection::DirectionOutput};
+    arm::app::GpioSignal statusLED {arm::app::SignalPort::Port12,
+                                    arm::app::SignalPin::Port12_LED0_R,
+                                    arm::app::SignalDirection::DirectionOutput};
 
     /* Start the camera */
-    arm::app::CameraCaptureStart(arm::app::rawImage);
-    arm::app::CameraCaptureWaitForFrame();
+    if (0 != arm::app::CameraCaptureStart(arm::app::rawImage)) {
+        printf_err("Failed to start camera capture\n");
+        return 4;
+    }
 
     auto dstPtr = static_cast<uint8_t*>(inputTensor->data.uint8);
 
@@ -177,14 +178,17 @@ int main()
                                 arm::app::rgbImage,
                                 inputImgCols,
                                 inputImgRows,
-                                arm::app::ColourFilter::BGGR);
+                                arm::app::ColourFilter::GRBG);
+
 
         if (!debayerState) {
             printf_err("Debayering failed\n");
             return 1;
         }
 
-        arm::app::CameraCaptureStart(arm::app::rawImage);
+        if (0 != arm::app::CameraCaptureStart(arm::app::rawImage)) {
+            printf_err("Failed to start camera capture\n");
+        }
 
         /* Run the pre-processing, inference and post-processing. */
         if (!preProcess.DoPreProcess(arm::app::rgbImage, imgSz)) {
@@ -193,7 +197,9 @@ int main()
         }
 
         /* Run inference over this image. */
-        printf("\rImage %" PRIu32 "; ", ++imgCount);
+        if (!(imgCount++ & 0xF)) {
+            printf("\rImage %" PRIu32 "; ", imgCount);
+        }
 
         statusLED.Send(true);
         if (!model.RunInference()) {
@@ -210,14 +216,12 @@ int main()
 
         DrawDetectionBoxes(arm::app::rgbImage, inputImgCols, inputImgRows, results);
 
-        arm::app::RotateClockwise90(arm::app::rgbImage, inputImgCols, inputImgRows);
-
         arm::app::LcdDisplayImage(arm::app::rgbImage,
-                         inputImgCols,
-                         inputImgRows,
-                         arm::app::ColourFormat::RGB,
-                         (DIMAGE_X - inputImgCols)/2,
-                         (DIMAGE_Y - inputImgRows)/2);
+                        inputImgCols,
+                        inputImgRows,
+                        arm::app::ColourFormat::RGB,
+                        (DIMAGE_X - inputImgCols)/2,
+                        (DIMAGE_Y - inputImgRows)/2);
     }
 
     return 0;

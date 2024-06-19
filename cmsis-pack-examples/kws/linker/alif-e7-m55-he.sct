@@ -1,8 +1,9 @@
 #! armclang -E --target=arm-arm-none-eabi -mcpu=cortex-m55 -xc
 ; command above MUST be in first line (no comment above!)
-#include "../../device/alif-ensemble/RTE/Device/AE722F80F55D5TE_M55_HE/M55_HE_map.h"
+#include "../../device/alif-ensemble/RTE/Device/AE722F80F55D5LS_M55_HE/M55_HE_map.h"
 
-;  SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
+
+;  SPDX-FileCopyrightText: Copyright 2022-2024 Arm Limited and/or its
 ;  affiliates <open-source-office@arm.com>
 ;  SPDX-License-Identifier: Apache-2.0
 ;

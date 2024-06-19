@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
+ * SPDX-FileCopyrightText: Copyright 2022-2024 Arm Limited and/or its
  * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -57,9 +57,9 @@ static void cdc_event_handler(uint32_t event)
 static void clear_display_error(void)
 {
     /* Clear the error. */
-    NVIC_DisableIRQ((IRQn_Type)MIPI_DSI_IRQ);
+    NVIC_DisableIRQ((IRQn_Type)DSI_IRQ_IRQn);
     s_display_error = false;
-    NVIC_EnableIRQ((IRQn_Type)MIPI_DSI_IRQ);
+    NVIC_EnableIRQ((IRQn_Type)DSI_IRQ_IRQn);
 }
 
 #if defined(__cplusplus)
@@ -176,8 +176,8 @@ namespace app {
         lcd_params.buffer = lcdImageBuffer;
         lcd_params.height = lcdHeight;
         lcd_params.width = lcdWidth;
-        lcd_params.bytes_per_pixel = RGB_BYTES;
-        lcd_params.bytes = lcdHeight * lcdWidth * RGB_BYTES;
+        lcd_params.bytes_per_pixel = LCD_BYTES_PER_PIXEL;
+        lcd_params.bytes = lcdHeight * lcdWidth * lcd_params.bytes_per_pixel;
 
         return true;
     }
@@ -201,15 +201,31 @@ namespace app {
                             (lcd_params.width * lcd_params.bytes_per_pixel * rowOffset) +
                             (colOffset * lcd_params.bytes_per_pixel);
 
-            for (uint32_t point = 0; point < width * RGB_BYTES; point++) {
-                lcdPtr[point] = 0;
-            }
+            std::memset(lcdPtr, 0, width * lcd_params.bytes_per_pixel);
         }
         if (s_display_error) {
             printf_err("Display error detected\n");
             clear_display_error();
         }
         return true;
+    }
+
+    static inline void RGB888ToRGB565(const uint8_t* rgb888, uint8_t* rgb565)
+    {
+        uint16_t* dst = reinterpret_cast<uint16_t*>(rgb565);
+        *dst = __REV16(
+                (((rgb888[0] >> 3) & 0x1f) << 11) | /* Red */
+                (((rgb888[1] >> 2) & 0x3f) << 5) |  /* Green */
+                (((rgb888[2] >> 3) & 0x1f) << 0));  /* Blue */
+    }
+
+    static inline void BGR888ToRGB565(const uint8_t* bgr888, uint8_t* rgb565)
+    {
+        uint16_t* dst = reinterpret_cast<uint16_t*>(rgb565);
+        *dst = __REV16(
+                (((bgr888[2] >> 3) & 0x1f) << 11) | /* Red */
+                (((bgr888[1] >> 2) & 0x3f) << 5) |  /* Green */
+                (((bgr888[0] >> 3) & 0x1f) << 0));  /* Blue */
     }
 
     bool LcdDisplayImage(
@@ -237,12 +253,12 @@ namespace app {
                 uint8_t* lcdPtr = lcd_params.buffer +
                                 (lcd_params.width * lcd_params.bytes_per_pixel * rowLcd) +
                                 (lcdColOffset * lcd_params.bytes_per_pixel);
-                const uint8_t* rgb_ptr = rgbData + (rgbWidth * RGB_BYTES * rowRgb);
+                const uint8_t* rgbPtr = rgbData + (rgbWidth * RGB_BYTES * rowRgb);
 
-                for (colRgb = 0; colRgb < rgbWidth * RGB_BYTES; colRgb += 3, lcdPtr += 3) {
-                    lcdPtr[2] = *rgb_ptr++;
-                    lcdPtr[1] = *rgb_ptr++;
-                    lcdPtr[0] = *rgb_ptr++;
+                for (colRgb = 0; colRgb < rgbWidth; ++colRgb) {
+                    BGR888ToRGB565(rgbPtr, lcdPtr);
+                    lcdPtr += lcd_params.bytes_per_pixel;
+                    rgbPtr += RGB_BYTES;
                 }
             }
         } else if (rgbFormat == ColourFormat::RGB) {
@@ -250,9 +266,13 @@ namespace app {
                 uint8_t* lcdPtr = lcd_params.buffer +
                                 (lcd_params.width * lcd_params.bytes_per_pixel * rowLcd) +
                                 (lcdColOffset * lcd_params.bytes_per_pixel);
-                const uint8_t* rgb_ptr = rgbData + (rgbWidth * RGB_BYTES * rowRgb);
+                const uint8_t* rgbPtr = rgbData + (rgbWidth * RGB_BYTES * rowRgb);
 
-                memcpy(lcdPtr, rgb_ptr, rgbWidth * RGB_BYTES);
+                for (colRgb = 0; colRgb < rgbWidth; ++colRgb) {
+                    RGB888ToRGB565(rgbPtr, lcdPtr);
+                    lcdPtr += lcd_params.bytes_per_pixel;
+                    rgbPtr += RGB_BYTES;
+                }
             }
         } else {
             printf_err("Unsupported format\n");

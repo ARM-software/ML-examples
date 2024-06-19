@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2023 Arm Limited and/or its
+ * SPDX-FileCopyrightText: Copyright 2023-2024 Arm Limited and/or its
  * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -18,17 +18,21 @@
 #ifndef CAMERA_CAPTURE_HPP
 #define CAMERA_CAPTURE_HPP
 
-#if defined (__cplusplus)
-extern "C" {
-    #include "Camera_Common.h"
-}
-#endif
 #include <cstdint>
+#include "Driver_CPI.h"
+#include "RTE_Device.h"
 
-#define CAMERA_FRAME_WIDTH          560
-#define CAMERA_FRAME_HEIGHT         560
-#define CAMERA_RESOLUTION           CAMERA_RESOLUTION_560x560
+#if !defined(RTE_ARX3A0_CAMERA_SENSOR_FRAME_WIDTH) || !defined(RTE_ARX3A0_CAMERA_SENSOR_FRAME_HEIGHT)
+#error "Camera frame dimensions undefined!"
+#endif
+
+#define CAMERA_FRAME_WIDTH          RTE_ARX3A0_CAMERA_SENSOR_FRAME_WIDTH
+#define CAMERA_FRAME_HEIGHT         RTE_ARX3A0_CAMERA_SENSOR_FRAME_HEIGHT
 #define CAMERA_IMAGE_RAW_SIZE       (CAMERA_FRAME_WIDTH * CAMERA_FRAME_HEIGHT)
+
+#if CAMERA_IMAGE_RAW_SIZE <= 0
+#error "Invalid image size"
+#endif
 
 namespace arm {
 namespace app {
@@ -48,7 +52,7 @@ enum class ColourFilter {
  * @param raw_image Pointer to the raw image that can be populated.
  * @return int: 0 if successful, error code otherwise
  */
-int CameraCaptureInit(ARM_CAMERA_RESOLUTION resolution);
+int CameraCaptureInit();
 
 /**
  * @brief Starts the camera capture (does not wait for it to finish)

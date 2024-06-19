@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
+ * SPDX-FileCopyrightText: Copyright 2022-2024 Arm Limited and/or its
  * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -20,38 +20,39 @@
 extern "C" {
 #endif
 
-#include "gpio.h"
+#include "gpio_wrapper.h"
 
 #include "RTE_Components.h"
 #include "RTE_Device.h"
 #include CMSIS_device_header
 
 #include "Driver_GPIO.h"
-#include "Driver_PINMUX_AND_PINPAD.h"
 #include "log_macros.h"
 
-extern ARM_DRIVER_GPIO Driver_GPIO1;
-extern ARM_DRIVER_GPIO Driver_GPIO2;
-extern ARM_DRIVER_GPIO Driver_GPIO3;
+extern ARM_DRIVER_GPIO Driver_GPIO6;
+extern ARM_DRIVER_GPIO Driver_GPIO7;
+extern ARM_DRIVER_GPIO Driver_GPIO12;
 
 static bool is_gpio_port_valid(uint8_t gpio_port)
 {
-    if (gpio_port < 1 || gpio_port > 3) {
-        printf_err("Invalid GPIO port # %d\n", gpio_port);
-        return false;
+    switch (gpio_port) {
+        case 6: return true;
+        case 7: return true;
+        case 12: return true;
+        default: printf_err("Invalid GPIO port # %d\n", gpio_port);
     }
-    return true;
+    return false;
 }
 
 static ARM_DRIVER_GPIO* get_driver(uint8_t port)
 {
     switch (port) {
-    case 1:
-        return &Driver_GPIO1;
-    case 2:
-        return &Driver_GPIO2;
-    case 3:
-        return &Driver_GPIO3;
+    case 6:
+        return &Driver_GPIO6;
+    case 7:
+        return &Driver_GPIO7;
+    case 12:
+        return &Driver_GPIO12;
     default:
         break;
     }

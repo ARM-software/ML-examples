@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2023 Arm Limited and/or its
+ * SPDX-FileCopyrightText: Copyright 2023-2024 Arm Limited and/or its
  * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -26,13 +26,13 @@ extern "C" {
 
 #include "RTE_Components.h"
 #include "RTE_Device.h"
-#include <Driver_PINMUX_AND_PINPAD.h>
+#include "pinconf.h"
 #include <Driver_SAI.h>
 #include CMSIS_device_header
 
 #include <stdio.h>
 
-#define I2S_ADC       2 /* Audio I2S Controller 2 */
+#define I2S_ADC       3 /* Audio I2S Controller 3 */
 extern ARM_DRIVER_SAI ARM_Driver_SAI_(I2S_ADC);
 ARM_DRIVER_SAI*       s_i2s_drv;
 
@@ -45,9 +45,9 @@ static volatile audio_capture_state s_cap_state;
 
 static void set_capture_completed(bool val)
 {
-    NVIC_DisableIRQ((IRQn_Type)I2S2_IRQ);
+    NVIC_DisableIRQ((IRQn_Type)I2S3_IRQ_IRQn);
     s_cap_state.capCompleted = val;
-    NVIC_EnableIRQ((IRQn_Type)I2S2_IRQ);
+    NVIC_EnableIRQ((IRQn_Type)I2S3_IRQ_IRQn);
 }
 
 static void set_capture_started(bool val)
@@ -77,20 +77,14 @@ static int32_t ConfigureI2SPinMuxPinPad()
 {
     int32_t status = 0;
 
-    // Configure P2_1.I2S2_SDI_A
-    status |= PINMUX_Config(PORT_NUMBER_2, PIN_NUMBER_1, PINMUX_ALTERNATE_FUNCTION_3);
-    status |=
-        PINPAD_Config(PORT_NUMBER_2,
-                      PIN_NUMBER_1,
-                      PAD_FUNCTION_DRIVER_DISABLE_STATE_WITH_PULL_DOWN | PAD_FUNCTION_READ_ENABLE);
+    /** Configure I2S3_B_WS */
+    status |= pinconf_set(PORT_8, PIN_7, PINMUX_ALTERNATE_FUNCTION_2, 0);
 
-    /* Configure P2_3.I2S2_SCLK_A */
-    status |= PINMUX_Config(PORT_NUMBER_2, PIN_NUMBER_3, PINMUX_ALTERNATE_FUNCTION_3);
-    status |= PINPAD_Config(PORT_NUMBER_2, PIN_NUMBER_3, PAD_FUNCTION_READ_ENABLE);
+    /** Configure I2S3_B_SCLK */
+    status |= pinconf_set(PORT_8, PIN_6, PINMUX_ALTERNATE_FUNCTION_2, 0);
 
-    /* Configure P2_3.I2S2_WS_A */
-    status |= PINMUX_Config(PORT_NUMBER_2, PIN_NUMBER_4, PINMUX_ALTERNATE_FUNCTION_2);
-    status |= PINPAD_Config(PORT_NUMBER_2, PIN_NUMBER_4, PAD_FUNCTION_READ_ENABLE);
+    /** Configure I2S3_B_SDI */
+    status |= pinconf_set(PORT_9, PIN_0, PINMUX_ALTERNATE_FUNCTION_2, PADCTRL_READ_ENABLE);
 
     return status;
 }
