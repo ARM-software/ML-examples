@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
+ * SPDX-FileCopyrightText: Copyright 2022-2024 Arm Limited and/or its
  * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 #include "uart_stdout.h"
-#include "Driver_PINMUX_AND_PINPAD.h"
+#include "pinconf.h"
 #include "Driver_USART.h"
 
 #include <stdio.h>
@@ -50,6 +50,33 @@
 extern ARM_DRIVER_USART  USART_Driver_(USART_DRV_NUM);
 #define ptrUSART       (&USART_Driver_(USART_DRV_NUM))
 
+#if USART_DRV_NUM == 1
+    #define PORT_NUM                        PORT_0
+    #define RX_PIN                          PIN_4
+    #define TX_PIN                          PIN_5
+    #define RX_PINMUX_FUNCTION              PINMUX_ALTERNATE_FUNCTION_2
+    #define TX_PINMUX_FUNCTION              PINMUX_ALTERNATE_FUNCTION_2
+    #define RX_PADCTRL                      PADCTRL_READ_ENABLE
+    #define TX_PADCTRL                      0
+#elif USART_DRV_NUM == 2
+    #define PORT_NUM                        PORT_1
+    #define RX_PIN                          PIN_0
+    #define TX_PIN                          PIN_1
+    #define RX_PINMUX_FUNCTION              PINMUX_ALTERNATE_FUNCTION_1
+    #define TX_PINMUX_FUNCTION              PINMUX_ALTERNATE_FUNCTION_1
+    #define RX_PADCTRL                      PADCTRL_READ_ENABLE
+    #define TX_PADCTRL                      0
+#elif USART_DRV_NUM == 4
+    #define PORT_NUM                        PORT_12
+    #define RX_PIN                          PIN_1
+    #define TX_PIN                          PIN_2
+    #define RX_PINMUX_FUNCTION              PINMUX_ALTERNATE_FUNCTION_2
+    #define TX_PINMUX_FUNCTION              PINMUX_ALTERNATE_FUNCTION_2
+    #define RX_PADCTRL                      PADCTRL_READ_ENABLE
+    #define TX_PADCTRL                      0
+#else /* USART_DRV_NUM */
+#endif /* USART_DRV_NUM */
+
 /**
   Initialize pinmux
 
@@ -57,74 +84,11 @@ extern ARM_DRIVER_USART  USART_Driver_(USART_DRV_NUM);
 */
 static int usart_pinmux_init(void)
 {
-    int32_t ret;
-    uint32_t port_config = PAD_FUNCTION_READ_ENABLE |
-                           PAD_FUNCTION_DRIVER_DISABLE_STATE_WITH_PULL_UP;
+    int32_t ret = pinconf_set(PORT_NUM, TX_PIN, TX_PINMUX_FUNCTION, TX_PADCTRL);
 
-#if USART_DRV_NUM == 1	/* Rev A0 - DevKit Alpha */
-    /* PINMUX UART1_A */
-    /* Configure GPIO Pin : P1_4 as UART1_RX_A */
-    ret = PINMUX_Config (PORT_NUMBER_1, PIN_NUMBER_4, PINMUX_ALTERNATE_FUNCTION_1);
-    if(ret != ARM_DRIVER_OK) {
-        return ret;
+    if (ARM_DRIVER_OK == ret) {
+        ret = pinconf_set(PORT_NUM, RX_PIN, RX_PINMUX_FUNCTION, RX_PADCTRL);
     }
-    ret = PINPAD_Config(PORT_NUMBER_1, PIN_NUMBER_4, port_config);
-    if(ret != ARM_DRIVER_OK) {
-        return ret;
-    }
-
-    /* Configure GPIO Pin : P1_5 as UART1_TX_A */
-    ret = PINMUX_Config (PORT_NUMBER_1, PIN_NUMBER_5, PINMUX_ALTERNATE_FUNCTION_1);
-    if(ret != ARM_DRIVER_OK) {
-        return ret;
-    }
-    ret = PINPAD_Config(PORT_NUMBER_1, PIN_NUMBER_5, port_config);
-    if(ret != ARM_DRIVER_OK) {
-        return ret;
-    }
-#elif USART_DRV_NUM == 2	/* Rev A1 - DevKit Beta */
-    /* PINMUX UART2_B */
-    /* Configure GPIO Pin : P3_16 as UART2_RX_B */
-    ret = PINMUX_Config (PORT_NUMBER_3, PIN_NUMBER_16, PINMUX_ALTERNATE_FUNCTION_2);
-    if(ret != ARM_DRIVER_OK) {
-        return ret;
-    }
-    ret = PINPAD_Config(PORT_NUMBER_3, PIN_NUMBER_16, port_config);
-    if(ret != ARM_DRIVER_OK) {
-        return ret;
-    }
-
-    /* Configure GPIO Pin : P3_17 as UART2_TX_B */
-    ret = PINMUX_Config (PORT_NUMBER_3, PIN_NUMBER_17, PINMUX_ALTERNATE_FUNCTION_2);
-    if(ret != ARM_DRIVER_OK) {
-        return ret;
-    }
-    ret = PINPAD_Config(PORT_NUMBER_3, PIN_NUMBER_17, port_config);
-    if(ret != ARM_DRIVER_OK) {
-        return ret;
-    }
-#elif USART_DRV_NUM == 4	/* Rev A1 - DevKit Beta */
-    /* PINMUX UART4_B */
-    /* Configure GPIO Pin : P3_1 as UART4_RX_B */
-    ret = PINMUX_Config (PORT_NUMBER_3, PIN_NUMBER_1, PINMUX_ALTERNATE_FUNCTION_1);
-    if(ret != ARM_DRIVER_OK) {
-        return ret;
-    }
-    ret = PINPAD_Config(PORT_NUMBER_3, PIN_NUMBER_1, port_config);
-    if(ret != ARM_DRIVER_OK) {
-        return ret;
-    }
-
-    /* Configure GPIO Pin : P3_2 as UART4_TX_B */
-    ret = PINMUX_Config (PORT_NUMBER_3, PIN_NUMBER_2, PINMUX_ALTERNATE_FUNCTION_1);
-    if(ret != ARM_DRIVER_OK) {
-        return ret;
-    }
-    ret = PINPAD_Config(PORT_NUMBER_3, PIN_NUMBER_2, port_config);
-    if(ret != ARM_DRIVER_OK) {
-        return ret;
-    }
-#endif
 
     return ret;
 }

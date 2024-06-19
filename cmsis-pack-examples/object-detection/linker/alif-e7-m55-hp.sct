@@ -1,8 +1,8 @@
 #! armclang -E --target=arm-arm-none-eabi -mcpu=cortex-m55 -xc
 ; command above MUST be in first line (no comment above!)
-#include "../../device/alif-ensemble/RTE/Device/AE722F80F55D5TE_M55_HP/M55_HP_map.h"
+#include "../../device/alif-ensemble/RTE/Device/AE722F80F55D5LS_M55_HP/M55_HP_map.h"
 
-;  SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
+;  SPDX-FileCopyrightText: Copyright 2022-2024 Arm Limited and/or its
 ;  affiliates <open-source-office@arm.com>
 ;  SPDX-License-Identifier: Apache-2.0
 ;
@@ -34,7 +34,7 @@
 
 #define RGB_BUFFER_SIZE         (0x00132400) /* ~1.2 MiB of RGB and RAW buffers */
 #define ARENA_SIZE              (0x00196400) /* ~1.6 MiB of arena */
-#define MODEL_BASE              (SRAM0_BASE)
+#define MODEL_BASE              (SRAM0_BASE + 0x100000)
 
 
 #define DTCM_DATA_SIZE          (SRAM3_SIZE - __HEAP_SIZE - __STACK_SIZE)
@@ -67,12 +67,12 @@ LOAD_REGION_0       ROM_BASE                  SRAM2_SIZE
     {}
 }
 
-LOAD_REGION_1 (HEAP_BASE+__HEAP_SIZE) ALIGN 4 DTCM_DATA_SIZE
+LOAD_REGION_1 (HEAP_BASE+__HEAP_SIZE) ALIGN 8 DTCM_DATA_SIZE
 {
     ;-----------------------------------------------------
     ; Remaining DTCM for R/O and R/W data
     ;-----------------------------------------------------
-    hp_dtcm (HEAP_BASE+__HEAP_SIZE) ALIGN 4 DTCM_DATA_SIZE
+    hp_dtcm (HEAP_BASE+__HEAP_SIZE) ALIGN 8 DTCM_DATA_SIZE
     {
         .ANY (+RW +ZI)
         .ANY (+RO-DATA)
@@ -82,7 +82,7 @@ LOAD_REGION_1 (HEAP_BASE+__HEAP_SIZE) ALIGN 4 DTCM_DATA_SIZE
 ;---------------------------------------------------------
 ; Second load region (SRAM0)
 ;---------------------------------------------------------
-LOAD_REGION_2       SRAM0_BASE                  SRAM0_SIZE
+LOAD_REGION_2       MODEL_BASE                  SRAM0_SIZE
 {
     ;-----------------------------------------------------
     ; SRAM0 space for nn model and input vectors

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
+ * SPDX-FileCopyrightText: Copyright 2022-2024 Arm Limited and/or its
  * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -126,7 +126,7 @@ int main()
     const float secondsPerSample = 1.0 / arm::app::audio::MicroNetKwsMFCC::ms_defaultSamplingFreq;
 
     /* Classifier object for results */
-    arm::app::Classifier classifier;
+    arm::app::KwsClassifier classifier;
 
     /* Object to hold label strings. */
     std::vector<std::string> labels;
@@ -207,12 +207,8 @@ int main()
         while (audioDataSlider.HasNext()) {
             const int16_t* inferenceWindow = audioDataSlider.Next();
 
-            /* The first window does not have cache ready. */
-            preProcess.m_audioWindowIndex = audioDataSlider.Index();
-
             /* Run the pre-processing, inference and post-processing. */
-            if (!preProcess.DoPreProcess(
-                    inferenceWindow, arm::app::audio::MicroNetKwsMFCC::ms_defaultSamplingFreq)) {
+            if (!preProcess.DoPreProcess(inferenceWindow, audioDataSlider.Index())) {
                 printf_err("Pre-processing failed.");
                 return 1;
             }

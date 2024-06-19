@@ -1,4 +1,4 @@
-#  SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
+#  SPDX-FileCopyrightText: Copyright 2022-2024 Arm Limited and/or its
 #  affiliates <open-source-office@arm.com>
 #  SPDX-License-Identifier: Apache-2.0
 #
@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/2.0.0/tools/projmgr/schemas/clayer.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/2.4.0/tools/projmgr/schemas/clayer.schema.json
 
 layer:
 
@@ -39,10 +39,10 @@ layer:
 
   components:
     - component: ARM::Device:Definition
-    - component: ARM::Device:Startup&Baremetal
-    - component: ARM::Native Driver:Timeout
-    - component: ARM::Native Driver:SysCounter
-    - component: ARM::Native Driver:SysTimer
+    - component: ARM::Device:Startup&C Startup
+    - component: ARM::Device:Native Driver:Timeout
+    - component: ARM::Device:Native Driver:SysCounter
+    - component: ARM::Device:Native Driver:SysTimer
     - component: Arm::Machine Learning:NPU Support:Ethos-U Driver&Generic U55
       for-context:
         - +AVH-SSE-300-U55

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2023 Arm Limited and/or its
+ * SPDX-FileCopyrightText: Copyright 2023-2024 Arm Limited and/or its
  * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -37,35 +37,34 @@ extern "C" {
 
 #include "RTE_Components.h"
 #include CMSIS_device_header
-#include "Driver_Camera_Controller.h"
-#include "Driver_Common.h"
+#include "Driver_CPI.h"
 #include "Driver_GPIO.h"
-#include "Driver_PINMUX_AND_PINPAD.h"
+#include "pinconf.h"
 #include "log_macros.h"
 
-extern ARM_DRIVER_GPIO Driver_GPIO1;
-extern ARM_DRIVER_CAMERA_CONTROLLER Driver_CAMERA0;
+extern ARM_DRIVER_CPI Driver_CPI;
 
 static struct arm_camera_status {
     bool frame_complete: 1;
     bool camera_error: 1;
 } camera_status;
 
+#define CPI_CAMERA_ERR_MASK (ARM_CPI_EVENT_ERR_HARDWARE |                   \
+                             ARM_CPI_EVENT_MIPI_CSI2_ERROR |                \
+                             ARM_CPI_EVENT_ERR_CAMERA_OUTPUT_FIFO_OVERRUN | \
+                             ARM_CPI_EVENT_ERR_CAMERA_INPUT_FIFO_OVERRUN)
+
+#define CPI_FRAME_DONE_MASK (ARM_CPI_EVENT_CAMERA_CAPTURE_STOPPED)
+
+#define CPI_ALL_EVENTS_MASK (CPI_CAMERA_ERR_MASK | CPI_FRAME_DONE_MASK)
+
 static void camera_event_cb(uint32_t event)
 {
-    if(event & ARM_CAMERA_CONTROLLER_EVENT_CAMERA_FRAME_VSYNC_DETECTED) {
+    if(event & CPI_FRAME_DONE_MASK ) {
         camera_status.frame_complete = true;
     }
 
-    if(event & ARM_CAMERA_CONTROLLER_EVENT_ERR_CAMERA_FIFO_OVERRUN) {
-        camera_status.camera_error = true;
-    }
-
-    if(event & ARM_CAMERA_CONTROLLER_EVENT_ERR_CAMERA_FIFO_UNDERRUN) {
-        camera_status.camera_error = true;
-    }
-
-    if(event & ARM_CAMERA_CONTROLLER_EVENT_MIPI_CSI2_ERROR) {
+    if(event & CPI_CAMERA_ERR_MASK) {
         camera_status.camera_error = true;
     }
 }
@@ -78,38 +77,50 @@ __attribute__((noreturn)) static void CameraErrorLoop(const char* errorStr)
 {
     printf_err("%s\n", errorStr);
     while(true) {
-        Driver_GPIO1.SetValue(PIN_NUMBER_14, GPIO_PIN_OUTPUT_STATE_LOW);
-        PMU_delay_loop_us(300000);
-        Driver_GPIO1.SetValue(PIN_NUMBER_14, GPIO_PIN_OUTPUT_STATE_HIGH);
-        PMU_delay_loop_us(300000);
+        __WFI();
     }
 }
 
-int arm::app::CameraCaptureInit(ARM_CAMERA_RESOLUTION resolution)
+int arm::app::CameraCaptureInit()
 {
-    if (0 != Driver_CAMERA0.Initialize(resolution, camera_event_cb)) {
+    int32_t ret = ARM_DRIVER_ERROR;
+
+    if (ARM_DRIVER_OK != (ret = Driver_CPI.Initialize(camera_event_cb))) {
         CameraErrorLoop("Camera initialisation failed.\n");
+        return ret;
     }
 
-    if (0 != Driver_CAMERA0.PowerControl(ARM_POWER_FULL)) {
+    if (ARM_DRIVER_OK != (ret = Driver_CPI.PowerControl(ARM_POWER_FULL))) {
         CameraErrorLoop("Camera power up failed.\n");
+        return ret;
     }
 
-    if (0 != Driver_CAMERA0.Control(CAMERA_SENSOR_CONFIGURE, resolution)) {
+    if (ARM_DRIVER_OK != (ret = Driver_CPI.Control(CPI_CONFIGURE, 0))) {
         CameraErrorLoop("Camera configuration failed.\n");
+        return ret;
+    }
+
+    if (ARM_DRIVER_OK != (ret = Driver_CPI.Control(CPI_CAMERA_SENSOR_CONFIGURE, 0))) {
+        CameraErrorLoop("Camera configuration failed.\n");
+        return ret;
+    }
+
+    if (ARM_DRIVER_OK != (ret = Driver_CPI.Control(CPI_EVENTS_CONFIGURE, CPI_ALL_EVENTS_MASK))) {
+        CameraErrorLoop("Camera configuration failed.\n");
+        return ret;
     }
 
     info("Camera initialised.\n");
-    Driver_GPIO1.SetValue(PIN_NUMBER_14, GPIO_PIN_OUTPUT_STATE_HIGH);
-    return 0;
+    return ret;
 }
 
 static inline void CameraStatusReset()
 {
-    NVIC_DisableIRQ((IRQn_Type) CAMERA0_IRQ);
+    NVIC_DisableIRQ((IRQn_Type) CAM_IRQ_IRQn);
     camera_status.frame_complete = false;
     camera_status.camera_error = false;
-    NVIC_EnableIRQ((IRQn_Type) CAMERA0_IRQ);
+    NVIC_ClearPendingIRQ((IRQn_Type) CAM_IRQ_IRQn);
+    NVIC_EnableIRQ((IRQn_Type) CAM_IRQ_IRQn);
 }
 
 int arm::app::CameraCaptureStart(uint8_t* rawImage)
@@ -118,19 +129,26 @@ int arm::app::CameraCaptureStart(uint8_t* rawImage)
 
     /* NOTE: This is a blocking call at the moment; doesn't need to be.
      *       It slows down the whole pipeline considerably. */
-    Driver_CAMERA0.CaptureFrame(rawImage);
-    return 0;
+    return Driver_CPI.CaptureFrame(rawImage);
 }
 
 void arm::app::CameraCaptureWaitForFrame()
 {
-    while (camera_status.frame_complete != true) {
+    trace("Waiting for camera frame\n");
+    while (!camera_status.frame_complete && !camera_status.camera_error) {
         __WFI();
+    }
+
+    if (camera_status.frame_complete) {
+        trace("Frame complete signal received\n");
     }
 
     if (camera_status.camera_error) {
         printf_err("Camera error detected!\n");
+        Driver_CPI.Stop();
     }
+
+    CameraStatusReset();
 }
 
 /**

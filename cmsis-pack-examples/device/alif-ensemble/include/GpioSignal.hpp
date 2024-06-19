@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
+ * SPDX-FileCopyrightText: Copyright 2022-2024 Arm Limited and/or its
  * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -24,7 +24,7 @@
 extern "C" {
 #endif // #if defined(__cplusplus)
 
-#include "gpio.h"
+#include "gpio_wrapper.h"
 
 #if defined(__cplusplus)
 }
@@ -37,14 +37,17 @@ namespace app {
     enum class SignalDirection { DirectionOutput = 0, DirectionInput = 1, DirectionInvalid = 2 };
 
     /* Valid GPIO port numbers */
-    enum class SignalPort { Port1 = 1, Port2 = 2, Port3 = 3 };
+    enum class SignalPort { Port6 = 6, Port7 = 7, Port12 = 12 };
 
     /* Valid and used GPIO pin number definitions */
     enum class SignalPin {
-        Port1_UserButton1 = 12, /* Wired to SW2 on the board. */
-        Port3_UserButton2 = 4,  /* Wired to SW3 on the board. */
-        Port1_StatusLED1 = 14,  /* LED1 - green. */
-        Port1_StatusLED2 = 15   /* LED2 - orange. */
+        Port12_LED0_R = 3,  /* LED0 - red. */
+        Port07_LED0_G = 4,  /* LED0 - green. */
+        Port12_LED0_B = 0,  /* LED0 - blue. */
+
+        Port06_LED1_R = 2,  /* LED0 - red. */
+        Port06_LED1_G = 4,  /* LED0 - green. */
+        Port06_LED1_B = 6   /* LED0 - blue. */
     };
 
     /**

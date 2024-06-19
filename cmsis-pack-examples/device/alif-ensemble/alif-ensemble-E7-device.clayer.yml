@@ -1,4 +1,4 @@
-#  SPDX-FileCopyrightText: Copyright 2023 Arm Limited and/or its
+#  SPDX-FileCopyrightText: Copyright 2023-2024 Arm Limited and/or its
 #  affiliates <open-source-office@arm.com>
 #  SPDX-License-Identifier: Apache-2.0
 #
@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/2.0.0/tools/projmgr/schemas/clayer.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/2.4.0/tools/projmgr/schemas/clayer.schema.json
 
 layer:
   description: Alif Ensemble E7 ML islands' CPU device layer (High-Performance and High-Efficiency Arm Cortex-M55 CPUs).
@@ -26,7 +26,8 @@ layer:
       files:
         - file: ./src/GpioSignal.cpp
         - file: ./include/GpioSignal.hpp
-        - file: ./src/gpio.c
+        - file: ./src/gpio_wrapper.c
+        - file: ./src/gpio_wrapper.h
 
     - group: AudioHelpers
       for-context: +Alif-E7-M55-HE
@@ -64,11 +65,10 @@ layer:
     - component: AlifSemiconductor::Device:SOC Peripherals:USART
     - component: AlifSemiconductor::Device:SOC Peripherals:GPIO
     - component: AlifSemiconductor::Device:SOC Peripherals:PINCONF
+    - component: AlifSemiconductor::Device:SOC Peripherals:MHU
     - component: AlifSemiconductor::Device:Startup
     - component: ARM::CMSIS Driver:USART
     - component: ARM::CMSIS Driver:USART:Custom
-    - component: AlifSemiconductor::Device:SE Services:SE RunTime services&Source
-    - component: AlifSemiconductor::Device:SE Services:MHU Driver
 
     - component: AlifSemiconductor::Device:SOC Peripherals:DMA
       for-context: +Alif-E7-M55-HE
@@ -79,7 +79,7 @@ layer:
     - component: AlifSemiconductor::Device:SOC Peripherals:I3C
       for-context: +Alif-E7-M55-HP
 
-    - component: AlifSemiconductor::Device:SOC Peripherals:CDC200
+    - component: AlifSemiconductor::Device:SOC Peripherals:CDC
       for-context: +Alif-E7-M55-HP
 
     - component: AlifSemiconductor::Device:SOC Peripherals:MIPI CSI2
@@ -88,7 +88,10 @@ layer:
     - component: AlifSemiconductor::Device:SOC Peripherals:MIPI DSI
       for-context: +Alif-E7-M55-HP
 
-    - component: AlifSemiconductor::Device:SOC Peripherals:CAMERA Controller
+    - component: AlifSemiconductor::Device:SOC Peripherals:I2C
+      for-context: +Alif-E7-M55-HP
+
+    - component: AlifSemiconductor::Device:SOC Peripherals:CPI
       for-context: +Alif-E7-M55-HP
 
     - component: AlifSemiconductor::BSP:External peripherals:ILI9806E LCD panel
@@ -96,3 +99,11 @@ layer:
 
     - component: AlifSemiconductor::BSP:External peripherals:CAMERA Sensor ARX3A0
       for-context: +Alif-E7-M55-HP
+
+    - component: AlifSemiconductor::Device:SE runtime Services:core
+      for-context: +Alif-E7-M55-HP
+
+    - component: AlifSemiconductor::Device:SE runtime Services:Initialization Helper
+      for-context: +Alif-E7-M55-HP
+
+

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its
+ * SPDX-FileCopyrightText: Copyright 2022-2024 Arm Limited and/or its
  * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,6 +25,14 @@
 #define DIMAGE_X            RTE_PANEL_HACTIVE_TIME
 #define DIMAGE_Y            RTE_PANEL_VACTIVE_LINE
 #define RGB_BYTES           3
+
+#if RTE_CDC200_PIXEL_FORMAT==(1)
+    #define LCD_BYTES_PER_PIXEL     (3)
+#elif RTE_CDC200_PIXEL_FORMAT==(2)
+    #define LCD_BYTES_PER_PIXEL     (2)
+#else // LCD_BYTES_PER_PIXEL
+    #error "Unsupported RTE_CDC200_PIXEL_FORMAT."
+#endif // LCD_BYTES_PER_PIXEL
 
 namespace arm {
 namespace app {

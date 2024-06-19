@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2023 Arm Limited and/or its
+ * SPDX-FileCopyrightText: Copyright 2023-2024 Arm Limited and/or its
  * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,11 +25,16 @@ extern "C" {
 #include "RTE_Components.h"
 #include "RTE_Device.h"
 #include CMSIS_device_header
-#include "Driver_PINMUX_AND_PINPAD.h"
+#include "pinconf.h"
 #include "Driver_Common.h"
 #include "ethosu_driver.h"
 #include "uart_stdout.h"
+#include "log_macros.h"
 #include <stdio.h>
+
+#if defined(M55_HP)
+#include "se_services_port.h"
+#endif /* defined(M55_HP) */
 
 static struct ethosu_driver npuDriver;
 static void npu_irq_handler(void)
@@ -43,9 +48,7 @@ static void npu_irq_handler(void)
 
 bool NpuInit()
 {
-    /* Base address is 0x4000E1000; interrupt number is 55. */
-    constexpr uint32_t npuBaseOffset = 0xE1000;
-    const void *npuBaseAddr = reinterpret_cast<void*>(LOCAL_PERIPHERAL_BASE + npuBaseOffset);
+    void * const npuBaseAddr = reinterpret_cast<void*>(LOCAL_NPU_BASE);
 
     /*  Initialize Ethos-U NPU driver. */
     if (ethosu_init(&npuDriver, /* Arm Ethos-U device driver pointer  */
@@ -58,8 +61,8 @@ bool NpuInit()
         return false;
     }
 
-    NVIC_SetVector(NPU_IRQ, (uint32_t) &npu_irq_handler);
-    NVIC_EnableIRQ(NPU_IRQ);
+    NVIC_SetVector(LOCAL_NPU_IRQ_IRQn, (uint32_t) &npu_irq_handler);
+    NVIC_EnableIRQ(LOCAL_NPU_IRQ_IRQn);
 
     return true;
 }
@@ -82,63 +85,86 @@ static void CpuCacheEnable(void)
 
 static int I3CPinsInit(void)
 {
-    /* Configure GPIO Pin : P3_8 as I3C_SDA_B */
-    int ret = PINMUX_Config(PORT_NUMBER_3, PIN_NUMBER_8, PINMUX_ALTERNATE_FUNCTION_3);
-    if(ret != ARM_DRIVER_OK) {
+    int ret = pinconf_set(PORT_7, PIN_2,
+                          PINMUX_ALTERNATE_FUNCTION_5,
+                          PADCTRL_READ_ENABLE | PADCTRL_DRIVER_DISABLED_PULL_UP);
+
+    if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    /* Configure GPIO Pin : P3_9 as I3C_SCL_B */
-    ret = PINMUX_Config(PORT_NUMBER_3, PIN_NUMBER_9, PINMUX_ALTERNATE_FUNCTION_4);
-    if(ret != ARM_DRIVER_OK) {
-        return ret;
-    }
+    ret = pinconf_set(PORT_7, PIN_3,
+                      PINMUX_ALTERNATE_FUNCTION_5,
+                      PADCTRL_READ_ENABLE | PADCTRL_DRIVER_DISABLED_PULL_UP);
 
-    /* Pin-Pad P3_8 as I3C_SDA_B
-     * Pad function: PAD_FUNCTION_READ_ENABLE |
-     *  PAD_FUNCTION_DRIVER_DISABLE_STATE_WITH_PULL_UP |
-     *  PAD_FUNCTION_DRIVER_OPEN_DRAIN
-     */
-    ret = PINPAD_Config(PORT_NUMBER_3, PIN_NUMBER_8, PAD_FUNCTION_READ_ENABLE |
-            PAD_FUNCTION_DRIVER_DISABLE_STATE_WITH_PULL_UP |
-            PAD_FUNCTION_DRIVER_OPEN_DRAIN);
-    if(ret != ARM_DRIVER_OK) {
-        return ret;
-    }
-
-    /* Pin-Pad P3_9 as I3C_SCL_B
-     * Pad function: PAD_FUNCTION_READ_ENABLE |
-     *  PAD_FUNCTION_DRIVER_DISABLE_STATE_WITH_PULL_UP |
-     *  PAD_FUNCTION_DRIVER_OPEN_DRAIN
-     */
-    ret = PINPAD_Config(PORT_NUMBER_3, PIN_NUMBER_9,PAD_FUNCTION_READ_ENABLE |
-            PAD_FUNCTION_DRIVER_DISABLE_STATE_WITH_PULL_UP |
-            PAD_FUNCTION_DRIVER_OPEN_DRAIN);
-    if(ret != ARM_DRIVER_OK) {
-        return ret;
-    }
-
-    return 0;
+    return ret;
 }
 
 static int CameraPinsInit(void)
 {
-    /* @Note: Below GPIO pins are configured for Camera.
-     *
-     *         For ASIC A1 CPU Board
-     *         - P2_7 as CAM_XVCLK_B
-     */
-#if RTE_SILICON_REV_A1
+    return pinconf_set(PORT_0, PIN_3, PINMUX_ALTERNATE_FUNCTION_6, 0);
+}
 
-    /* Configure GPIO Pin : P2_7 as CAM_XVCLK_B */
-    int ret = PINMUX_Config(PORT_NUMBER_2, PIN_NUMBER_7, PINMUX_ALTERNATE_FUNCTION_6);
+static uint32_t CameraClocksEnable(void)
+{
+    uint32_t error_code = SERVICES_REQ_SUCCESS;
+    uint32_t service_error_code;
+    run_profile_t runp = {0};
 
-    if(ret != ARM_DRIVER_OK) {
-        return ret;
+    /* Initialize the SE services */
+    se_services_port_init();
+
+    /* Enable MIPI Clocks */
+    error_code = SERVICES_clocks_enable_clock(se_services_s_handle, CLKEN_CLK_100M, true, &service_error_code);
+    if(error_code != SERVICES_REQ_SUCCESS) {
+        printf_err("SE: MIPI 100MHz clock enable = %d\n", error_code);
+        return error_code;
     }
-#endif /* RTE_SILICON_REV_A1 */
 
+    error_code = SERVICES_clocks_enable_clock(se_services_s_handle, CLKEN_HFOSC, true, &service_error_code);
+    if(error_code != SERVICES_REQ_SUCCESS) {
+        printf_err("SE: MIPI 38.4Mhz(HFOSC) clock enable = %d\n", error_code);
+        goto error_disable_100mhz_clk;
+    }
+
+    /* Get the current run configuration from SE */
+    error_code = SERVICES_get_run_cfg(se_services_s_handle,
+                                      &runp,
+                                      &service_error_code);
+    if (error_code != SERVICES_REQ_SUCCESS) {
+        printf_err("\r\nSE: get_run_cfg error = %d\n", error_code);
+        goto error_disable_hfosc_clk;
+    }
+
+    runp.memory_blocks = MRAM_MASK | SRAM0_MASK | SRAM1_MASK;
+
+    runp.phy_pwr_gating = MIPI_PLL_DPHY_MASK | MIPI_TX_DPHY_MASK | MIPI_RX_DPHY_MASK | LDO_PHY_MASK;
+
+    /* Set the new run configuration */
+    error_code = SERVICES_set_run_cfg(se_services_s_handle,
+                                      &runp,
+                                      &service_error_code);
+    if(error_code) {
+        printf_err("\r\nSE: set_run_cfg error = %d\n", error_code);
+        goto error_disable_hfosc_clk;
+    }
+
+    info("Camera clocks enabled.\n");
     return 0;
+
+error_disable_hfosc_clk:
+    error_code = SERVICES_clocks_enable_clock(se_services_s_handle, CLKEN_HFOSC, false, &service_error_code);
+    if (error_code != SERVICES_REQ_SUCCESS) {
+        printf_err("SE: MIPI 38.4Mhz(HFOSC)  clock disable = %d\n", error_code);
+    }
+
+error_disable_100mhz_clk:
+    error_code = SERVICES_clocks_enable_clock(se_services_s_handle, CLKEN_CLK_100M, false, &service_error_code);
+    if (error_code != SERVICES_REQ_SUCCESS) {
+        printf_err("SE: MIPI 100MHz clock disable = %d\n", error_code);
+    }
+
+    return 1;
 }
 
 #endif /* defined (M55_HP) */
@@ -159,6 +185,11 @@ void BoardInit(void)
         printf("CameraPinsInit failed\n");
         return;
     }
+
+    if (0 != CameraClocksEnable()) {
+        printf("CameraClocksEnable failed\n");
+        return;
+    }
 #endif /* defined (M55_HP) */
 
 #if defined(ETHOSU_ARCH) && (ETHOSU_ARCH==u55)
@@ -169,5 +200,7 @@ void BoardInit(void)
 
     /* Enable the CPU Cache */
     CpuCacheEnable();
+
+    printf("Board init: completed\n");
     return;
 }
