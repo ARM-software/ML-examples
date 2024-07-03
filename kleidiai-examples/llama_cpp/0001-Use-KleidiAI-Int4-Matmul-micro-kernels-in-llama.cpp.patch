@@ -3,9 +3,9 @@ From: Gian Marco Iodice <gianmarco.iodice@arm.com>
 Date: Fri, 14 Jun 2024 14:55:47 +0100
 Subject: [PATCH] Use KleidiAI Int4 Matmul micro-kernels in llama.cpp
 
-- Update CMake file to fetch the Int4 micro-kernels from the KleidiAI
+* Update CMake file to fetch the Int4 micro-kernels from the KleidiAI
 repository
-- Implement a KleidiAI backend for llama.cpp
+* Implement a KleidiAI backend for llama.cpp
 
 Signed-off-by: Gian Marco Iodice <gianmarco.iodice@arm.com>
 ---
@@ -20,7 +20,7 @@ Signed-off-by: Gian Marco Iodice <gianmarco.iodice@arm.com>
  create mode 100644 ggml-kleidiai.h
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 08481334..5c0458e9 100644
+index 08481334..99382573 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -548,6 +548,53 @@ if (LLAMA_VULKAN)
@@ -31,9 +31,9 @@ index 08481334..5c0458e9 100644
 +
 +    # Fetch KleidiAI sources:
 +    include(FetchContent)
-+    set(KLEIDIAI_COMMIT_SHA "b0911c80b35e41dc9c22075a63e83c217fd0a106")
++    set(KLEIDIAI_COMMIT_SHA "d6c3b987e445e5e1daeda94e3c2888efaa07ca50")
 +    set(KLEIDIAI_DOWNLOAD_URL "https://gitlab.arm.com/kleidi/kleidiai/-/archive/${KLEIDIAI_COMMIT_SHA}/kleidiai-${KLEIDIAI_COMMIT_SHA}.tar.gz")
-+    set(KLEIDIAI_ARCHIVE_MD5  "8b54226586eb18957c374a6d1434f4f2")
++    set(KLEIDIAI_ARCHIVE_MD5  "8e94e73bfa00ea038fd6e3d13f59080f")
 +
 +    if (POLICY CMP0135)
 +        cmake_policy(SET CMP0135 NEW)
@@ -86,7 +86,7 @@ index 08481334..5c0458e9 100644
  
  target_include_directories(ggml PUBLIC . ${LLAMA_EXTRA_INCLUDES})
 diff --git a/ggml-alloc.c b/ggml-alloc.c
-index bd367c42..ac099392 100644
+index bd367c42..ed4ce0ae 100644
 --- a/ggml-alloc.c
 +++ b/ggml-alloc.c
 @@ -9,6 +9,10 @@
@@ -105,12 +105,12 @@ index bd367c42..ac099392 100644
          if (t->data == NULL && t->view_src == NULL) {
              this_size = GGML_PAD(ggml_backend_buft_get_alloc_size(buft, t), alignment);
 +#if defined(GGML_USE_KLEIDIAI)
-+            // Temporary solution to allocate more memore if needed for packing the weights.
++            // Temporary solution to allocate more memory if needed for packing the weights.
 +            // This method is not sufficient as we assume that the weights are for matmul only.
 +            // However, weights could belong to other operations
-+            const int64_t iai_diff = (ggml_kai_get_const_workspace_size_matmul(t) - this_size);
-+            if (iai_diff > 0) {
-+                this_size += iai_diff;
++            const int64_t kai_diff = (ggml_kai_get_const_workspace_size_matmul(t) - this_size);
++            if (kai_diff > 0) {
++                this_size += kai_diff;
 +            }
 +#endif
          }
