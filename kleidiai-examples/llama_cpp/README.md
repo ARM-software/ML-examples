@@ -97,7 +97,16 @@ mkdir build && cd build
 
 export NDK_PATH="your-android-ndk-path"
 
-cmake -DLLAMA_KLEIDIAI=ON -DLLAMA_OPENMP=OFF -DCMAKE_TOOLCHAIN_FILE=${NDK_PATH}/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-23 -DCMAKE_C_FLAGS=-march=armv8.2a+i8mm+dotprod -DCMAKE_CXX_FLAGS=-march=armv8.2a+i8mm+dotprod ..
+cmake -DLLAMA_KLEIDIAI=ON -DCMAKE_TOOLCHAIN_FILE=${NDK_PATH}/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-23 -DCMAKE_C_FLAGS=-march=armv8.2a+i8mm+dotprod -DCMAKE_CXX_FLAGS=-march=armv8.2a+i8mm+dotprod ..
+
+make -j4
+```
+Build the llama.cpp project for Linux:
+
+```bash
+mkdir build && cd build
+
+cmake -DCMAKE_C_FLAGS=-march=armv8.2-a+dotprod+i8mm -DCMAKE_CXX_FLAGS=-march=armv8.2-a+dotprod+i8mm -DLLAMA_KLEIDIAI=ON
 
 make -j4
 ```
