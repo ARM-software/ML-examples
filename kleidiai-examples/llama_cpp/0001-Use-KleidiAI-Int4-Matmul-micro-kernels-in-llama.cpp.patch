@@ -1,21 +1,16 @@
-From 3eaa2789f0099dbdd2f36efce4d1eeb6edfda033 Mon Sep 17 00:00:00 2001
-From: Gian Marco Iodice <gianmarco.iodice@arm.com>
-Date: Fri, 14 Jun 2024 14:55:47 +0100
-Subject: [PATCH] Use KleidiAI Int4 Matmul micro-kernels in llama.cpp
+From 453e52a763043e95b23c88176792e065377189ad Mon Sep 17 00:00:00 2001
+From: Charles Xu <chaxu01@e125126.arm.com>
+Date: Tue, 9 Jul 2024 08:49:27 +0200
+Subject: [PATCH] Updated to be able to build on Linux
 
-* Update CMake file to fetch the Int4 micro-kernels from the KleidiAI
-repository
-* Implement a KleidiAI backend for llama.cpp
-
-Signed-off-by: Gian Marco Iodice <gianmarco.iodice@arm.com>
 ---
  CMakeLists.txt    |  48 ++++
  ggml-alloc.c      |  13 ++
- ggml-kleidiai.cpp | 561 ++++++++++++++++++++++++++++++++++++++++++++++
+ ggml-kleidiai.cpp | 560 ++++++++++++++++++++++++++++++++++++++++++++++
  ggml-kleidiai.h   |  45 ++++
  ggml.c            |  27 +++
  llama.cpp         |  19 +-
- 6 files changed, 712 insertions(+), 1 deletion(-)
+ 6 files changed, 711 insertions(+), 1 deletion(-)
  create mode 100644 ggml-kleidiai.cpp
  create mode 100644 ggml-kleidiai.h
 
@@ -118,10 +113,10 @@ index bd367c42..ed4ce0ae 100644
          if (this_size > max_size) {
 diff --git a/ggml-kleidiai.cpp b/ggml-kleidiai.cpp
 new file mode 100644
-index 00000000..9e343c86
+index 00000000..aa53086d
 --- /dev/null
 +++ b/ggml-kleidiai.cpp
-@@ -0,0 +1,561 @@
+@@ -0,0 +1,560 @@
 +/*
 + * Copyright (c) 2024 Arm Limited.
 + *
@@ -146,7 +141,7 @@ index 00000000..9e343c86
 + * SOFTWARE.
 + */
 +
-+#if defined(__aarch64__) && defined(__ANDROID__)
++#if defined(__aarch64__) && (defined(__ANDROID__) || defined(__linux__))
 +#include "ggml-kleidiai.h"
 +
 +#include "ggml.h"
@@ -681,8 +676,7 @@ index 00000000..9e343c86
 +    }
 +    extra_mem_idx = 0;
 +}
-+
-+#endif // defined(__aarch64__) && defined(__ANDROID__)
++#endif // defined(__aarch64__) && (defined(__ANDROID__) || defined(__linux__))
 diff --git a/ggml-kleidiai.h b/ggml-kleidiai.h
 new file mode 100644
 index 00000000..a4cdf1fb
@@ -846,5 +840,5 @@ index 05591aa4..735dde04 100644
      }
  
 -- 
-2.25.1
+2.34.1
 
