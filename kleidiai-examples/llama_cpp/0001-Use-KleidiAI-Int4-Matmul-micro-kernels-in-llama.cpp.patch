@@ -1,8 +1,13 @@
-From 453e52a763043e95b23c88176792e065377189ad Mon Sep 17 00:00:00 2001
-From: Charles Xu <chaxu01@e125126.arm.com>
-Date: Tue, 9 Jul 2024 08:49:27 +0200
-Subject: [PATCH] Updated to be able to build on Linux
+From 617486784d5394fbb54f4d99a4860a050318a4e8 Mon Sep 17 00:00:00 2001
+From: Gian Marco Iodice <gianmarco.iodice@arm.com>
+Date: Tue, 16 Jul 2024 17:28:50 +0100
+Subject: [PATCH] Use KleidiAI Int4 Matmul micro-kernels in llama.cpp
 
+- Update CMake file to fetch the Int4 micro-kernels from the KleidiAI
+repository
+- Implement a KleidiAI backend for llama.cpp
+
+Signed-off-by: Gian Marco Iodice <gianmarco.iodice@arm.com>
 ---
  CMakeLists.txt    |  48 ++++
  ggml-alloc.c      |  13 ++
@@ -15,7 +20,7 @@ Subject: [PATCH] Updated to be able to build on Linux
  create mode 100644 ggml-kleidiai.h
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 08481334..99382573 100644
+index 08481334..22504ad2 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -548,6 +548,53 @@ if (LLAMA_VULKAN)
@@ -26,9 +31,9 @@ index 08481334..99382573 100644
 +
 +    # Fetch KleidiAI sources:
 +    include(FetchContent)
-+    set(KLEIDIAI_COMMIT_SHA "d6c3b987e445e5e1daeda94e3c2888efaa07ca50")
++    set(KLEIDIAI_COMMIT_SHA "187d9aacddfb678c09f0831b18f87401b1b353c3")
 +    set(KLEIDIAI_DOWNLOAD_URL "https://gitlab.arm.com/kleidi/kleidiai/-/archive/${KLEIDIAI_COMMIT_SHA}/kleidiai-${KLEIDIAI_COMMIT_SHA}.tar.gz")
-+    set(KLEIDIAI_ARCHIVE_MD5  "8e94e73bfa00ea038fd6e3d13f59080f")
++    set(KLEIDIAI_ARCHIVE_MD5  "4a1eee013cb20464b534cb01212d19c9")
 +
 +    if (POLICY CMP0135)
 +        cmake_policy(SET CMP0135 NEW)
@@ -113,7 +118,7 @@ index bd367c42..ed4ce0ae 100644
          if (this_size > max_size) {
 diff --git a/ggml-kleidiai.cpp b/ggml-kleidiai.cpp
 new file mode 100644
-index 00000000..aa53086d
+index 00000000..6800f63e
 --- /dev/null
 +++ b/ggml-kleidiai.cpp
 @@ -0,0 +1,560 @@
@@ -171,8 +176,8 @@ index 00000000..aa53086d
 +static bool g_kai_loaded = false;
 +
 +// Basic backend memory allocator
-+static uint8_t* extra_mem[MAX_EXTRA_BUFFERS];
-+static int32_t extra_mem_idx = 0;
++static uint8_t* g_extra_mem[MAX_EXTRA_BUFFERS];
++static int32_t g_extra_mem_idx = 0;
 +
 +typedef void (*kai_matmul_func_t)(const struct ggml_compute_params * params, const ggml_tensor * src0, const ggml_tensor * src1, ggml_tensor * dst);
 +
@@ -546,7 +551,7 @@ index 00000000..aa53086d
 +            free(reshaped_data);
 +            cur->extra = cur->data;
 +#else
-+            extra_mem[extra_mem_idx++] = reshaped_data;
++            g_extra_mem[g_extra_mem_idx++] = reshaped_data;
 +            cur->extra = reshaped_data;
 +#endif
 +        } else {
@@ -671,10 +676,10 @@ index 00000000..aa53086d
 +}
 +
 +GGML_CALL void ggml_kai_free_extra_mem(void) {
-+    for(int32_t i = extra_mem_idx - 1; i >= 0; i--) {
-+        free(extra_mem[i]);
++    for(int32_t i = g_extra_mem_idx - 1; i >= 0; i--) {
++        free(g_extra_mem[i]);
 +    }
-+    extra_mem_idx = 0;
++    g_extra_mem_idx = 0;
 +}
 +#endif // defined(__aarch64__) && (defined(__ANDROID__) || defined(__linux__))
 diff --git a/ggml-kleidiai.h b/ggml-kleidiai.h
@@ -840,5 +845,5 @@ index 05591aa4..735dde04 100644
      }
  
 -- 
-2.34.1
+2.25.1
 
