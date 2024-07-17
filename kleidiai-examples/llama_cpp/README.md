@@ -101,12 +101,12 @@ cmake -DLLAMA_KLEIDIAI=ON -DCMAKE_TOOLCHAIN_FILE=${NDK_PATH}/build/cmake/android
 
 make -j4
 ```
-Build the llama.cpp project for Linux:
+Build the llama.cpp project for Linux®:
 
 ```bash
 mkdir build && cd build
 
-cmake -DCMAKE_C_FLAGS=-march=armv8.2-a+dotprod+i8mm -DCMAKE_CXX_FLAGS=-march=armv8.2-a+dotprod+i8mm -DLLAMA_KLEIDIAI=ON
+cmake -DLLAMA_KLEIDIAI=ON -DCMAKE_C_FLAGS=-march=armv8.2-a+dotprod+i8mm -DCMAKE_CXX_FLAGS=-march=armv8.2-a+dotprod+i8mm ..
 
 make -j4
 ```
