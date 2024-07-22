@@ -97,7 +97,7 @@ mkdir build && cd build
 
 export NDK_PATH="your-android-ndk-path"
 
-cmake -DLLAMA_KLEIDIAI=ON -DCMAKE_TOOLCHAIN_FILE=${NDK_PATH}/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-23 -DCMAKE_C_FLAGS=-march=armv8.2a+i8mm+dotprod -DCMAKE_CXX_FLAGS=-march=armv8.2a+i8mm+dotprod ..
+cmake -DLLAMA_KLEIDIAI=ON -DLLAMA_KLEIDIAI_CACHE=ON -DCMAKE_TOOLCHAIN_FILE=${NDK_PATH}/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-23 -DCMAKE_C_FLAGS=-march=armv8.2a+i8mm+dotprod -DCMAKE_CXX_FLAGS=-march=armv8.2a+i8mm+dotprod ..
 
 make -j4
 ```
@@ -106,10 +106,12 @@ Build the llama.cpp project for Linux®:
 ```bash
 mkdir build && cd build
 
-cmake -DLLAMA_KLEIDIAI=ON -DCMAKE_C_FLAGS=-march=armv8.2-a+dotprod+i8mm -DCMAKE_CXX_FLAGS=-march=armv8.2-a+dotprod+i8mm ..
+cmake -DLLAMA_KLEIDIAI=ON -DLLAMA_KLEIDIAI_CACHE=ON -DCMAKE_C_FLAGS=-march=armv8.2-a+dotprod+i8mm -DCMAKE_CXX_FLAGS=-march=armv8.2-a+dotprod+i8mm ..
 
 make -j4
 ```
+The  -DLLAMA_KLEIDIAI_CACHE=ON  is used to enable the weights caching. Weights caching is a feature available in the KleidiAI backend to improve the model loading time. Since the layout of the original model weights is transformed by KleidiAI to improve the performance of the matrix-multiplication routines, this option ensures that the weights transformation only happens the first time you run the model.
+To disable this option, you simply remove the flag from the cmake command.
 
 ### Step 6:
 

@@ -1,29 +1,30 @@
-From 617486784d5394fbb54f4d99a4860a050318a4e8 Mon Sep 17 00:00:00 2001
-From: Gian Marco Iodice <gianmarco.iodice@arm.com>
-Date: Tue, 16 Jul 2024 17:28:50 +0100
+From 25ba8dfa43e2b4b101b890c88464b638427d3d42 Mon Sep 17 00:00:00 2001
+From: Charles Xu <charles.xu@arm.com>
+Date: Wed, 17 Jul 2024 13:28:18 +0200
 Subject: [PATCH] Use KleidiAI Int4 Matmul micro-kernels in llama.cpp
 
 - Update CMake file to fetch the Int4 micro-kernels from the KleidiAI
 repository
 - Implement a KleidiAI backend for llama.cpp
+- Add weight caching feature for KleidiAI
 
-Signed-off-by: Gian Marco Iodice <gianmarco.iodice@arm.com>
+Signed-off-by: Charles Xu <charles.xu@arm.com>
 ---
- CMakeLists.txt    |  48 ++++
- ggml-alloc.c      |  13 ++
- ggml-kleidiai.cpp | 560 ++++++++++++++++++++++++++++++++++++++++++++++
+ CMakeLists.txt    |  52 ++++
+ ggml-alloc.c      |  13 +
+ ggml-kleidiai.cpp | 675 ++++++++++++++++++++++++++++++++++++++++++++++
  ggml-kleidiai.h   |  45 ++++
- ggml.c            |  27 +++
+ ggml.c            |  27 ++
  llama.cpp         |  19 +-
- 6 files changed, 711 insertions(+), 1 deletion(-)
+ 6 files changed, 830 insertions(+), 1 deletion(-)
  create mode 100644 ggml-kleidiai.cpp
  create mode 100644 ggml-kleidiai.h
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 08481334..22504ad2 100644
+index 08481334..07f8f601 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -548,6 +548,53 @@ if (LLAMA_VULKAN)
+@@ -548,6 +548,57 @@ if (LLAMA_VULKAN)
      endif()
  endif()
  
@@ -72,12 +73,16 @@ index 08481334..22504ad2 100644
 +    add_compile_definitions(GGML_USE_KLEIDIAI)
 +    add_compile_definitions(GGML_KLEIDIAI_REUSE_MEMORY)
 +
++    if (LLAMA_KLEIDIAI_CACHE)
++        add_compile_definitions(GGML_KLEIDIAI_USE_CACHE)
++    endif()
++
 +endif()
 +
  if (LLAMA_HIPBLAS)
      if (NOT EXISTS $ENV{ROCM_PATH})
          if (NOT EXISTS /opt/rocm)
-@@ -1268,6 +1315,7 @@ add_library(ggml OBJECT
+@@ -1268,6 +1319,7 @@ add_library(ggml OBJECT
              ${GGML_SOURCES_ROCM}      ${GGML_HEADERS_ROCM}
              ${GGML_SOURCES_BLAS}      ${GGML_HEADERS_BLAS}
              ${GGML_SOURCES_LLAMAFILE} ${GGML_HEADERS_LLAMAFILE}
@@ -118,10 +123,10 @@ index bd367c42..ed4ce0ae 100644
          if (this_size > max_size) {
 diff --git a/ggml-kleidiai.cpp b/ggml-kleidiai.cpp
 new file mode 100644
-index 00000000..6800f63e
+index 00000000..257a0d4c
 --- /dev/null
 +++ b/ggml-kleidiai.cpp
-@@ -0,0 +1,560 @@
+@@ -0,0 +1,675 @@
 +/*
 + * Copyright (c) 2024 Arm Limited.
 + *
@@ -160,6 +165,13 @@ index 00000000..6800f63e
 +#include <string.h>
 +#include <asm/hwcap.h>
 +#include <sys/auxv.h>
++#if defined(GGML_KLEIDIAI_USE_CACHE)
++#include <cstring>
++#include <sys/mman.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <unistd.h>
++#endif
 +
 +// KleidiAI micro-kernels
 +#include "kai_matmul_clamp_f32_qsi8d32p_qsi4c32p_interface.h"
@@ -213,6 +225,85 @@ index 00000000..6800f63e
 +unsigned long int getauxval(unsigned long int __type) __INTRODUCED_IN(18);
 +#endif
 +
++#if defined(GGML_KLEIDIAI_USE_CACHE)
++struct binary_data {
++    void *ptr;
++    size_t size;
++};
++
++struct cached_weight {
++    int fd;
++    binary_data data;
++};
++
++static const char *g_cache_filename = "kai_transformed_weights.cache";
++static const size_t g_cache_key_size = 16;
++
++static struct cached_weight g_kai_cached_weight;
++
++static void ggml_kai_open_cached_weight() {
++    if (access(g_cache_filename, F_OK) != 0) {
++        g_kai_cached_weight.fd = open(g_cache_filename, O_RDWR | O_CREAT, 0644);
++        if (g_kai_cached_weight.fd == -1) {
++            GGML_ASSERT(false);
++        }
++        g_kai_cached_weight.data.size = 0;
++    }
++    else {
++        struct stat file_info;
++        g_kai_cached_weight.fd = open(g_cache_filename, O_RDONLY);
++        if (fstat(g_kai_cached_weight.fd, &file_info) == -1) {
++            GGML_ASSERT(false);
++        }
++
++        g_kai_cached_weight.data.size = file_info.st_size;
++
++        if (g_kai_cached_weight.data.size > 0) {
++            g_kai_cached_weight.data.ptr = mmap(NULL, g_kai_cached_weight.data.size, PROT_READ, MAP_PRIVATE, g_kai_cached_weight.fd, 0);
++            if (g_kai_cached_weight.data.ptr == MAP_FAILED) {
++                GGML_ASSERT(false);
++            }
++        }
++
++    }
++}
++
++static void ggml_kai_write_cache_weight(int fd, void *key, size_t key_size, void *data, size_t data_size) {
++    if (write(fd, key, key_size) != static_cast<ssize_t>(key_size)) {
++        GGML_ASSERT(false);
++    }
++
++    if (write(fd, &data_size, sizeof(size_t)) != sizeof(size_t)) {
++        GGML_ASSERT(false);
++    }
++
++    if (write(fd, data, data_size) != static_cast<ssize_t>(data_size)) {
++        GGML_ASSERT(false);
++    }
++}
++
++static bool ggml_kai_match_cached_weight(void *token, struct binary_data *data) {
++    char* data_ptr = static_cast<char*>(g_kai_cached_weight.data.ptr);
++    char* end_ptr = data_ptr + g_kai_cached_weight.data.size;
++
++    while (data_ptr < end_ptr) {
++        void *key = data_ptr;
++        data_ptr += g_cache_key_size;
++
++        data->size=*(std::size_t*)data_ptr;
++        data_ptr += sizeof(std::size_t);
++
++        data->ptr = data_ptr;
++        data_ptr += data->size;
++
++        if (memcmp(token, key, 16) == 0) {
++            return true;
++        }
++    }
++    return false;
++}
++#endif
++
 +inline bool is_feature_supported(uint64_t features, uint64_t feature_mask) {
 +    return (features & feature_mask);
 +}
@@ -240,6 +331,10 @@ index 00000000..6800f63e
 +        ggml_kai_free_extra_mem();
 +        initialized = true;
 +        g_kai_loaded = true;
++
++#if defined(GGML_KLEIDIAI_USE_CACHE)
++        ggml_kai_open_cached_weight();
++#endif
 +    }
 +}
 +
@@ -523,6 +618,20 @@ index 00000000..6800f63e
 +    if (cur->extra == NULL) {
 +        if(cur->type == GGML_TYPE_Q4_0) {
 +
++#if defined(GGML_KLEIDIAI_USE_CACHE)
++            if (g_kai_cached_weight.data.size > 0) {
++                struct binary_data data;
++                bool matched = ggml_kai_match_cached_weight(cur->data, &data);
++                if (matched) {
++                    cur->extra = data.ptr;
++                }
++                else {
++                    perror("No match found, please remove the cache file and try again!");
++                    GGML_ASSERT(false);
++                }
++                return;
++            }
++#endif
 +            const size_t original_data_size = ggml_nbytes(cur);
 +            const size_t reshaped_data_sz = rhs_packing_params.packed_size;
 +
@@ -544,6 +653,10 @@ index 00000000..6800f63e
 +                reshaped_data,              // RHS PACKED
 +                0,
 +                &params);
++
++#if defined(GGML_KLEIDIAI_USE_CACHE)
++            ggml_kai_write_cache_weight(g_kai_cached_weight.fd, cur->data, g_cache_key_size, reshaped_data, reshaped_data_sz);
++#endif
 +
 +#if defined(GGML_KLEIDIAI_REUSE_MEMORY)
 +            GGML_ASSERT(reshaped_data_sz <= original_data_size);
@@ -570,9 +683,9 @@ index 00000000..6800f63e
 +    // tensor->src[1] = second source tensor
 +
 +    ggml_kai_func_t func;
-+    const bool is_cpu_only = tensor->backend == GGML_BACKEND_TYPE_CPU
-+        || (tensor->src[0] != nullptr && (tensor->src[0]->backend == GGML_BACKEND_TYPE_CPU))
-+        || (tensor->src[1] != nullptr && tensor->src[1]->backend == GGML_BACKEND_TYPE_CPU);
++    const bool is_cpu_only = ggml_backend_buffer_is_host(tensor->buffer)
++        || (tensor->src[0] != nullptr && ggml_backend_buffer_is_host(tensor->src[0]->buffer))
++        || (tensor->src[1] != nullptr && ggml_backend_buffer_is_host(tensor->src[0]->buffer));
 +
 +    if (!is_cpu_only) {
 +        return false;
@@ -604,9 +717,9 @@ index 00000000..6800f63e
 +    // tensor->src[0] = first source tensor
 +    // tensor->src[1] = second source tensor
 +
-+    const bool is_cpu_only = tensor->backend == GGML_BACKEND_TYPE_CPU
-+        || (tensor->src[0] != nullptr && (tensor->src[0]->backend == GGML_BACKEND_TYPE_CPU))
-+        || (tensor->src[1] != nullptr && tensor->src[1]->backend == GGML_BACKEND_TYPE_CPU);
++    const bool is_cpu_only = ggml_backend_buffer_is_host(tensor->buffer)
++        || (tensor->src[0] != nullptr && ggml_backend_buffer_is_host(tensor->src[0]->buffer))
++        || (tensor->src[1] != nullptr && ggml_backend_buffer_is_host(tensor->src[0]->buffer));
 +
 +    if (!is_cpu_only) {
 +        return false;
@@ -680,6 +793,13 @@ index 00000000..6800f63e
 +        free(g_extra_mem[i]);
 +    }
 +    g_extra_mem_idx = 0;
++
++#if defined(GGML_KLEIDIAI_USE_CACHE)
++    if (g_kai_cached_weight.data.size > 0) {
++        munmap(g_kai_cached_weight.data.ptr, g_kai_cached_weight.data.size);
++    }
++    close(g_kai_cached_weight.fd);
++#endif
 +}
 +#endif // defined(__aarch64__) && (defined(__ANDROID__) || defined(__linux__))
 diff --git a/ggml-kleidiai.h b/ggml-kleidiai.h
@@ -845,5 +965,5 @@ index 05591aa4..735dde04 100644
      }
  
 -- 
-2.25.1
+2.34.1
 
