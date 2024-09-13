@@ -66,7 +66,11 @@ static void arm_ethosu_npu_irq_handler(void)
 /** @brief  Initialises the NPU IRQ */
 static void arm_ethosu_npu_irq_init(void)
 {
-    const IRQn_Type ethosu_irqnum = (IRQn_Type)ETHOS_U55_IRQn;
+    #if defined(CORSTONE310_FVP)
+        const IRQn_Type ethosu_irqnum = (IRQn_Type)NPU0_IRQn;
+    #else
+        const IRQn_Type ethosu_irqnum = (IRQn_Type)ETHOS_U55_IRQn;
+    #endif
 
     /* Register the EthosU IRQ handler in our vector table.
      * Note, this handler comes from the EthosU driver */
@@ -87,7 +91,11 @@ static int arm_ethosu_npu_init(void)
     arm_ethosu_npu_irq_init();
 
     /* Initialise Ethos-U device */
-    void* const ethosu_base_address = (void*)(ETHOS_U55_APB_BASE_S);
+    #if defined(CORSTONE310_FVP)
+        void* const ethosu_base_address = (void*)(NPU0_APB_BASE_NS);
+    #else
+        void* const ethosu_base_address = (void*)(ETHOS_U55_APB_BASE_S);
+    #endif
 
     debug("Cache arena: 0x%p\n", get_cache_arena());
 

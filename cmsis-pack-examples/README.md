@@ -14,11 +14,13 @@
 - [Prerequisites](#prerequisites)
   - [Visual Studio Code](#visual-studio-code)
   - [Packs](#packs)
+  - [Virtual Streaming Interface](#virtual-streaming-interface)
 - [Building the examples](#building-the-examples)
   - [Launch project in Visual Studio Code](#launch-project-in-visual-studio-code)
   - [Download Software Packs](#download-software-packs)
   - [Generate and build the project](#generate-and-build-the-project)
-  - [Execute project](#execute-project)
+  - [Execute Project](#execute-project)
+    - [Working with Virtual Streaming Interface](#working-with-virtual-streaming-interface)
   - [Application output](#application-output)
 - [Trademarks](#trademarks)
 - [Licenses](#licenses)
@@ -107,6 +109,33 @@ CMSIS-Pack defines a standardized way to deliver software components, device par
 support information and code. A list of available CMSIS-Packs can be found
 [here](https://developer.arm.com/tools-and-software/embedded/cmsis/cmsis-packs).
 
+## Virtual Streaming Interface
+
+[Virtual Streaming Interface)](https://arm-software.github.io/AVH/main/simulation/html/group__arm__vsi.html)
+(VSI) is available for certain
+[Fixed Virtual Platform](https://developer.arm.com/Tools%20and%20Software/Fixed%20Virtual%20Platforms) (FVP) or
+[Arm Virtual Hardware](https://developer.arm.com/Tools%20and%20Software/Arm%20Virtual%20Hardware) (AVH)
+targets. For VSI supported examples, you may need to install some dependencies.
+
+For more details and up-to-date requirements, see
+[Python environment setup](https://arm-software.github.io/AVH/main/simulation/html/group__arm__vsi__pyenv.html)
+which mentions:
+
+> The following packages are required on Linux systems (Ubuntu 20.04 and later):
+>   - libatomic1
+>   - python3.9
+>   - python3-pip
+
+In addition to the above, the VSI Python scripts depend on `opencv-python` package. We recommend using
+a virtual environment and installing this with pip.
+
+```shell
+$ pip install opencv-python
+```
+
+**NOTE**: The requirement for Python version is driven by the FVP executable. Versions <= 11.26 require
+Python3.9 but this may change for future releases.
+
 # Building the examples
 
 ## Launch project in Visual Studio Code
@@ -181,12 +210,12 @@ Build complete
 
 The built artifacts will be located under the `out/` directory in the project root.
 
-## Execute project
+## Execute Project
 
 The project is configured for execution on Arm Virtual Hardware which removes the requirement for
 a physical hardware board.
 
-- When using a Fixed Virtual Platform installed locally:
+- When using a Fixed Virtual Platform (FVP) installed locally:
   ```shell
   $ <path_to_installed_FVP> -a ./out/kws/AVH-SSE-300-U55/Debug/kws.Debug+AVH-SSE-300-U55.axf -f ./FVP/FVP_Corstone_SSE-300/fvp_config.txt
   ```
@@ -217,6 +246,21 @@ For example:
 ```shell
 $ cp ./out/kws/STM32F746-DISCO/Release/kws.Release+STM32F746-DISCO.bin /media/user/DIS_F746NG/ && sync
 ```
+
+### Working with Virtual Streaming Interface
+
+The object detection example for Arm Corstone-300 and Corstone-310 supports Virtual Streaming Interface (VSI).
+This allows the locally installed FVP application (or an AVH instance) to read images in from a camera connected to
+your local machine and stream these over to the application running within the FVP.
+
+To run the VSI application, append the command line with the v_path argument. For example:
+
+```shell
+  $ <path_to_installed_FVP> \
+    -a ./out/object-detection-vsi/AVH-SSE-300-U55/Release/object-detection-vsi.axf \
+    -C ethosu.num_macs=256 \
+    -C mps3_board.v_path=./device/corstone/vsi/video/python/
+  ```
 
 ## Application output
 
@@ -379,3 +423,20 @@ spot immediately. Please help us improve this section by reporting them via GitH
    virtual targets.
    You can build the project but will have to run it on your local machine on an
    installation of the equivalent Fixed Virtual Platform containing Arm® Ethos™-U65 NPU.
+
+7. The newer versions of BSP packs for Arm® Corstone™-300 and Arm® Corstone™-310 require CMSIS 6.
+   There are warnings about some unsatisfied requirements because of this. For example:
+   ```shell
+   MISSING ARM::Device:Definition@2.0.0
+    require CMSIS:CORE@6.0.0
+   MISSING ARM::Device:Native Driver:SysCounter@1.1.0
+    require CMSIS:CORE@6.0.0
+   MISSING ARM::Device:Native Driver:SysTimer@1.1.0
+    require CMSIS:CORE@6.0.0
+   MISSING ARM::Device:Native Driver:Timeout@1.0.0
+    require CMSIS:CORE@6.0.0
+   MISSING ARM::Device:Startup&C Startup@2.0.0
+    require CMSIS:CORE@6.0.0
+   ```
+   These are expected to be resolved once we bump up the version of CMSIS core pack. Currently,
+   this is blocked by other dependencies.

@@ -23,29 +23,13 @@ project:
       - bin
 
   groups:
-    - group: MainStatic
-      for-context:
-        - +AVH-SSE-300
-        - +AVH-SSE-300-U55
-        - +AVH-SSE-300-U65
-        - +AVH-SSE-310
-        - +AVH-SSE-310-U55
-        - +AVH-SSE-310-U65
+    - group: MainVSI
       files:
-        - file: include/InputFiles.hpp
-        - file: src/InputFiles.cpp
-        - file: src/sample_image.cpp
-        - file: src/main_static.cpp
-
-    - group: MainLive
-      for-context:
-        - +Alif-E7-M55-HP
-      files:
-        - file: src/main_live.cpp
+        - file: src/main_vsi.cpp
 
   layers:
     - layer: ../common/common.clayer.yml
-
+    - layer: ../device/corstone/vsi/vsi.clayer.yml
     - layer: ../device/corstone/corstone-device.clayer.yml
       for-context:
         - +AVH-SSE-300
@@ -54,9 +38,4 @@ project:
         - +AVH-SSE-310
         - +AVH-SSE-310-U55
         - +AVH-SSE-310-U65
-
-    - layer: ../device/alif-ensemble/alif-ensemble-E7-device.clayer.yml
-      for-context:
-        - +Alif-E7-M55-HP
-
     - layer: ./object-detection.clayer.yml

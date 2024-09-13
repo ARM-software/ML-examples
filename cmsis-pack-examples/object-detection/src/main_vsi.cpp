@@ -30,9 +30,7 @@
 #include "DetectorPostProcessing.hpp" /* Post Process */
 #include "DetectorPreProcessing.hpp"  /* Pre Process */
 #include "YoloFastestModel.hpp"       /* Model API */
-#include "CameraCapture.hpp"          /* Live camera capture API */
-#include "LcdDisplay.hpp"             /* LCD display */
-#include "GpioSignal.hpp"             /* GPIO signals to drive LEDs */
+#include "video_drv.h"                /* Video Driver API */
 
 /* Platform dependent files */
 #include "RTE_Components.h"  /* Provides definition for CMSIS_device_header */
@@ -40,23 +38,19 @@
 #include "BoardInit.hpp"      /* Board initialisation */
 #include "log_macros.h"      /* Logging macros (optional) */
 
-#define CROPPED_IMAGE_WIDTH     192
-#define CROPPED_IMAGE_HEIGHT    192
-#define CROPPED_IMAGE_SIZE      (CROPPED_IMAGE_WIDTH * CROPPED_IMAGE_HEIGHT * 3)
+
+#define IMAGE_WIDTH     192
+#define IMAGE_HEIGHT    192
+#define IMAGE_SIZE      (IMAGE_WIDTH * IMAGE_HEIGHT * 3)
 
 namespace arm {
 namespace app {
     /* Tensor arena buffer */
     static uint8_t tensorArena[ACTIVATION_BUF_SZ] ACTIVATION_BUF_ATTRIBUTE;
 
-    /* RGB image buffer - cropped/scaled version of the original + debayered. */
-    static uint8_t rgbImage[CROPPED_IMAGE_SIZE] __attribute__((section("rgb_buf"), aligned(16)));
-
-    /* RAW image buffer. */
-    static uint8_t rawImage[CAMERA_IMAGE_RAW_SIZE] __attribute__((section("raw_buf"), aligned(16)));
-
-    /* LCD image buffer */
-    static uint8_t lcdImage[DIMAGE_Y][DIMAGE_X][LCD_BYTES_PER_PIXEL] __attribute__((section("lcd_buf"), aligned(16)));
+    /* Image buffer */
+    static uint8_t ImageBuf[IMAGE_SIZE] __attribute__((section("image_buf"), aligned(16)));
+    static uint8_t ImageOut[IMAGE_SIZE] __attribute__((section("image_buf"), aligned(16)));
 
     /* Optional getter function for the model pointer and its size. */
     namespace object_detection {
@@ -71,12 +65,12 @@ typedef arm::app::object_detection::DetectionResult OdResults;
 /**
  * @brief Draws a boxes in the image using the object detection results vector.
  *
- * @param[out] rgbImage     Pointer to the start of the image.
+ * @param[out] image        Pointer to the start of the image.
  * @param[in]  width        Image width.
  * @param[in]  height       Image height.
  * @param[in]  results      Vector of object detection results.
  */
-static void DrawDetectionBoxes(uint8_t* rgbImage,
+static void DrawDetectionBoxes(uint8_t* image,
                                const uint32_t imageWidth,
                                const uint32_t imageHeight,
                                const std::vector<OdResults>& results);
@@ -133,96 +127,127 @@ int main()
     arm::app::DetectorPostProcess postProcess =
         arm::app::DetectorPostProcess(outputTensor0, outputTensor1, results, postProcessParams);
 
-    const size_t imgSz = inputTensor->bytes < CROPPED_IMAGE_SIZE ?
-                         inputTensor->bytes : CROPPED_IMAGE_SIZE;
+    const size_t imgSz = inputTensor->bytes < IMAGE_SIZE ?
+                         inputTensor->bytes : IMAGE_SIZE;
 
-    if (0 != arm::app::CameraCaptureInit()) {
-        printf_err("Failed to initalise camera\n");
-        return 2;
+    if (sizeof(arm::app::ImageBuf) < imgSz) {
+        printf_err("Image buffer is insufficient\n");
+        return 1;
     }
 
-    if (sizeof(arm::app::rgbImage) < imgSz) {
-        printf_err("RGB buffer is insufficient\n");
-        return 3;
+    /* Initialize Video Interface */
+    if (VideoDrv_Initialize(NULL) != VIDEO_DRV_OK) {
+        printf_err("Failed to initialise video driver\n");
+        return 1;
     }
 
-    /* Initalise the LCD  */
-    arm::app::LcdDisplayInit(&arm::app::lcdImage[0][0][0], DIMAGE_X, DIMAGE_Y);
+    /**
+     * Following section is commented out as we use VSI "camera" input by default.
+     * These lines can be uncommented to use VSI file interface instead - when using
+     * AVH in a headless environment or a remote instance.
+     */
+//  if (VideoDrv_SetFile(VIDEO_DRV_IN0,  "sample_image.png") != VIDEO_DRV_OK) {
+//      printf_err("Failed to set filename for video input\n");
+//      return 1;
+//  }
+    /* Set Output Video file (only when using AVH - default: Display) */
+//  if (VideoDrv_SetFile(VIDEO_DRV_OUT0, "output_image.png") != VIDEO_DRV_OK) {
+//      printf_err("Failed to set filename for video output\n");
+//      return 1;
+//  }
 
-    /* LCD initialisation */
-    arm::app::GpioSignal statusLED {arm::app::SignalPort::Port12,
-                                    arm::app::SignalPin::Port12_LED0_R,
-                                    arm::app::SignalDirection::DirectionOutput};
+    /* Configure Input Video */
+    if (VideoDrv_Configure(VIDEO_DRV_IN0,  IMAGE_WIDTH, IMAGE_HEIGHT, VIDEO_DRV_COLOR_RGB888, 24U) != VIDEO_DRV_OK) {
+        printf_err("Failed to configure video input\n");
+        return 1;
+    }
 
-    /* Start the camera */
-    if (0 != arm::app::CameraCaptureStart(arm::app::rawImage)) {
-        printf_err("Failed to start camera capture\n");
-        return 4;
+    /* Configure Output Video */
+    if (VideoDrv_Configure(VIDEO_DRV_OUT0, IMAGE_WIDTH, IMAGE_HEIGHT, VIDEO_DRV_COLOR_RGB888, 24U) != VIDEO_DRV_OK) {
+        printf_err("Failed to configure video output\n");
+        return 1;
+    }
+
+    /* Set Input Video buffer */
+    if (VideoDrv_SetBuf(VIDEO_DRV_IN0,  arm::app::ImageBuf, IMAGE_SIZE) != VIDEO_DRV_OK) {
+        printf_err("Failed to set buffer for video input\n");
+        return 1;
+    }
+    /* Set Output Video buffer */
+    if (VideoDrv_SetBuf(VIDEO_DRV_OUT0, arm::app::ImageOut, IMAGE_SIZE) != VIDEO_DRV_OK) {
+        printf_err("Failed to set buffer for video output\n");
+        return 1;
     }
 
     auto dstPtr = static_cast<uint8_t*>(inputTensor->data.uint8);
 
     uint32_t imgCount = 0;
+    void    *imgFrame;
+    void    *outFrame;
 
     while (true) {
+        VideoDrv_Status_t status;
         results.clear();
 
-        arm::app::CameraCaptureWaitForFrame();
-
-        auto debayerState = arm::app::CropAndDebayer(
-                                arm::app::rawImage,
-                                CAMERA_FRAME_WIDTH,
-                                CAMERA_FRAME_HEIGHT,
-                                (CAMERA_FRAME_WIDTH - inputImgCols)/2,
-                                (CAMERA_FRAME_HEIGHT - inputImgRows)/2,
-                                arm::app::rgbImage,
-                                inputImgCols,
-                                inputImgRows,
-                                arm::app::ColourFilter::GRBG);
-
-
-        if (!debayerState) {
-            printf_err("Debayering failed\n");
+        /* Start video capture (single frame) */
+        if (VideoDrv_StreamStart(VIDEO_DRV_IN0, VIDEO_DRV_MODE_SINGLE) != VIDEO_DRV_OK) {
+            printf_err("Failed to start video capture\n");
             return 1;
         }
 
-        if (0 != arm::app::CameraCaptureStart(arm::app::rawImage)) {
-            printf_err("Failed to start camera capture\n");
-        }
+        /* Wait for video input frame */
+        do {
+            status = VideoDrv_GetStatus(VIDEO_DRV_IN0);
+        } while (status.buf_empty != 0U);
+
+        /* Get input video frame buffer */
+        imgFrame = VideoDrv_GetFrameBuf(VIDEO_DRV_IN0);
 
         /* Run the pre-processing, inference and post-processing. */
-        if (!preProcess.DoPreProcess(arm::app::rgbImage, imgSz)) {
+        if (!preProcess.DoPreProcess(imgFrame, imgSz)) {
             printf_err("Pre-processing failed.\n");
             return 1;
         }
 
         /* Run inference over this image. */
-        if (!(imgCount++ & 0xF)) {
-            printf("\rImage %" PRIu32 "; ", imgCount);
-        }
+        printf("\rImage %" PRIu32 "; ", ++imgCount);
 
-        statusLED.Send(true);
         if (!model.RunInference()) {
             printf_err("Inference failed.\n");
-            statusLED.Send(false);
-            return 2;
+            return 1;
         }
-        statusLED.Send(false);
 
         if (!postProcess.DoPostProcess()) {
             printf_err("Post-processing failed.\n");
-            return 3;
+            return 1;
         }
 
-        DrawDetectionBoxes(arm::app::rgbImage, inputImgCols, inputImgRows, results);
+        /* Release input frame */
+        VideoDrv_ReleaseFrame(VIDEO_DRV_IN0);
 
-        arm::app::LcdDisplayImage(arm::app::rgbImage,
-                        inputImgCols,
-                        inputImgRows,
-                        arm::app::ColourFormat::RGB,
-                        (DIMAGE_X - inputImgCols)/2,
-                        (DIMAGE_Y - inputImgRows)/2);
+        DrawDetectionBoxes((uint8_t *)imgFrame, inputImgCols, inputImgRows, results);
+
+        /* Get output video frame buffer */
+        outFrame = VideoDrv_GetFrameBuf(VIDEO_DRV_OUT0);
+
+        /* Copy image frame with detection boxes to output frame buffer */
+        memcpy(outFrame, imgFrame, IMAGE_SIZE);
+
+        /* Release output frame */
+        VideoDrv_ReleaseFrame(VIDEO_DRV_OUT0);
+
+        /* Start video output (single frame) */
+        VideoDrv_StreamStart(VIDEO_DRV_OUT0, VIDEO_DRV_MODE_SINGLE);
+
+        /* Check for end of stream (when using AVH with file as Video input) */
+        if (status.eos != 0U) {
+            while (VideoDrv_GetStatus(VIDEO_DRV_OUT0).buf_empty == 0U);
+            break;
+        }
     }
+
+    /* De-initialize Video Interface */
+    VideoDrv_Uninitialize();
 
     return 0;
 }
@@ -271,13 +296,13 @@ static void DrawBox(uint8_t* imageData,
     }
 }
 
-static void DrawDetectionBoxes(uint8_t* rgbImage,
+static void DrawDetectionBoxes(uint8_t* image,
                                const uint32_t imageWidth,
                                const uint32_t imageHeight,
                                const std::vector<OdResults>& results)
 {
     for (const auto& result : results) {
-        DrawBox(rgbImage, imageWidth, imageHeight, result);
+        DrawBox(image, imageWidth, imageHeight, result);
         printf("Detection :: [%" PRIu32 ", %" PRIu32
                          ", %" PRIu32 ", %" PRIu32 "]\n",
                 result.m_x0,
