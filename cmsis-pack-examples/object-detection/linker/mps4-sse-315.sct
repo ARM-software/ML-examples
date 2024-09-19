@@ -1,4 +1,4 @@
-;  SPDX-FileCopyrightText: Copyright 2021-2022, 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+;  SPDX-FileCopyrightText: Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 ;  SPDX-License-Identifier: Apache-2.0
 ;
 ;  Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,31 +22,44 @@
 ;       only be placed in those regions.
 ;
 ;---------------------------------------------------------
-; First load region (SRAM/BRAM) 2MiB region
+; First load region (SRAM) 64KiB boot region
 ;---------------------------------------------------------
-LOAD_REGION_0       0x11000000                  0x00200000
+LOAD_REGION_0       0x11000000                  0x00010000
 {
     ;-----------------------------------------------------
-    ; 0.5 MiB of SRAM/BRAM region. Our vector table also
+    ; 64K boot ROM. Our vector table also
     ; resides here as the default INITSVTOR is 0x11000000.
     ; We currently do not use the ITCM for any code, but
     ; could potentially put some critical code in there
     ; if we need to.
     ;-----------------------------------------------------
-    bram.bin        0x11000000                  0x00080000
+    boot.bin        0x11000000                  0x00010000
     {
-        *.o (RESET, +First)
-        * (InRoot$$Sections)
+       *.o (RESET, +First)
+       *(InRoot$$Sections)
+    }
+}
 
-        ; Essentially only RO (code + data)
+;---------------------------------------------------------
+; Second load region (FPGA SRAM) 2MiB region
+;---------------------------------------------------------
+LOAD_REGION_1       0X12000000                  0x00200000
+{
+    ;-----------------------------------------------------
+    ; First 640K of SRAM/BRAM region for RO code,
+    ; 8 byte aligned.
+    ;-----------------------------------------------------
+    bram.bin        0x12000000 ALIGN 8          0x000A0000
+    {
+        ; Essentially only RO (code)
         .ANY (+RO)
     }
 
     ;-----------------------------------------------------
-    ; Next 0.5 MiB of SRAM/BRAM region for RO, RW and ZI
+    ; Next 384K of SRAM/BRAM region for RW and ZI
     ; data, 8 byte aligned.
     ;-----------------------------------------------------
-    data.bin        0x11080000 ALIGN 8          0x00080000
+    data.bin        0x120A0000 ALIGN 8          0x00060000
     {
         ; Any RO-DATA
         .ANY (+RO-DATA)
@@ -59,7 +72,7 @@ LOAD_REGION_0       0x11000000                  0x00200000
     ; 768 KiB of remaining part of the 1MiB BRAM used as
     ; heap space.
     ;-----------------------------------------------------
-    ARM_LIB_HEAP    0x11100000 EMPTY ALIGN 8    0x000C0000
+    ARM_LIB_HEAP    0x12100000 EMPTY ALIGN 8    0x000C0000
     {}
 
     ;-----------------------------------------------------
@@ -86,9 +99,9 @@ LOAD_REGION_0       0x11000000                  0x00200000
 }
 
 ;---------------------------------------------------------
-; Second load region (DDR)
+; Third load region (DDR)
 ;---------------------------------------------------------
-LOAD_REGION_1       0x70000000                  0x02000000
+LOAD_REGION_2       0x70000000                  0x02000000
 {
     ;-----------------------------------------------------
     ; 32 MiB of DDR space for neural network model,
@@ -106,6 +119,7 @@ LOAD_REGION_1       0x70000000                  0x02000000
 
         ; labels
         *.o (labels)
+        Labels.o (+RO-DATA)
 
         ; activation buffers a.k.a tensor arena when memory mode dedicated sram
         *.o (activation_buf_dram)

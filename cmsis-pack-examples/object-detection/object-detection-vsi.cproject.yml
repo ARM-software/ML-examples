@@ -38,4 +38,6 @@ project:
         - +AVH-SSE-310
         - +AVH-SSE-310-U55
         - +AVH-SSE-310-U65
+        - +AVH-SSE-315
+        - +AVH-SSE-315-U65
     - layer: ./object-detection.clayer.yml

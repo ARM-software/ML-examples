@@ -116,3 +116,6 @@ out/
 tmp/
 *.cbuild.yml
 *.cbuild-idx.yml
+*.cbuild-pack.yml
+*.cbuild-set.yml
+

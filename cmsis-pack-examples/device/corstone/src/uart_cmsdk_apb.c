@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2022 Arm Limited and/or its
+ * SPDX-FileCopyrightText: Copyright 2022, 2024 Arm Limited and/or its
  * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -20,6 +20,11 @@
 
 #include "uart_config.h"
 #include "uart_stdout.h"
+
+/* Platform dependent files */
+#include "RTE_Components.h"  /* Provides definition for CMSIS_device_header */
+#include CMSIS_device_header /* Gives us IRQ num, base addresses. */
+
 #include <stdint.h>
 #include <stdio.h>
 
@@ -46,7 +51,7 @@ typedef struct {
     __IO uint32_t BAUDDIV; /* Offset: 0x010 (R/W) Baudrate Divider Register */
 } CMSDK_UART_TypeDef;
 
-#define CMSDK_UART0_BASE     UART0_BASE
+#define CMSDK_UART0_BASE     UART0_BASE_NS
 #define CMSDK_UART0          ((CMSDK_UART_TypeDef*)CMSDK_UART0_BASE)
 #define CMSDK_UART0_BAUDRATE UART0_BAUDRATE
 

@@ -35,6 +35,7 @@ solution:
 
     - pack: ARM::V2M_MPS3_SSE_300_BSP@1.5.0
     - pack: ARM::V2M_MPS3_SSE_310_BSP@1.4.0
+    - pack: ARM::SSE_315_BSP@1.0.0
     - pack: NXP::FRDM-K64F_BSP@14.0.0
     - pack: NXP::MK64F12_DFP@14.0.0
     - pack: Keil::STM32F7xx_DFP@2.15.1
@@ -75,6 +76,10 @@ solution:
       define:
         - ETHOSU55
 
+    - type: AVH-SSE-315
+      board: ARM::SSE-315
+      device: ARM::SSE-315-FVP
+
     - type: FRDM-K64F
       board: NXP::FRDM-K64F
       device: MK64FN1M0VLL12
@@ -112,16 +117,24 @@ solution:
       define:
         - ETHOSU65
 
+    - type: AVH-SSE-315-U65
+      board: ARM::SSE-315
+      device: ARM::SSE-315-FVP
+      define:
+        - ETHOSU65
+
   projects:
     # Object detection use case
     - project: ./object-detection/object-detection.cproject.yml
       for-context:
         - +AVH-SSE-300-U65
         - +AVH-SSE-310-U65
+        - +AVH-SSE-315-U65
         - +AVH-SSE-300-U55
         - +AVH-SSE-310-U55
         - +AVH-SSE-300
         - +AVH-SSE-310
+        - +AVH-SSE-315
         - +Alif-E7-M55-HP
 
     # Object detection with Virtual Streaming Interface (VSI) support
@@ -129,20 +142,24 @@ solution:
       for-context:
         - +AVH-SSE-300-U65
         - +AVH-SSE-310-U65
+        - +AVH-SSE-315-U65
         - +AVH-SSE-300-U55
         - +AVH-SSE-310-U55
         - +AVH-SSE-300
         - +AVH-SSE-310
+        - +AVH-SSE-315
 
     # Keyword Spotting (KWS) use case
     - project: ./kws/kws.cproject.yml
       for-context:
         - +AVH-SSE-300-U65
         - +AVH-SSE-310-U65
+        - +AVH-SSE-315-U65
         - +AVH-SSE-300-U55
         - +AVH-SSE-310-U55
         - +AVH-SSE-300
         - +AVH-SSE-310
+        - +AVH-SSE-315
         - +FRDM-K64F
         - +STM32F746-DISCO
         - +Alif-E7-M55-HE

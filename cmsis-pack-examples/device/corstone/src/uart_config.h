@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2022 Arm Limited and/or its
+ * SPDX-FileCopyrightText: Copyright 2022, 2024 Arm Limited and/or its
  * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -19,7 +19,6 @@
 #ifndef _UART_CONFIG_H_
 #define _UART_CONFIG_H_
 
-#define UART0_BASE        (0x49303000)
 #define UART0_BAUDRATE    (115200)
 #define SYSTEM_CORE_CLOCK (25000000)
 

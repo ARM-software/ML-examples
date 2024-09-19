@@ -42,17 +42,19 @@ Currently, the following examples are supported:
 
 Target platforms supported:
 
-| Name                  | Type                | IP                                            | Examples |
-|-----------------------|---------------------|-----------------------------------------------|----------|
-| Arm® Corstone™-300    | Virtual or physical | Arm® Cortex®-M55 CPU  | All      |
-| Arm® Corstone™-300-U55    | Virtual or physical | Arm® Cortex®-M55 CPU with Arm® Ethos™-U55 | All      |
-| Arm® Corstone™-300-U65    | Virtual or physical | Arm® Cortex®-M55 CPU with Arm® Ethos™-U65 | All      |
-| Arm® Corstone™-310    | Virtual or physical | Arm® Cortex®-M85 CPU  | All      |
-| Arm® Corstone™-310    | Virtual or physical | Arm® Cortex®-M85 CPU with Arm® Ethos™-U55  | All      |
-| Arm® Corstone™-310-U65    | Virtual or physical | Arm® Cortex®-M85 CPU with Arm® Ethos™-U65 NPU | All      |
+| Name                         | Type                | IP                                            | Examples |
+|------------------------------|---------------------|-----------------------------------------------|----------|
+| Arm® Corstone™-300           | Virtual or physical | Arm® Cortex®-M55 CPU                          | All      |
+| Arm® Corstone™-300-U55       | Virtual or physical | Arm® Cortex®-M55 CPU with Arm® Ethos™-U55     | All      |
+| Arm® Corstone™-300-U65       | Virtual or physical | Arm® Cortex®-M55 CPU with Arm® Ethos™-U65     | All      |
+| Arm® Corstone™-310           | Virtual or physical | Arm® Cortex®-M85 CPU                          | All      |
+| Arm® Corstone™-310           | Virtual or physical | Arm® Cortex®-M85 CPU with Arm® Ethos™-U55     | All      |
+| Arm® Corstone™-310-U65       | Virtual or physical | Arm® Cortex®-M85 CPU with Arm® Ethos™-U65 NPU | All      |
+| Arm® Corstone™-315           | Virtual or physical | Arm® Cortex®-M85 CPU                          | All      |
+| Arm® Corstone™-315-U65       | Virtual or physical | Arm® Cortex®-M85 CPU with Arm® Ethos™-U65 NPU | All      |
 | Alif™ Ensemble™ E7 AI/ML Kit | Physical board      | Arm® Cortex®-M55 CPU with Arm® Ethos™-U55 NPU | All      |
-| STM32® F746G-Discovery| Physical board      | Arm® Cortex®-M7 CPU                           | KWS      |
-| NXP® FRDM-K64F        | Physical board      | Arm® Cortex®-M4 CPU                           | KWS      |
+| STM32® F746G-Discovery       | Physical board      | Arm® Cortex®-M7 CPU                           | KWS      |
+| NXP® FRDM-K64F               | Physical board      | Arm® Cortex®-M4 CPU                           | KWS      |
 
 
 Use this import button to open the solution in Keil Studio Cloud: [![Open in Keil Studio](https://img.shields.io/badge/Keil%20Studio-Import-blue?logo=data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAyNS40LjEsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4NCjxzdmcgdmVyc2lvbj0iMS4xIiBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeD0iMHB4IiB5PSIwcHgiDQoJIHZpZXdCb3g9IjAgMCA0NyAxNCIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgNDcgMTQ7IiB4bWw6c3BhY2U9InByZXNlcnZlIj4NCjxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+DQoJLnN0MHtmaWxsOiNGRkZGRkY7fQ0KPC9zdHlsZT4NCjxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik00LjcsN2MwLDIuMiwxLjQsNC4xLDMuNSw0LjFjMS44LDAsMy42LTEuNCwzLjYtNC4xYzAtMi44LTEuNy00LjItMy42LTQuMkM2LjIsMi45LDQuNyw0LjcsNC43LDcgTTExLjYsMC41DQoJaDIuOXYxM2gtMi45di0xLjNjLTAuOSwxLjEtMi4zLDEuNy0zLjcsMS43QzQsMTMuOSwxLjgsMTAuNiwxLjgsN2MwLTQuMywyLjctNi45LDYuMS02LjljMS41LDAsMi44LDAuNywzLjcsMS45VjAuNXoiLz4NCjxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik0xOCwwLjVIMjF2MS4yYzAuMy0wLjQsMC43LTAuOCwxLjItMS4xYzAuNS0wLjMsMS4yLTAuNCwxLjctMC40YzAuOCwwLDEuNiwwLjIsMi4zLDAuNmwtMS4yLDIuOA0KCWMtMC40LTAuMy0xLTAuNC0xLjUtMC40Yy0wLjctMC4xLTEuMywwLjItMS44LDAuN0MyMSw0LjYsMjEsNS45LDIxLDYuOHY2LjdIMThWMC41eiIvPg0KPHBhdGggY2xhc3M9InN0MCIgZD0iTTI4LjIsMC41aDIuOXYxLjJjMC43LTAuOSwxLjktMS42LDMuMS0xLjZjMS4zLDAsMi42LDAuNywzLjIsMS45YzAuOS0xLjIsMi4yLTEuOSwzLjctMS45DQoJQzQyLjcsMCw0NCwwLjksNDQuNywyLjJjMC4yLDAuNCwwLjcsMS40LDAuNywzLjN2OC4xaC0yLjlWNi4zYzAtMS41LTAuMi0yLjEtMC4yLTIuM2MtMC4yLTAuNy0wLjktMS4yLTEuNy0xLjENCgljLTAuNywwLTEuMywwLjMtMS43LDAuOWMtMC41LDAuOC0wLjYsMS45LTAuNiwyLjl2Ni43aC0yLjlWNi4zYzAtMS41LTAuMi0yLjEtMC4yLTIuM2MtMC4yLTAuNy0wLjktMS4yLTEuNy0xLjENCgljLTAuNywwLTEuMywwLjMtMS43LDAuOWMtMC41LDAuOC0wLjYsMS45LTAuNiwyLjl2Ni43aC0yLjlMMjguMiwwLjV6Ii8+DQo8L3N2Zz4NCg==&logoWidth=47)](https://studio.keil.arm.com/?import=https://github.com/Arm-Examples/mlek-cmsis-pack-examples.git)
@@ -130,7 +132,7 @@ In addition to the above, the VSI Python scripts depend on `opencv-python` packa
 a virtual environment and installing this with pip.
 
 ```shell
-$ pip install opencv-python
+$ pip install opencv-python "numpy<2.0.0"
 ```
 
 **NOTE**: The requirement for Python version is driven by the FVP executable. Versions <= 11.26 require
@@ -249,11 +251,13 @@ $ cp ./out/kws/STM32F746-DISCO/Release/kws.Release+STM32F746-DISCO.bin /media/us
 
 ### Working with Virtual Streaming Interface
 
-The object detection example for Arm Corstone-300 and Corstone-310 supports Virtual Streaming Interface (VSI).
+The object detection example supports the Virtual Streaming Interface (VSI) feature found in the FVPs for Arm Corstone-300, Corstone-310 and Corstone-315.
 This allows the locally installed FVP application (or an AVH instance) to read images in from a camera connected to
 your local machine and stream these over to the application running within the FVP.
 
 To run the VSI application, append the command line with the v_path argument. For example:
+
+#### Arm Corstone-300 + Arm Corstone-310
 
 ```shell
   $ <path_to_installed_FVP> \
@@ -261,6 +265,15 @@ To run the VSI application, append the command line with the v_path argument. Fo
     -C ethosu.num_macs=256 \
     -C mps3_board.v_path=./device/corstone/vsi/video/python/
   ```
+
+#### Arm Corstone-315
+
+```shell
+  $ <path_to_installed_FVP> \
+    -a ./out/object-detection-vsi/AVH-SSE-315-U65/Release/object-detection-vsi.axf \
+    -C ethosu.num_macs=256 \
+    -C mps4_board.v_path=./device/corstone/vsi/video/python/
+```
 
 ## Application output
 
