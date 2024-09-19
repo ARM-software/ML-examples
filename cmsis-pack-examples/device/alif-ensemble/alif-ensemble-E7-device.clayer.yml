@@ -67,7 +67,6 @@ layer:
     - component: AlifSemiconductor::Device:SOC Peripherals:PINCONF
     - component: AlifSemiconductor::Device:SOC Peripherals:MHU
     - component: AlifSemiconductor::Device:Startup
-    - component: ARM::CMSIS Driver:USART
     - component: ARM::CMSIS Driver:USART:Custom
 
     - component: AlifSemiconductor::Device:SOC Peripherals:DMA

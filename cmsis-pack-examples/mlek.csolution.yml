@@ -33,8 +33,8 @@ solution:
     - pack: tensorflow::ruy@1.23.2
     - pack: tensorflow::tensorflow-lite-micro@1.23.2
 
-    - pack: ARM::V2M_MPS3_SSE_300_BSP@1.4.0
-    - pack: ARM::V2M_MPS3_SSE_310_BSP@1.3.0
+    - pack: ARM::V2M_MPS3_SSE_300_BSP@1.5.0
+    - pack: ARM::V2M_MPS3_SSE_310_BSP@1.4.0
     - pack: NXP::FRDM-K64F_BSP@14.0.0
     - pack: NXP::MK64F12_DFP@14.0.0
     - pack: Keil::STM32F7xx_DFP@2.15.1
@@ -55,12 +55,15 @@ solution:
     - type: AVH-SSE-300
       board: ARM::V2M-MPS3-SSE-300-FVP
       device: ARM::SSE-300-MPS3
+      define:
+        - CORSTONE300_FVP
 
     - type: AVH-SSE-300-U55
       board: ARM::V2M-MPS3-SSE-300-FVP
       device: ARM::SSE-300-MPS3
       define:
         - ETHOSU55
+        - CORSTONE300_FVP
 
     - type: AVH-SSE-310
       board: ARM::V2M-MPS3-SSE-310
@@ -101,6 +104,7 @@ solution:
       device: ARM::SSE-300-MPS3
       define:
         - ETHOSU65
+        - CORSTONE300_FVP
 
     - type: AVH-SSE-310-U65
       board: ARM::V2M-MPS3-SSE-310
@@ -109,6 +113,7 @@ solution:
         - ETHOSU65
 
   projects:
+    # Object detection use case
     - project: ./object-detection/object-detection.cproject.yml
       for-context:
         - +AVH-SSE-300-U65
@@ -118,6 +123,18 @@ solution:
         - +AVH-SSE-300
         - +AVH-SSE-310
         - +Alif-E7-M55-HP
+
+    # Object detection with Virtual Streaming Interface (VSI) support
+    - project: ./object-detection/object-detection-vsi.cproject.yml
+      for-context:
+        - +AVH-SSE-300-U65
+        - +AVH-SSE-310-U65
+        - +AVH-SSE-300-U55
+        - +AVH-SSE-310-U55
+        - +AVH-SSE-300
+        - +AVH-SSE-310
+
+    # Keyword Spotting (KWS) use case
     - project: ./kws/kws.cproject.yml
       for-context:
         - +AVH-SSE-300-U65

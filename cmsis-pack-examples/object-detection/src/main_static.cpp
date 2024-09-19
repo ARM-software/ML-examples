@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2021-2023 Arm Limited and/or its
+ * SPDX-FileCopyrightText: Copyright 2021-2024 Arm Limited and/or its
  * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -21,7 +21,7 @@
  * CMSIS pack produced by ml-embedded-eval-kit. The pack consists
  * of platform agnostic end-to-end ML use case API's that can be
  * used to construct ML examples for any target that can support
- * the memory requirements for TensorFlow-Lite-Micro framework and
+ * the memory requirements for TensorFlow Lite Micro framework and
  * some heap for the API runtime.
  */
 #include "BufAttributes.hpp" /* Buffer attributes to be applied */
