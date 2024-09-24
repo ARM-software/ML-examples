@@ -25,10 +25,12 @@ layer:
       for-context:
         - +AVH-SSE-300
         - +AVH-SSE-310
+        - +AVH-SSE-315
         - +AVH-SSE-300-U55
         - +AVH-SSE-310-U55
         - +AVH-SSE-300-U65
         - +AVH-SSE-310-U65
+        - +AVH-SSE-315-U65
       files:
         - file: src/retarget.c
         - file: src/uart_cmsdk_apb.c
@@ -51,13 +53,16 @@ layer:
       for-context:
         - +AVH-SSE-300-U65
         - +AVH-SSE-310-U65
+        - +AVH-SSE-315-U65
     - component: tensorflow::Machine Learning:TensorFlow:Kernel&Ethos-U
       for-context:
         - +AVH-SSE-300-U55
         - +AVH-SSE-310-U55
         - +AVH-SSE-300-U65
         - +AVH-SSE-310-U65
+        - +AVH-SSE-315-U65
     - component: tensorflow::Machine Learning:TensorFlow:Kernel&CMSIS-NN
       for-context:
         - +AVH-SSE-300
         - +AVH-SSE-310
+        - +AVH-SSE-315

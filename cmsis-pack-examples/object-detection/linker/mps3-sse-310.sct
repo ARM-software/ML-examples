@@ -1,4 +1,4 @@
-;  Copyright (c) 2021-2022 Arm Limited. All rights reserved.
+;  SPDX-FileCopyrightText: Copyright 2021-2022, 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 ;  SPDX-License-Identifier: Apache-2.0
 ;
 ;  Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +16,11 @@
 ; *************************************************************
 ; ***       Scatter-Loading Description File                ***
 ; *************************************************************
-; Please see docs/sections/appendix.md for memory mapping
-; information.
 ;
 ; Note: Ethos-U NPU can access BRAM, internal SRAM and the DDR
 ;       sections => activation buffers and the model should
 ;       only be placed in those regions.
 ;
-
 ;---------------------------------------------------------
 ; First load region (SRAM/BRAM) 2MiB region
 ;---------------------------------------------------------

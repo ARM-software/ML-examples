@@ -26,6 +26,7 @@ layer:
           for-context:
             - +AVH-SSE-300
             - +AVH-SSE-310
+            - +AVH-SSE-315
         - file: src/yolo-fastest_192_face_v4_vela_H256.tflite.cpp
           for-context:
             - +AVH-SSE-300-U55
@@ -35,6 +36,7 @@ layer:
           for-context:
             - +AVH-SSE-300-U65
             - +AVH-SSE-310-U65
+            - +AVH-SSE-315-U65
 
     - group: Device Files
       files:
@@ -48,6 +50,10 @@ layer:
             - +AVH-SSE-310
             - +AVH-SSE-310-U55
             - +AVH-SSE-310-U65
+        - file: linker/mps4-sse-315.sct
+          for-context:
+            - +AVH-SSE-315
+            - +AVH-SSE-315-U65
         - file: linker/alif-e7-m55-hp.sct
           for-context: +Alif-E7-M55-HP
 
