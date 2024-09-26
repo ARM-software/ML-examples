@@ -47,7 +47,7 @@ These KleidiAI micro-kernels were fundamental to the Cookie and Ada chatbot, whi
 <video autoplay src="https://community.arm.com/cfs-file/__key/telligent-evolution-videotranscoding-securefilestorage/communityserver-blogs-components-weblogfiles-00-00-00-38-23/phi_2D00_3-demo.mp4.mp4" width="640" height="480" controls></video>
 </p>
 
-> ⚠️ This guide is intended as a demonstration of how to integrate the KleidiAI int4 matmul optimized routines in llama.cpp.
+> ⚠️ Please be aware that this guide is only intended as a demonstration of how to integrate the KleidiAI int4 matmul optimized routines in llama.cpp. It is provided without any commitment to support or keep it up to date with current versions of llama.cpp.
 
 ## Target Arm® CPUs
 
