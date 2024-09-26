@@ -1,4 +1,4 @@
-From 8d4bc83e2144cbbe5e634a53ac07a2c6a709b9c0 Mon Sep 17 00:00:00 2001
+From deb08cd16a2fe6fe2dc98197d58b4f0fb3dd9c7f Mon Sep 17 00:00:00 2001
 From: Charles Xu <charles.xu@arm.com>
 Date: Wed, 21 Aug 2024 07:31:51 +0200
 Subject: [PATCH] Use KleidiAI Int4 Matmul micro-kernels in llama.cpp
@@ -8,7 +8,7 @@ repository
 - Implement a KleidiAI backend for llama.cpp
 - Add weight caching feature for KleidiAI
 
-Signed-off-by: Charles Xu <charles.xu@arm.com>
+Signed-off-by: Dan Johansson <dan.johansson@arm.com>
 ---
  CMakeLists.txt    |  52 ++++
  ggml-alloc.c      |  13 +
@@ -920,7 +920,7 @@ index d5d33c2b..84bfd3b1 100644
  
  #if defined(GGML_USE_OPENMP)
 diff --git a/llama.cpp b/llama.cpp
-index 05591aa4..735dde04 100644
+index 05591aa4..99461995 100644
 --- a/llama.cpp
 +++ b/llama.cpp
 @@ -19,6 +19,8 @@
@@ -953,17 +953,17 @@ index 05591aa4..735dde04 100644
  
      // list of mapped fragments (first_offset, last_offset)
      std::vector<std::pair<size_t, size_t>> mapped_fragments;
-@@ -2295,6 +2308,10 @@ struct llama_context {
-             ggml_backend_free(backend);
-         }
+@@ -15987,6 +16000,10 @@ void llama_numa_init(enum ggml_numa_strategy numa) {
  
-+#if GGML_USE_KLEIDIAI
-+        ggml_kai_free_extra_mem();
-+#endif
+ void llama_backend_free(void) {
+     ggml_quantize_free();
 +
-         ggml_backend_buffer_free(buf_output);
-     }
++#if GGML_USE_KLEIDIAI
++    ggml_kai_free_extra_mem();
++#endif
+ }
  
+ int64_t llama_time_us(void) {
 -- 
-2.34.1
+2.39.5 (Apple Git-154)
 
