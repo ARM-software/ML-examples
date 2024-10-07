@@ -142,13 +142,16 @@ Python3.9 but this may change for future releases.
 
 ## Launch project in Visual Studio Code
 
-Upon opening the project in Visual Studio Code, `vcpkg` will automatically install the required packages as specified in the manifest file [vcpkg-configuration.json](vcpkg-configuration.json).
+Upon opening the project in Visual Studio Code, `vcpkg` will automatically install the required packages as specified in
+the manifest file [vcpkg-configuration.json](vcpkg-configuration.json). These may include the FVP binaries.
 
 ## Download Software Packs
 
 Once `vcpkg` has finished configuring the environment, a prompt will appear to install the required CMSIS packs for this project:
 
 ![](docs/01-install-cmsis-packs.png)
+
+Recent versions of CMSIS toolbox will automatically install the missing packs when a project is built.
 
 Alternatively, the packs can be installed manually be opening up a Terminal in Visual Studio Code (Ctrl + Shift + `) and running the following commands:
 
@@ -166,46 +169,21 @@ Use the CMSIS tab in the Activity Bar to build, run and debug the use case sampl
 Simply use the drop-down menus to specify your build, then click the Build button.  The output should look similar to the following:
 
 ```log
- *  Executing task: Workspace: cmsis-csolution.build: Build
-
-info cbuild: Build Invocation 2.0.0 (C) 2023 Arm Ltd. and Contributors
-/home/armuser/Development/ML-examples/cmsis-pack-examples/object-detection/object-detection.Debug+AVH-SSE-300-U55.cprj - info csolution: file generated successfully
-/home/armuser/Development/ML-examples/cmsis-pack-examples/object-detection/object-detection.Debug+AVH-SSE-300-U55.cbuild.yml - info csolution: file is already up-to-date
-/home/armuser/Development/ML-examples/cmsis-pack-examples/mlek.cbuild-idx.yml - info csolution: file is already up-to-date
-info cbuild: Processing 1 context(s)
-===============================================================================
-info cbuild: (1/1) Processing context: "object-detection.Debug+AVH-SSE-300-U55"
-info cbuild: clean finished successfully!
-
-M650: Command completed successfully.
-
-M652: Generated file for project build: '/home/armuser/Development/ML-examples/cmsis-pack-examples/tmp/object-detection/AVH-SSE-300-U55/Debug/CMakeLists.txt'
--- The C compiler identification is ARMClang 6.20.2
--- The CXX compiler identification is ARMClang 6.20.2
--- Detecting C compiler ABI info
--- Detecting C compiler ABI info - done
--- Check for working C compiler: /home/armuser/.config/Code/User/globalStorage/ms-vscode.vscode-embedded-tools/vcpkg/root/downloads/artifacts/vcpkg-artifacts-arm/compilers.arm.armclang/6.20.0/bin/armclang - skipped
--- Detecting C compile features
--- Detecting C compile features - done
--- Detecting CXX compiler ABI info
--- Detecting CXX compiler ABI info - done
--- Check for working CXX compiler: /home/armuser/.config/Code/User/globalStorage/ms-vscode.vscode-embedded-tools/vcpkg/root/downloads/artifacts/vcpkg-artifacts-arm/compilers.arm.armclang/6.20.0/bin/armclang - skipped
--- Detecting CXX compile features
--- Detecting CXX compile features - done
--- Registered toolchain version 6.20.0 does not match running version 6.20.2
--- Configuring done
--- Generating done
--- Build files have been written to: /home/armuser/Development/ML-examples/cmsis-pack-examples/tmp/object-detection/AVH-SSE-300-U55/Debug
-[1/257] Building C object CMakeFiles/object-detection.dir/home/armuser/.cache/arm/packs/ARM/V2M_MPS3_SSE_300_BSP/1.3.0/Native_Driver/systimer_armv8-m_timeout.o
+ *  Executing task: cmsis-csolution.build: Build
+> cbuild /home/kshsis01/eco-projects/oss/ML-examples/cmsis-pack-examples/mlek.csolution.yml --update-rte --packs --context object-detection.Release+AVH-SSE-300-U55
+/home/kshsis01/eco-projects/oss/ML-examples/cmsis-pack-examples/mlek.csolution.yml - warning csolution: cproject.yml files should be placed in separate sub-directories
+/home/kshsis01/eco-projects/oss/ML-examples/cmsis-pack-examples/mlek.csolution.yml - warning csolution: cproject.yml files should be placed in separate sub-directories
++-----------------------------------------------------------------
+(1/1) Building context: "object-detection.Release+AVH-SSE-300-U55"
+Building CMake target 'object-detection.Release+AVH-SSE-300-U55'
+[1/306] Building CXX object CMakeFiles/Group_MainStatic.dir/home/kshsis01/eco-projects/oss/ML-examples/cmsis-pack-examples/object-detection/src/InputFiles.o
+[2/306] Building C object CMakeFiles/Group_Retarget.dir/home/kshsis01/eco-projects/oss/ML-examples/cmsis-pack-examples/device/corstone/src/retarget.o
 ...
 ...
-[257/257] Linking CXX executable /home/armuser/Development/ML-examples/cmsis-pack-examples/out/object-detection/AVH-SSE-300-U55/Debug/object-detection.axf
-Warning: L6439W: Multiply defined Global Symbol flatbuffers::flatbuffer_version_string defined in .data._ZN11flatbuffers25flatbuffer_version_stringE(Model.o) rejected in favor of Symbol defined in .data._ZN11flatbuffers25flatbuffer_version_stringE(Classifier.o).
-...
-...
-"/home/armuser/Development/ML-examples/cmsis-pack-examples/object-detection/linker/mps3-sse-300.sct", line 104 (column 14): Warning: L6314W: No section matches pattern *.o(activation_buf_dram).
-Finished: 0 information, 129 warning and 0 error messages.
-info cbuild: build finished successfully!
+[306/306] Linking CXX executable /home/kshsis01/eco-projects/oss/ML-examples/cmsis-pack-examples/out/object-detection/AVH-SSE-300-U55/Release/object-detection.axf
++------------------------------------------------------------
+Build summary: 1 succeeded, 0 failed - Time Elapsed: 00:00:23
++============================================================
 Build complete
  *  Terminal will be reused by tasks, press any key to close it.
 ```
@@ -219,7 +197,7 @@ a physical hardware board.
 
 - When using a Fixed Virtual Platform (FVP) installed locally:
   ```shell
-  $ <path_to_installed_FVP> -a ./out/kws/AVH-SSE-300-U55/Debug/kws.Debug+AVH-SSE-300-U55.axf -f ./FVP/FVP_Corstone_SSE-300/fvp_config.txt
+  $ FVP_Corstone_SSE-300_Ethos-U55 -a out/object-detection/AVH-SSE-300-U55/Release/object-detection.axf -f ./FVP/FVP_Corstone_SSE-300/fvp_config.txt
   ```
   > **NOTE**: The FVP defaults to running 128 MAC configuration for Arm® Ethos™-U55 NPU.
   > However, our default neural network model for the NPU is for 256 MAC configuration.
@@ -436,20 +414,3 @@ spot immediately. Please help us improve this section by reporting them via GitH
    virtual targets.
    You can build the project but will have to run it on your local machine on an
    installation of the equivalent Fixed Virtual Platform containing Arm® Ethos™-U65 NPU.
-
-7. The newer versions of BSP packs for Arm® Corstone™-300 and Arm® Corstone™-310 require CMSIS 6.
-   There are warnings about some unsatisfied requirements because of this. For example:
-   ```shell
-   MISSING ARM::Device:Definition@2.0.0
-    require CMSIS:CORE@6.0.0
-   MISSING ARM::Device:Native Driver:SysCounter@1.1.0
-    require CMSIS:CORE@6.0.0
-   MISSING ARM::Device:Native Driver:SysTimer@1.1.0
-    require CMSIS:CORE@6.0.0
-   MISSING ARM::Device:Native Driver:Timeout@1.0.0
-    require CMSIS:CORE@6.0.0
-   MISSING ARM::Device:Startup&C Startup@2.0.0
-    require CMSIS:CORE@6.0.0
-   ```
-   These are expected to be resolved once we bump up the version of CMSIS core pack. Currently,
-   this is blocked by other dependencies.

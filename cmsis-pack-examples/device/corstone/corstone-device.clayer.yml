@@ -39,6 +39,10 @@ layer:
         - file: src/uart_stdout.h
         - file: include/BoardInit.hpp
 
+  define:
+    # For profiling under micro_time.cpp in TensorFlow Lite Micro pack
+    - ARM_MODEL_USE_PMU_COUNTERS
+
   components:
     - component: ARM::Device:Definition
     - component: ARM::Device:Startup&C Startup

@@ -27,14 +27,6 @@ layer:
         - file: include/BufAttributes.hpp
         - file: include/ethosu_mem_config.h
 
-  # Workaround 4001: for TensorFlow's pack referring to
-  # CMSIS_DEVICE_ARM_CORTEX_M_XX_HEADER_FILE.
-  # Can be removed once the pack has been fixed.
-  misc:
-    - for-compiler: AC6
-      CPP:
-        - "-include \"RTE_Components.h\""
-
   components:
     - component: ARM::CMSIS:CORE
     - component: ARM::CMSIS:DSP&Source
@@ -44,9 +36,6 @@ layer:
     - component: tensorflow::Data Processing:Math:kissfft
     - component: tensorflow::Data Processing:Math:ruy
     - component: tensorflow::Machine Learning:TensorFlow:Kernel Utils
-      # Workaround 4001 (see description above)
-      define:
-        - CMSIS_DEVICE_ARM_CORTEX_M_XX_HEADER_FILE: CMSIS_device_header
     - component: tensorflow::Machine Learning:TensorFlow:Testing
     - component: ARM::ML Eval Kit:Common:API
     - component: ARM::ML Eval Kit:Common:Log

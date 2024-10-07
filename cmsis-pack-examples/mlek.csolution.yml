@@ -22,16 +22,16 @@ solution:
   cdefault: # use default setup of toolchain specific controls.
 
   packs:
-    - pack: ARM::CMSIS@5.9.0
-    - pack: ARM::CMSIS-DSP@1.15.0
-    - pack: ARM::CMSIS-NN@4.0.0
-    - pack: Arm::ethos-u-core-driver@1.23.2
-    - pack: ARM::ml-embedded-eval-kit-uc-api@23.2.0
-    - pack: tensorflow::flatbuffers@1.23.2
-    - pack: tensorflow::gemmlowp@1.23.2
-    - pack: tensorflow::kissfft@1.23.2
-    - pack: tensorflow::ruy@1.23.2
-    - pack: tensorflow::tensorflow-lite-micro@1.23.2
+    - pack: ARM::CMSIS@6.0.0
+    - pack: ARM::CMSIS-DSP@1.16.0
+    - pack: ARM::CMSIS-NN@6.0.0
+    - pack: Arm::ethos-u-core-driver@1.24.8
+    - pack: ARM::ml-embedded-eval-kit-uc-api@24.8.0
+    - pack: tensorflow::flatbuffers@1.24.8
+    - pack: tensorflow::gemmlowp@1.24.8
+    - pack: tensorflow::kissfft@1.24.8
+    - pack: tensorflow::ruy@1.24.8
+    - pack: tensorflow::tensorflow-lite-micro@1.24.8
 
     - pack: ARM::V2M_MPS3_SSE_300_BSP@1.5.0
     - pack: ARM::V2M_MPS3_SSE_310_BSP@1.4.0
