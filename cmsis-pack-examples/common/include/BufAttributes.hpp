@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2022 Arm Limited and/or its
+ * SPDX-FileCopyrightText: Copyright 2022, 2024 Arm Limited and/or its
  * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -19,9 +19,9 @@
 #ifndef BUF_ATTRIBUTES_HPP
 #define BUF_ATTRIBUTES_HPP
 
-#if defined(ETHOSU55) || defined(ETHOSU65)
+#if defined(ETHOSU55) || defined(ETHOSU65) || defined(ETHOSU85)
 #define ARM_NPU
-#endif /* defined(ETHOSU55) || defined(ETHOSU65) */
+#endif /* defined(ETHOSU55) || defined(ETHOSU65) || defined(ETHOSU85) */
 
 #if defined(ARM_NPU)
 /* When Arm NPU is defined, we use the config set by NPU mem parameters */

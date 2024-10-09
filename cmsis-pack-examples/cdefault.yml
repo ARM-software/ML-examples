@@ -17,10 +17,9 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/2.4.0/tools/projmgr/schemas/cdefault.schema.json
 
 default:
-  # Note that we need AC6@6.18 or higher to compile for Corstone-310 target.
-  compiler: AC6
 
   misc:
+    # Note that we need AC6@6.18 or higher to compile for Arm Cortex-M85 based targets.
     - for-compiler: AC6
       CPP:
         - -std=c++17

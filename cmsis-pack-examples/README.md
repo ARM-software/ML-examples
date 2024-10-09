@@ -21,6 +21,8 @@
   - [Generate and build the project](#generate-and-build-the-project)
   - [Execute Project](#execute-project)
     - [Working with Virtual Streaming Interface](#working-with-virtual-streaming-interface)
+      - [Arm MPS3 based FVPs](#arm-mps3-based-fvps)
+      - [Arm MPS4 based FVPs](#arm-mps4-based-fvps)
   - [Application output](#application-output)
 - [Trademarks](#trademarks)
 - [Licenses](#licenses)
@@ -48,10 +50,12 @@ Target platforms supported:
 | Arm® Corstone™-300-U55       | Virtual or physical | Arm® Cortex®-M55 CPU with Arm® Ethos™-U55     | All      |
 | Arm® Corstone™-300-U65       | Virtual or physical | Arm® Cortex®-M55 CPU with Arm® Ethos™-U65     | All      |
 | Arm® Corstone™-310           | Virtual or physical | Arm® Cortex®-M85 CPU                          | All      |
-| Arm® Corstone™-310           | Virtual or physical | Arm® Cortex®-M85 CPU with Arm® Ethos™-U55     | All      |
+| Arm® Corstone™-310-U55       | Virtual or physical | Arm® Cortex®-M85 CPU with Arm® Ethos™-U55     | All      |
 | Arm® Corstone™-310-U65       | Virtual or physical | Arm® Cortex®-M85 CPU with Arm® Ethos™-U65 NPU | All      |
 | Arm® Corstone™-315           | Virtual or physical | Arm® Cortex®-M85 CPU                          | All      |
 | Arm® Corstone™-315-U65       | Virtual or physical | Arm® Cortex®-M85 CPU with Arm® Ethos™-U65 NPU | All      |
+| Arm® Corstone™-320           | Virtual or physical | Arm® Cortex®-M85 CPU                          | All      |
+| Arm® Corstone™-320-U85       | Virtual or physical | Arm® Cortex®-M85 CPU with Arm® Ethos™-U85 NPU | All      |
 | Alif™ Ensemble™ E7 AI/ML Kit | Physical board      | Arm® Cortex®-M55 CPU with Arm® Ethos™-U55 NPU | All      |
 | STM32® F746G-Discovery       | Physical board      | Arm® Cortex®-M7 CPU                           | KWS      |
 | NXP® FRDM-K64F               | Physical board      | Arm® Cortex®-M4 CPU                           | KWS      |
@@ -195,12 +199,15 @@ The built artifacts will be located under the `out/` directory in the project ro
 The project is configured for execution on Arm Virtual Hardware which removes the requirement for
 a physical hardware board.
 
-- When using a Fixed Virtual Platform (FVP) installed locally:
+- When using a Fixed Virtual Platform (FVP) installed locally by `vcpkg`:
   ```shell
-  $ FVP_Corstone_SSE-300_Ethos-U55 -a out/object-detection/AVH-SSE-300-U55/Release/object-detection.axf -f ./FVP/FVP_Corstone_SSE-300/fvp_config.txt
+  $ FVP_Corstone_SSE-300_Ethos-U55 \
+    -a out/object-detection/AVH-SSE-300-U55/Release/object-detection.axf \
+    -f device/corstone/fvp-configs/mps3_fvp_config.txt
   ```
   > **NOTE**: The FVP defaults to running 128 MAC configuration for Arm® Ethos™-U55 NPU.
-  > However, our default neural network model for the NPU is for 256 MAC configuration.
+  > However, our default neural network model for the NPU is for 256 MAC configuration. The FVP
+  > configuration file sets the MAC units to be 256.
 
 - [Keil Studio Cloud](https://studio.keil.arm.com/) integrates also the Arm Virtual Hardware
   VHT_Corstone_SSE-300_Ethos-U55 model. The steps to use the example are:
@@ -235,7 +242,9 @@ your local machine and stream these over to the application running within the F
 
 To run the VSI application, append the command line with the v_path argument. For example:
 
-#### Arm Corstone-300 + Arm Corstone-310
+#### Arm MPS3 based FVPs
+
+For Arm Corstone-300 and Arm Corstone-310:
 
 ```shell
   $ <path_to_installed_FVP> \
@@ -244,7 +253,9 @@ To run the VSI application, append the command line with the v_path argument. Fo
     -C mps3_board.v_path=./device/corstone/vsi/video/python/
   ```
 
-#### Arm Corstone-315
+#### Arm MPS4 based FVPs
+
+For Arm Corstone-315 and Arm Corstone-320:
 
 ```shell
   $ <path_to_installed_FVP> \
