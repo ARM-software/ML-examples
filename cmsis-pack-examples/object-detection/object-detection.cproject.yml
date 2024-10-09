@@ -33,6 +33,8 @@ project:
         - +AVH-SSE-310-U65
         - +AVH-SSE-315
         - +AVH-SSE-315-U65
+        - +AVH-SSE-320
+        - +AVH-SSE-320-U85
       files:
         - file: include/InputFiles.hpp
         - file: src/InputFiles.cpp
@@ -58,6 +60,8 @@ project:
         - +AVH-SSE-310-U65
         - +AVH-SSE-315
         - +AVH-SSE-315-U65
+        - +AVH-SSE-320
+        - +AVH-SSE-320-U85
 
     - layer: ../device/alif-ensemble/alif-ensemble-E7-device.clayer.yml
       for-context:

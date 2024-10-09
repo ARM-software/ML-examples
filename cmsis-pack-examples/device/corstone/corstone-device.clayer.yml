@@ -18,19 +18,22 @@
 
 layer:
 
-  description: Corstone-300/310 device related components and files.
+  description: Arm Corstone reference package related components and files.
 
   groups:
     - group: Retarget
       for-context:
         - +AVH-SSE-300
-        - +AVH-SSE-310
-        - +AVH-SSE-315
         - +AVH-SSE-300-U55
-        - +AVH-SSE-310-U55
         - +AVH-SSE-300-U65
+        - +AVH-SSE-310
+        - +AVH-SSE-310-U55
         - +AVH-SSE-310-U65
+        - +AVH-SSE-315
         - +AVH-SSE-315-U65
+        - +AVH-SSE-320
+        - +AVH-SSE-320-U85
+
       files:
         - file: src/retarget.c
         - file: src/uart_cmsdk_apb.c
@@ -58,6 +61,9 @@ layer:
         - +AVH-SSE-300-U65
         - +AVH-SSE-310-U65
         - +AVH-SSE-315-U65
+    - component: Arm::Machine Learning:NPU Support:Ethos-U Driver&Generic U85
+      for-context:
+        - +AVH-SSE-320-U85
     - component: tensorflow::Machine Learning:TensorFlow:Kernel&Ethos-U
       for-context:
         - +AVH-SSE-300-U55
@@ -65,8 +71,10 @@ layer:
         - +AVH-SSE-300-U65
         - +AVH-SSE-310-U65
         - +AVH-SSE-315-U65
+        - +AVH-SSE-320-U85
     - component: tensorflow::Machine Learning:TensorFlow:Kernel&CMSIS-NN
       for-context:
         - +AVH-SSE-300
         - +AVH-SSE-310
         - +AVH-SSE-315
+        - +AVH-SSE-320

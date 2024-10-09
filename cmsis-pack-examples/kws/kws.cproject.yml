@@ -26,13 +26,15 @@ project:
     - group: Wav file based example
       for-context:
         - +AVH-SSE-300
-        - +AVH-SSE-310
-        - +AVH-SSE-315
-        - +AVH-SSE-300-U65
-        - +AVH-SSE-310-U65
-        - +AVH-SSE-315-U65
         - +AVH-SSE-300-U55
+        - +AVH-SSE-300-U65
+        - +AVH-SSE-310
         - +AVH-SSE-310-U55
+        - +AVH-SSE-310-U65
+        - +AVH-SSE-315
+        - +AVH-SSE-315-U65
+        - +AVH-SSE-320
+        - +AVH-SSE-320-U85
         - +FRDM-K64F
 
       files:
@@ -69,6 +71,10 @@ project:
             - +AVH-SSE-310-U65
             - +AVH-SSE-315-U65
 
+        - file: src/kws_micronet_m_vela_Z256.tflite.cpp
+          for-context:
+            - +AVH-SSE-320-U85
+
         - file: src/kws_micronet_m.tflite.cpp
           for-context:
             - +FRDM-K64F
@@ -76,6 +82,7 @@ project:
             - +AVH-SSE-300
             - +AVH-SSE-310
             - +AVH-SSE-315
+            - +AVH-SSE-320
 
     - group: Device Files
       files:
@@ -84,19 +91,26 @@ project:
             - +AVH-SSE-300
             - +AVH-SSE-300-U55
             - +AVH-SSE-300-U65
+
         - file: linker/mps3-sse-310.sct
           for-context:
             - +AVH-SSE-310
             - +AVH-SSE-310-U55
             - +AVH-SSE-310-U65
+
         - file: linker/mps4-sse-315.sct
           for-context:
             - +AVH-SSE-315
             - +AVH-SSE-315-U65
+            - +AVH-SSE-320
+            - +AVH-SSE-320-U85
+
         - file: linker/frdm-k64f.sct
           for-context: +FRDM-K64F
+
         - file: linker/stm32f746-disco.sct
           for-context: +STM32F746-DISCO
+
         - file: linker/alif-e7-m55-he.sct
           for-context: +Alif-E7-M55-HE
 
@@ -115,6 +129,8 @@ project:
         - +AVH-SSE-310-U65
         - +AVH-SSE-315
         - +AVH-SSE-315-U65
+        - +AVH-SSE-320
+        - +AVH-SSE-320-U85
 
     - layer: ../device/frdm-k64f/frdm-k64f-device.clayer.yml
       for-context:

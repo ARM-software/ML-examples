@@ -94,7 +94,7 @@ static int arm_ethosu_npu_init(void)
     #if defined(CORSTONE300_FVP)
         void* const ethosu_base_address = (void*)(ETHOS_U55_APB_BASE_S);
     #else
-        void* const ethosu_base_address = (void*)(NPU0_APB_BASE_NS);
+        void* const ethosu_base_address = (void*)(NPU0_APB_BASE_S);
     #endif
 
     debug("Cache arena: 0x%p\n", get_cache_arena());

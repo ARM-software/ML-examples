@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2024 Arm Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,11 +25,11 @@
 #define ETHOS_U_MEM_BYTE_ALIGNMENT 16
 
 #ifndef ETHOS_U_NPU_MEMORY_MODE
-#if defined(ETHOSU65)
+#if defined(ETHOSU65) || defined(ETHOSU85)
 #define ETHOS_U_NPU_MEMORY_MODE ETHOS_U_NPU_MEMORY_MODE_DEDICATED_SRAM
 #else
 #define ETHOS_U_NPU_MEMORY_MODE ETHOS_U_MEMORY_MODE_SHARED_SRAM
-#endif /* defined (ETHOSU65) */
+#endif /* defined (ETHOSU65) || defined(ETHOSU85) */
 #endif /* ETHOS_U_NPU_MEMORY_MODE */
 
 #if (ETHOS_U_NPU_MEMORY_MODE == ETHOS_U_NPU_MEMORY_MODE_DEDICATED_SRAM)
