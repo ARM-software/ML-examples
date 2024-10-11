@@ -236,9 +236,11 @@ $ cp ./out/kws/STM32F746-DISCO/Release/kws.Release+STM32F746-DISCO.bin /media/us
 
 ### Working with Virtual Streaming Interface
 
-The object detection example supports the Virtual Streaming Interface (VSI) feature found in the FVPs for Arm Corstone-300, Corstone-310 and Corstone-315.
-This allows the locally installed FVP application (or an AVH instance) to read images in from a camera connected to
-your local machine and stream these over to the application running within the FVP.
+The object detection example supports the Virtual Streaming Interface (VSI) feature found in the
+FVPs for Arm Corstone-300, Corstone-310, Corstone-315 and Corstone-320. To build the example with
+VSI support, switch the build type to `VSI-enabled`. This allows the locally installed FVP
+application to read images in from a camera connected to your host machine and stream these over
+to the application running within the FVP.
 
 To run the VSI application, append the command line with the v_path argument. For example:
 
@@ -248,8 +250,8 @@ For Arm Corstone-300 and Arm Corstone-310:
 
 ```shell
   $ <path_to_installed_FVP> \
-    -a ./out/object-detection-vsi/AVH-SSE-300-U55/Release/object-detection-vsi.axf \
-    -C ethosu.num_macs=256 \
+    -a ./out/object-detection/AVH-SSE-300-U55/VSI-enabled/object-detection.axf \
+    -f ./device/corstone/fvp-configs/mps3_fvp_config.txt \
     -C mps3_board.v_path=./device/corstone/vsi/video/python/
   ```
 
@@ -259,8 +261,8 @@ For Arm Corstone-315 and Arm Corstone-320:
 
 ```shell
   $ <path_to_installed_FVP> \
-    -a ./out/object-detection-vsi/AVH-SSE-315-U65/Release/object-detection-vsi.axf \
-    -C ethosu.num_macs=256 \
+    -a ./out/object-detection/AVH-SSE-320-U85/VSI-enabled/object-detection.axf \
+    -f ./device/corstone/fvp-configs/mps4_fvp_config.txt \
     -C mps4_board.v_path=./device/corstone/vsi/video/python/
 ```
 
