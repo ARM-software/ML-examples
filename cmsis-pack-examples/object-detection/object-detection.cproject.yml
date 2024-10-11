@@ -24,17 +24,9 @@ project:
 
   groups:
     - group: MainStatic
-      for-context:
-        - +AVH-SSE-300
-        - +AVH-SSE-300-U55
-        - +AVH-SSE-300-U65
-        - +AVH-SSE-310
-        - +AVH-SSE-310-U55
-        - +AVH-SSE-310-U65
-        - +AVH-SSE-315
-        - +AVH-SSE-315-U65
-        - +AVH-SSE-320
-        - +AVH-SSE-320-U85
+      not-for-context:
+        - .VSI-enabled
+        - +Alif-E7-M55-HP
       files:
         - file: include/InputFiles.hpp
         - file: src/InputFiles.cpp
@@ -46,6 +38,61 @@ project:
         - +Alif-E7-M55-HP
       files:
         - file: src/main_live.cpp
+
+    - group: MainVSI
+      for-context:
+        - .VSI-enabled
+      files:
+        - file: src/main_vsi.cpp
+
+    - group: Use Case
+      files:
+        - file: src/yolo-fastest_192_face_v4.tflite.cpp
+          for-context:
+            - +AVH-SSE-300
+            - +AVH-SSE-310
+            - +AVH-SSE-315
+            - +AVH-SSE-320
+        - file: src/yolo-fastest_192_face_v4_vela_H256.tflite.cpp
+          for-context:
+            - +AVH-SSE-300-U55
+            - +AVH-SSE-310-U55
+            - +Alif-E7-M55-HP
+        - file: src/yolo-fastest_192_face_v4_vela_Y256.tflite.cpp
+          for-context:
+            - +AVH-SSE-300-U65
+            - +AVH-SSE-310-U65
+            - +AVH-SSE-315-U65
+        - file: src/yolo-fastest_192_face_v4_vela_Z256.tflite.cpp
+          for-context:
+            - +AVH-SSE-320-U85
+
+    - group: Device Files
+      files:
+        - file: linker/mps3-sse-300.sct
+          for-context:
+            - +AVH-SSE-300
+            - +AVH-SSE-300-U55
+            - +AVH-SSE-300-U65
+
+        - file: linker/mps3-sse-310.sct
+          for-context:
+            - +AVH-SSE-310
+            - +AVH-SSE-310-U55
+            - +AVH-SSE-310-U65
+
+        - file: linker/mps4-sse-315.sct
+          for-context:
+            - +AVH-SSE-315
+            - +AVH-SSE-315-U65
+            - +AVH-SSE-320
+            - +AVH-SSE-320-U85
+
+        - file: linker/alif-e7-m55-hp.sct
+          for-context: +Alif-E7-M55-HP
+
+  define:
+    - ACTIVATION_BUF_SZ: 532480
 
   layers:
     - layer: ../common/common.clayer.yml
@@ -67,4 +114,9 @@ project:
       for-context:
         - +Alif-E7-M55-HP
 
-    - layer: ./object-detection.clayer.yml
+    - layer: ../device/corstone/vsi/vsi.clayer.yml
+      for-context:
+        - .VSI-enabled
+
+  components:
+    - component: ARM::ML Eval Kit:Vision:Object detection

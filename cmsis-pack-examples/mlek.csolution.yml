@@ -58,6 +58,11 @@ solution:
       debug: off
       optimize: speed
 
+    - type: VSI-enabled
+      compiler: AC6
+      debug: off
+      optimize: speed
+
   target-types:
     # Arm Corstone-300 targets
     - type: AVH-SSE-300
@@ -156,35 +161,11 @@ solution:
         - +AVH-SSE-315-U65
         - +AVH-SSE-320
         - +AVH-SSE-320-U85
-        - +Alif-E7-M55-HP
-
-    # Object detection with Virtual Streaming Interface (VSI) support
-    - project: ./object-detection/object-detection-vsi.cproject.yml
-      for-context:
-        - +AVH-SSE-300
-        - +AVH-SSE-300-U55
-        - +AVH-SSE-300-U65
-        - +AVH-SSE-310
-        - +AVH-SSE-310-U55
-        - +AVH-SSE-310-U65
-        - +AVH-SSE-315
-        - +AVH-SSE-315-U65
-        - +AVH-SSE-320
-        - +AVH-SSE-320-U85
+        - .Debug+Alif-E7-M55-HP
+        - .Release+Alif-E7-M55-HP
 
     # Keyword Spotting (KWS) use case
     - project: ./kws/kws.cproject.yml
-      for-context:
-        - +AVH-SSE-300
-        - +AVH-SSE-300-U55
-        - +AVH-SSE-300-U65
-        - +AVH-SSE-310
-        - +AVH-SSE-310-U55
-        - +AVH-SSE-310-U65
-        - +AVH-SSE-315
-        - +AVH-SSE-315-U65
-        - +AVH-SSE-320
-        - +AVH-SSE-320-U85
-        - +FRDM-K64F
-        - +STM32F746-DISCO
-        - +Alif-E7-M55-HE
+      not-for-context:
+        - .VSI-enabled
+        - +Alif-E7-M55-HP
