@@ -27,8 +27,8 @@
 ## Prerequisities
 
 - Experience with Arm® cross-compilation on Android™
-- Proficiency with Android® shell commands
-- An Android® device with an Arm® CPU with <strong>FEAT_DotProd</strong> (dotprod) and <strong>FEAT_I8MM</strong> (i8mm) features
+- Proficiency with Android™ shell commands
+- An Android™ device with an Arm® CPU with <strong>FEAT_DotProd</strong> (dotprod) and <strong>FEAT_I8MM</strong> (i8mm) features
 
 ## Dependencies
 - A laptop/PC with a Linux®-based operating system (tested on Ubuntu® 20.04.4 LTS)
@@ -53,7 +53,7 @@ These KleidiAI micro-kernels were fundamental to the Cookie and Ada chatbot, whi
 
 Arm® CPUs with <strong>FEAT_DotProd</strong> (dotprod) and <strong>FEAT_I8MM</strong> (i8mm) features.
 
-## Running llama.cpp with KleidiAI
+## Running llama.cpp with KleidiAI on Android™
 
 Connect your Android™ device to your computer and open Terminal. Then, follow the following steps to apply the patch with the KleidiAI backend on top of llama.cpp.
 
@@ -101,15 +101,6 @@ cmake -DLLAMA_KLEIDIAI=ON -DLLAMA_KLEIDIAI_CACHE=ON -DCMAKE_TOOLCHAIN_FILE=${NDK
 
 make -j4
 ```
-Build the llama.cpp project for Linux®:
-
-```bash
-mkdir build && cd build
-
-cmake -DLLAMA_KLEIDIAI=ON -DLLAMA_KLEIDIAI_CACHE=ON -DCMAKE_C_FLAGS=-march=armv8.2-a+dotprod+i8mm -DCMAKE_CXX_FLAGS=-march=armv8.2-a+dotprod+i8mm ..
-
-make -j4
-```
 The  -DLLAMA_KLEIDIAI_CACHE=ON  is used to enable the weights caching. Weights caching is a feature available in the KleidiAI backend to improve the model loading time. Since the layout of the original model weights is transformed by KleidiAI to improve the performance of the matrix-multiplication routines, this option ensures that the weights transformation only happens the first time you run the model.
 To disable this option, you simply remove the flag from the cmake command.
 
@@ -147,5 +138,44 @@ Run the model inference using the `llama-cli` binary using 4 CPU cores:
 ```bash
 ./llama-cli -m phi-2.Q4_0.gguf -p "Write a code in C for bubble sorting" -n 32 -t 4
 ```
+
+## Building llama.cpp with KleidiAI for other platforms
+KleidiAI can also be enabled on macOS® and Windows® on Arm® with FEAT_DotProd (dotprod) and FEAT_I8MM (i8mm) features.
+
+### Linux®:
+
+```bash
+mkdir build && cd build
+
+cmake -DLLAMA_KLEIDIAI=ON -DLLAMA_KLEIDIAI_CACHE=ON -DCMAKE_C_FLAGS=-march=armv8.2-a+dotprod+i8mm -DCMAKE_CXX_FLAGS=-march=armv8.2-a+dotprod+i8mm ..
+
+make -j4
+```
+
+### macOS®:
+```bash
+mkdir build && cd build
+
+# The -DLLAMA_METAL=OFF is used to disable running on Metal GPU
+cmake -DLLAMA_KLEIDIAI=ON -DCMAKE_C_FLAGS=-march=armv8.2-a+i8mm+dotprod -DCMAKE_CXX_FLAGS=-march=armv8.2-a+i8mm+dotprod -DLLAMA_METAL=OFF ..
+
+make -j4
+```
+
+### Windows® on Arm®:
+
+- Install [Visual Studio 2022](https://visualstudio.microsoft.com/de/vs/community/)
+- Install Required Components in Visual Studio Installer
+  - Workload Tab: Desktop development with C++
+  - Individual Components Tab (search for these components): C++ CMake Tools for Windows®, Git for Windows®, C++ Clang Compiler for Windows®, MSBuild Support for LLVM-Toolset (clang)
+- Environment Setup:
+  - If the host machine is x86-based, please use the integrated Developer Command Prompt / PowerShell in VS2022 for building and testing.
+  - If the host machine is Arm64-based, please use the system's cmd and set environment variables by running `"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" arm64`as the integrated Developer Command Prompt / PowerShell in VS2022 is meant for x86
+```cmd
+cmake --preset arm64-windows-llvm-release -D LLAMA_KLEIDIAI=ON -D KLEIDIAI_BUILD_TESTS=OFF -D LLAMA_OPENMP=OFF
+cmake --build build-arm64-windows-llvm-release
+```
+
+The options LLAMA_KLEIDIAI_CACHE and KLEIDIAI_BUILD_TESTS are disabled on Windows®, as they are currently not supported. And please use llvm preset as MSVC is not supported either.
 
 That’s all for this guide!

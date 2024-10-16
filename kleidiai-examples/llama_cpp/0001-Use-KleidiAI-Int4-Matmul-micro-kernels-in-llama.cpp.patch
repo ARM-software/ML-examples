@@ -1,4 +1,4 @@
-From deb08cd16a2fe6fe2dc98197d58b4f0fb3dd9c7f Mon Sep 17 00:00:00 2001
+From d7ff60d4824e9ffa7fc11c6548462008bea0121f Mon Sep 17 00:00:00 2001
 From: Charles Xu <charles.xu@arm.com>
 Date: Wed, 21 Aug 2024 07:31:51 +0200
 Subject: [PATCH] Use KleidiAI Int4 Matmul micro-kernels in llama.cpp
@@ -8,15 +8,15 @@ repository
 - Implement a KleidiAI backend for llama.cpp
 - Add weight caching feature for KleidiAI
 
-Signed-off-by: Dan Johansson <dan.johansson@arm.com>
+Signed-off-by: Hao Wei <hao.wei@arm.com>
 ---
  CMakeLists.txt    |  52 ++++
  ggml-alloc.c      |  13 +
- ggml-kleidiai.cpp | 675 ++++++++++++++++++++++++++++++++++++++++++++++
- ggml-kleidiai.h   |  45 ++++
+ ggml-kleidiai.cpp | 746 ++++++++++++++++++++++++++++++++++++++++++++++
+ ggml-kleidiai.h   |  45 +++
  ggml.c            |  27 ++
- llama.cpp         |  19 +-
- 6 files changed, 830 insertions(+), 1 deletion(-)
+ llama.cpp         |  23 +-
+ 6 files changed, 901 insertions(+), 5 deletions(-)
  create mode 100644 ggml-kleidiai.cpp
  create mode 100644 ggml-kleidiai.h
 
@@ -123,10 +123,10 @@ index bd367c42..ed4ce0ae 100644
          if (this_size > max_size) {
 diff --git a/ggml-kleidiai.cpp b/ggml-kleidiai.cpp
 new file mode 100644
-index 00000000..9129ea99
+index 00000000..53236893
 --- /dev/null
 +++ b/ggml-kleidiai.cpp
-@@ -0,0 +1,675 @@
+@@ -0,0 +1,746 @@
 +/*
 + * Copyright (c) 2024 Arm Limited.
 + *
@@ -151,7 +151,7 @@ index 00000000..9129ea99
 + * SOFTWARE.
 + */
 +
-+#if defined(__aarch64__) && (defined(__ANDROID__) || defined(__linux__))
++#if defined(__aarch64__)
 +#include "ggml-kleidiai.h"
 +
 +#include "ggml.h"
@@ -163,9 +163,21 @@ index 00000000..9129ea99
 +#include <cfloat>
 +#include <stdint.h>
 +#include <string.h>
++#if defined(__linux__)
 +#include <asm/hwcap.h>
 +#include <sys/auxv.h>
++#elif defined(__APPLE__)
++#include <string_view>
++#include <sys/sysctl.h>
++#include <sys/types.h>
++#elif defined(_WIN32)
++#include <windows.h>
++#include <excpt.h>
++#endif
 +#if defined(GGML_KLEIDIAI_USE_CACHE)
++#if !(defined(__linux__) || defined(__APPLE__))
++#error "GGML_KLEIDIAI_USE_CACHE is only supported on Linux and macOS"
++#endif
 +#include <cstring>
 +#include <sys/mman.h>
 +#include <sys/stat.h>
@@ -308,13 +320,75 @@ index 00000000..9129ea99
 +    return (features & feature_mask);
 +}
 +
-+static void get_cpu_features(cpu_features &isa) {
++#if defined(__APPLE__)
++template <typename T>
++T get_sysctl_by_name(std::string_view name) {
++    T value{};
++    size_t size = sizeof(T);
++    if (sysctlbyname(name.data(), &value, &size, nullptr, 0) != 0) {
++        value = 0;
++    }
++    return value;
++}
++#endif
++
++#if defined(_WIN32)
++inline bool is_feature_supported(DWORD feature) {
++    return IsProcessorFeaturePresent(feature);
++}
++
++#pragma optimize("", off)  // Disable optimization for the exception handling
++bool check_i8mm_support() {
++    bool i8mm_supported = true;
++    __try {
++        int8x16_t matA = vdupq_n_s8(1);
++        int8x16_t matB = vdupq_n_s8(2);
++        int32x4_t matC = vmmlaq_s32(vdupq_n_s32(0), matA, matB);
++        int32_t array[4];
++        vst1q_s32(array, matC);
++        for (int i = 0; i < 4; ++i) {
++            assert(array[i]== 16);
++        }
++    }
++    __except (GetExceptionCode() == STATUS_ILLEGAL_INSTRUCTION ? 1 : 0)
++    {
++        i8mm_supported = false;
++    }
++    return i8mm_supported;
++}
++#pragma optimize("", on)  // Re-enable optimization
++#endif
++
++static void get_cpu_features_impl(cpu_features &isa) {
++#if defined (__linux__)
 +    const uint32_t hwcaps   = getauxval(AT_HWCAP);
 +    const uint32_t hwcaps2  = getauxval(AT_HWCAP2);
 +
 +    isa.neon = is_feature_supported(hwcaps, KAI_FEATURE_HWCAP_ASIMD);
 +    isa.dot  = is_feature_supported(hwcaps, KAI_FEATURE_HWCAP_ASIMDDP);
 +    isa.i8mm = is_feature_supported(hwcaps2, KAI_FEATURE_HWCAP2_I8MM);
++
++#elif defined(__APPLE__)
++    isa.neon = get_sysctl_by_name<uint32_t>("hw.optional.AdvSIMD") == 1;
++    isa.dot = get_sysctl_by_name<uint32_t>("hw.optional.arm.FEAT_DotProd") == 1;
++    isa.i8mm = get_sysctl_by_name<uint32_t>("hw.optional.arm.FEAT_I8MM") == 1;
++
++#elif defined(_WIN32)
++    isa.neon = is_feature_supported(PF_ARM_NEON_INSTRUCTIONS_AVAILABLE);
++    isa.dot  = is_feature_supported(PF_ARM_V8_INSTRUCTIONS_AVAILABLE);
++    isa.i8mm = check_i8mm_support();
++#endif
++}
++
++static const cpu_features& get_cpu_features() {
++    static cpu_features isa;
++    static bool initialized = false;
++
++    if (!initialized) {
++        get_cpu_features_impl(isa);
++        initialized = true;
++    }
++    return isa;
 +}
 +
 +typedef void (*ggml_kai_func_t)(const struct ggml_compute_params * params, const ggml_tensor * src0, const ggml_tensor * src1, ggml_tensor * dst);
@@ -343,8 +417,7 @@ index 00000000..9129ea99
 +        return false;
 +    }
 +
-+    cpu_features cpu;
-+    get_cpu_features(cpu);
++    const cpu_features& cpu = get_cpu_features();
 +
 +    // Check whether the target platfom has i8mm and dotprod features
 +    if(!(cpu.i8mm && cpu.dot)) {
@@ -396,8 +469,7 @@ index 00000000..9129ea99
 +    GGML_KAI_UNUSED(k);
 +
 +    // Get CPU features
-+    cpu_features cpu;
-+    get_cpu_features(cpu);
++    const cpu_features& cpu = get_cpu_features();
 +
 +#if defined(__ARM_FEATURE_MATMUL_INT8) && defined(__ARM_FEATURE_DOTPROD)
 +    if(cpu.i8mm && cpu.dot) {
@@ -760,8 +832,7 @@ index 00000000..9129ea99
 +        const int32_t b = cur->ne[2];
 +
 +        // Temporary solution as we should check whether we can run the kleidiai matmul micro-kernels
-+        cpu_features cpu;
-+        get_cpu_features(cpu);
++        const cpu_features& cpu = get_cpu_features();
 +
 +        // Check whether the target platfom has i8mm and dotprod features
 +        if(!(cpu.i8mm && cpu.dot)) {
@@ -801,7 +872,7 @@ index 00000000..9129ea99
 +    close(g_kai_cached_weight.fd);
 +#endif
 +}
-+#endif // defined(__aarch64__) && (defined(__ANDROID__) || defined(__linux__))
++#endif // defined(__aarch64__)
 diff --git a/ggml-kleidiai.h b/ggml-kleidiai.h
 new file mode 100644
 index 00000000..a4cdf1fb
@@ -920,7 +991,7 @@ index d5d33c2b..84bfd3b1 100644
  
  #if defined(GGML_USE_OPENMP)
 diff --git a/llama.cpp b/llama.cpp
-index 05591aa4..99461995 100644
+index 05591aa4..1c63d5ec 100644
 --- a/llama.cpp
 +++ b/llama.cpp
 @@ -19,6 +19,8 @@
@@ -937,23 +1008,41 @@ index 05591aa4..99461995 100644
      llama_mmap(const llama_mmap &) = delete;
  
 -#ifdef _POSIX_MAPPED_FILES
-+#ifdef GGML_USE_KLEIDIAI
++#if !defined(GGML_USE_KLEIDIAI) && (defined(_POSIX_MAPPED_FILES) || defined(_WIN32))
 +    // With KleidiAI, we disable mmap to allow the backend
 +    // to re-use the memory allocated for the weights.
 +    // KleidiAI requires to pack the weights in a different format from the original one
 +    // to improve the overall computational efficiency.
 +    // However, since RAM is very limited on some devices, we want to re-use the original
 +    // storage to avoid allocating additional memory.
-+    static constexpr bool SUPPORTED = false;
-+#elif _POSIX_MAPPED_FILES
      static constexpr bool SUPPORTED = true;
++#else
++    static constexpr bool SUPPORTED = false;
 +#endif
 +
 +#ifdef _POSIX_MAPPED_FILES
  
      // list of mapped fragments (first_offset, last_offset)
      std::vector<std::pair<size_t, size_t>> mapped_fragments;
-@@ -15987,6 +16000,10 @@ void llama_numa_init(enum ggml_numa_strategy numa) {
+@@ -1473,8 +1486,6 @@ struct llama_mmap {
+         }
+     }
+ #elif defined(_WIN32)
+-    static constexpr bool SUPPORTED = true;
+-
+     llama_mmap(struct llama_file * file, size_t prefetch = (size_t) -1, bool numa = false) {
+         GGML_UNUSED(numa);
+ 
+@@ -1535,8 +1546,6 @@ struct llama_mmap {
+         }
+     }
+ #else
+-    static constexpr bool SUPPORTED = false;
+-
+     llama_mmap(struct llama_file * file, size_t prefetch = -1, bool numa = false) {
+         GGML_UNUSED(file);
+         GGML_UNUSED(prefetch);
+@@ -15987,6 +15996,10 @@ void llama_numa_init(enum ggml_numa_strategy numa) {
  
  void llama_backend_free(void) {
      ggml_quantize_free();
