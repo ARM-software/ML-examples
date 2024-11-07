@@ -1,40 +1,96 @@
-From d7ff60d4824e9ffa7fc11c6548462008bea0121f Mon Sep 17 00:00:00 2001
-From: Charles Xu <charles.xu@arm.com>
-Date: Wed, 21 Aug 2024 07:31:51 +0200
+From 5dcac94d697cdb2554e3afa43c5643a9509b5224 Mon Sep 17 00:00:00 2001
+From: Gian Marco Iodice <gianmarco.iodice@arm.com>
+Date: Mon, 18 Nov 2024 16:57:08 +0000
 Subject: [PATCH] Use KleidiAI Int4 Matmul micro-kernels in llama.cpp
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
 - Update CMake file to fetch the Int4 micro-kernels from the KleidiAI
-repository
-- Implement a KleidiAI backend for llama.cpp
+  repository
+- Rebase to master@b8deef0ec0af5febac1d2cfd9119ff330ed0b762
+- Add runtime CPU feature detection (Arm® Neon™, dotprod, i8mm and SME)
 - Add weight caching feature for KleidiAI
+- Adds SME kernel support from KleidiAI
 
-Signed-off-by: Hao Wei <hao.wei@arm.com>
+Signed-off-by: Gian Marco Iodice <gianmarco.iodice@arm.com>
 ---
- CMakeLists.txt    |  52 ++++
- ggml-alloc.c      |  13 +
- ggml-kleidiai.cpp | 746 ++++++++++++++++++++++++++++++++++++++++++++++
- ggml-kleidiai.h   |  45 +++
- ggml.c            |  27 ++
- llama.cpp         |  23 +-
- 6 files changed, 901 insertions(+), 5 deletions(-)
- create mode 100644 ggml-kleidiai.cpp
- create mode 100644 ggml-kleidiai.h
+ ggml/CMakeLists.txt        |   2 +
+ ggml/include/ggml-cpu.h    |  13 +
+ ggml/src/CMakeLists.txt    |  65 +++
+ ggml/src/ggml-alloc.c      |  13 +
+ ggml/src/ggml-cpu.c        |  37 +-
+ ggml/src/ggml-kleidiai.cpp | 930 +++++++++++++++++++++++++++++++++++++
+ ggml/src/ggml-kleidiai.h   |  45 ++
+ ggml/src/ggml.c            |  13 +
+ src/CMakeLists.txt         |   4 +
+ src/llama.cpp              |  15 +-
+ 10 files changed, 1122 insertions(+), 15 deletions(-)
+ create mode 100644 ggml/src/ggml-kleidiai.cpp
+ create mode 100644 ggml/src/ggml-kleidiai.h
 
-diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 08481334..6aed4fc6 100644
---- a/CMakeLists.txt
-+++ b/CMakeLists.txt
-@@ -548,6 +548,57 @@ if (LLAMA_VULKAN)
-     endif()
+diff --git a/ggml/CMakeLists.txt b/ggml/CMakeLists.txt
+index cfa6e3f7..9713046a 100644
+--- a/ggml/CMakeLists.txt
++++ b/ggml/CMakeLists.txt
+@@ -141,6 +141,8 @@ option(GGML_CUDA_NO_VMM                     "ggml: do not try to use CUDA VMM"
+ option(GGML_CUDA_FA_ALL_QUANTS              "ggml: compile all quants for FlashAttention"     OFF)
+ option(GGML_CUDA_GRAPHS                     "ggml: use CUDA graphs (llama.cpp only)"          ${GGML_CUDA_GRAPHS_DEFAULT})
+ 
++option(GGML_KLEIDIAI                        "ggml: use KleidiAI"                              ON)
++
+ option(GGML_HIPBLAS                         "ggml: use hipBLAS"                               OFF)
+ option(GGML_HIP_UMA                         "ggml: use HIP unified memory architecture"       OFF)
+ option(GGML_VULKAN                          "ggml: use Vulkan"                                OFF)
+diff --git a/ggml/include/ggml-cpu.h b/ggml/include/ggml-cpu.h
+index 7f1ee757..4b9d0918 100644
+--- a/ggml/include/ggml-cpu.h
++++ b/ggml/include/ggml-cpu.h
+@@ -44,6 +44,17 @@ extern "C" {
+         void *              abort_callback_data;
+     };
+ 
++    struct ggml_compute_params {
++        // ith = thread index, nth = number of threads
++        int ith, nth;
++
++        // work buffer for all threads
++        size_t wsize;
++        void * wdata;
++
++        struct ggml_threadpool * threadpool;
++    };
++
+     // numa strategies
+     enum ggml_numa_strategy {
+         GGML_NUMA_STRATEGY_DISABLED   = 0,
+@@ -54,6 +65,8 @@ extern "C" {
+         GGML_NUMA_STRATEGY_COUNT
+     };
+ 
++    GGML_API void    ggml_barrier(struct ggml_threadpool * tp);
++
+     GGML_API void    ggml_numa_init(enum ggml_numa_strategy numa); // call once for better performance on NUMA systems
+     GGML_API bool    ggml_is_numa(void); // true if init detected that system has >1 NUMA node
+ 
+diff --git a/ggml/src/CMakeLists.txt b/ggml/src/CMakeLists.txt
+index 34b81bd7..c2f80603 100644
+--- a/ggml/src/CMakeLists.txt
++++ b/ggml/src/CMakeLists.txt
+@@ -630,6 +630,70 @@ if (GGML_RPC)
+     set(GGML_SOURCES_RPC ggml-rpc.cpp)
  endif()
  
-+if (LLAMA_KLEIDIAI)
++if (GGML_KLEIDIAI)
++
++    # Disable the KleidiAI tests
++    set(KLEIDIAI_BUILD_TESTS  OFF)
 +
 +    # Fetch KleidiAI sources:
 +    include(FetchContent)
-+    set(KLEIDIAI_COMMIT_SHA "cb27bbe4cd47bb15d8236df3250ff105ef64e65b")
++    set(KLEIDIAI_COMMIT_SHA "v0.5.0")
 +    set(KLEIDIAI_DOWNLOAD_URL "https://gitlab.arm.com/kleidi/kleidiai/-/archive/${KLEIDIAI_COMMIT_SHA}/kleidiai-${KLEIDIAI_COMMIT_SHA}.tar.gz")
-+    set(KLEIDIAI_ARCHIVE_MD5  "f4fa5d1070d9f0ab96f5c021d292dde3")
++    set(KLEIDIAI_ARCHIVE_MD5  "b75f2d3c1bd2a5457091cc3976e2fdde")
 +
 +    if (POLICY CMP0135)
 +        cmake_policy(SET CMP0135 NEW)
@@ -60,40 +116,50 @@ index 08481334..6aed4fc6 100644
 +    # KleidiAI
 +    include_directories(
 +        ${KLEIDIAI_SRC}/
++        ${KLEIDIAI_SRC}/kai/
 +        ${KLEIDIAI_SRC}/kai/ukernels/
 +        ${KLEIDIAI_SRC}/kai/ukernels/matmul/
 +        ${KLEIDIAI_SRC}/kai/ukernels/matmul/matmul_clamp_f32_qsi8d32p_qsi4c32p/
 +        ${KLEIDIAI_SRC}/kai/ukernels/matmul/pack/)
 +
 +    list(APPEND GGML_SOURCES_KLEIDIAI ${KLEIDIAI_SRC}/kai/ukernels/matmul/pack/kai_lhs_quant_pack_qsi8d32p_f32.c)
++    list(APPEND GGML_SOURCES_KLEIDIAI ${KLEIDIAI_SRC}/kai/ukernels/matmul/pack/kai_rhs_pack_nxk_qsi4c32ps1s0scalef16_qsu4c32s16s0_neon.c)
++    list(APPEND GGML_SOURCES_KLEIDIAI ${KLEIDIAI_SRC}/kai/ukernels/matmul/pack/kai_lhs_quant_pack_qsi8d32p_f32_neon.c)
 +    list(APPEND GGML_SOURCES_KLEIDIAI ${KLEIDIAI_SRC}/kai/ukernels/matmul/pack/kai_rhs_pack_nxk_qsi4c32pscalef16_qsu4c32s16s0.c)
 +    list(APPEND GGML_SOURCES_KLEIDIAI ${KLEIDIAI_SRC}/kai/ukernels/matmul/matmul_clamp_f32_qsi8d32p_qsi4c32p/kai_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod.c)
-+    list(APPEND GGML_SOURCES_KLEIDIAI ${KLEIDIAI_SRC}/kai/ukernels/matmul/matmul_clamp_f32_qsi8d32p_qsi4c32p/kai_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm.c)
++    list(APPEND GGML_SOURCES_KLEIDIAI ${KLEIDIAI_SRC}/kai/ukernels/matmul/matmul_clamp_f32_qsi8d32p_qsi4c32p/kai_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod.c)
++    list(APPEND GGML_SOURCES_KLEIDIAI ${KLEIDIAI_SRC}/kai/ukernels/matmul/matmul_clamp_f32_qsi8d32p_qsi4c32p/kai_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod.c)
++    list(APPEND GGML_SOURCES_KLEIDIAI ${KLEIDIAI_SRC}/kai/ukernels/matmul/matmul_clamp_f32_qsi8d32p_qsi4c32p/kai_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm.c)
++    list(APPEND GGML_SOURCES_KLEIDIAI ${KLEIDIAI_SRC}/kai/ukernels/matmul/matmul_clamp_f32_qsi8d32p_qsi4c32p/kai_matmul_clamp_f32_qsi8d32p1vlx4_qsi4c32p4vlx4_1vlx4vl_sme2_mopa.c)
++    list(APPEND GGML_SOURCES_KLEIDIAI ${KLEIDIAI_SRC}/kai/ukernels/matmul/matmul_clamp_f32_qsi8d32p_qsi4c32p/kai_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4vlx4_1x4vl_sme2_sdot.c)
++    list(APPEND GGML_CDEF_PUBLIC GGML_USE_KLEIDIAI)
++
++    set_source_files_properties(${GGML_SOURCES_KLEIDIAI} PROPERTIES COMPILE_OPTIONS -march=armv8.2-a+i8mm+dotprod+sve+sve2+fp16)
 +
 +    add_compile_definitions(GGML_USE_KLEIDIAI)
 +    add_compile_definitions(GGML_KLEIDIAI_REUSE_MEMORY)
 +
-+    if (LLAMA_KLEIDIAI_CACHE)
++    if (GGML_KLEIDIAI_CACHE)
 +        add_compile_definitions(GGML_KLEIDIAI_USE_CACHE)
 +    endif()
 +
 +endif()
 +
- if (LLAMA_HIPBLAS)
-     if (NOT EXISTS $ENV{ROCM_PATH})
-         if (NOT EXISTS /opt/rocm)
-@@ -1268,6 +1319,7 @@ add_library(ggml OBJECT
-             ${GGML_SOURCES_ROCM}      ${GGML_HEADERS_ROCM}
-             ${GGML_SOURCES_BLAS}      ${GGML_HEADERS_BLAS}
+ if (GGML_VULKAN)
+     find_package(Vulkan COMPONENTS glslc REQUIRED)
+ 
+@@ -1388,6 +1452,7 @@ add_library(ggml
              ${GGML_SOURCES_LLAMAFILE} ${GGML_HEADERS_LLAMAFILE}
+             ${GGML_SOURCES_AMX}       ${GGML_HEADERS_AMX}
+             ${GGML_SOURCES_CANN}      ${GGML_HEADERS_CANN}
 +            ${GGML_SOURCES_KLEIDIAI}  ${GGML_HEADERS_KLEIDIAI}
+             ggml-aarch64.c            ggml-aarch64.h
              )
  
- target_include_directories(ggml PUBLIC . ${LLAMA_EXTRA_INCLUDES})
-diff --git a/ggml-alloc.c b/ggml-alloc.c
-index bd367c42..ed4ce0ae 100644
---- a/ggml-alloc.c
-+++ b/ggml-alloc.c
+diff --git a/ggml/src/ggml-alloc.c b/ggml/src/ggml-alloc.c
+index 041de9e3..7263d328 100644
+--- a/ggml/src/ggml-alloc.c
++++ b/ggml/src/ggml-alloc.c
 @@ -9,6 +9,10 @@
  #include <stdlib.h>
  #include <string.h>
@@ -105,7 +171,7 @@ index bd367c42..ed4ce0ae 100644
  #define MAX(a, b) ((a) > (b) ? (a) : (b))
  #define MAX_FREE_BLOCKS 256
  
-@@ -986,6 +990,15 @@ ggml_backend_buffer_t ggml_backend_alloc_ctx_tensors_from_buft(struct ggml_conte
+@@ -985,6 +989,15 @@ ggml_backend_buffer_t ggml_backend_alloc_ctx_tensors_from_buft(struct ggml_conte
          size_t this_size = 0;
          if (t->data == NULL && t->view_src == NULL) {
              this_size = GGML_PAD(ggml_backend_buft_get_alloc_size(buft, t), alignment);
@@ -121,12 +187,95 @@ index bd367c42..ed4ce0ae 100644
          }
  
          if (this_size > max_size) {
-diff --git a/ggml-kleidiai.cpp b/ggml-kleidiai.cpp
+diff --git a/ggml/src/ggml-cpu.c b/ggml/src/ggml-cpu.c
+index 0cb5b824..8472dd87 100644
+--- a/ggml/src/ggml-cpu.c
++++ b/ggml/src/ggml-cpu.c
+@@ -33,6 +33,10 @@
+ #include <syscall.h>
+ #endif
+ 
++#if defined(GGML_USE_KLEIDIAI)
++#include "ggml-kleidiai.h"
++#endif
++
+ #ifdef GGML_USE_OPENMP
+ #include <omp.h>
+ #endif
+@@ -1335,17 +1339,6 @@ struct ggml_compute_state {
+     int ith;
+ };
+ 
+-struct ggml_compute_params {
+-    // ith = thread index, nth = number of threads
+-    int ith, nth;
+-
+-    // work buffer for all threads
+-    size_t wsize;
+-    void * wdata;
+-
+-    struct ggml_threadpool * threadpool;
+-};
+-
+ //
+ // fundamental operations
+ //
+@@ -2265,7 +2258,7 @@ void ggml_critical_section_end(void) {
+     atomic_flag_clear(&g_state_critical);
+ }
+ 
+-static void ggml_barrier(struct ggml_threadpool * tp) {
++void ggml_barrier(struct ggml_threadpool * tp) {
+     int n_threads = atomic_load_explicit(&tp->n_threads_cur, memory_order_relaxed);
+     if (n_threads == 1) {
+         return;
+@@ -12199,6 +12192,13 @@ static void ggml_compute_forward(struct ggml_compute_params * params, struct ggm
+         return;
+     }
+ 
++#ifdef GGML_USE_KLEIDIAI
++    bool can_use_kai = ggml_kai_compute_forward(params, tensor);
++    if (can_use_kai) {
++        return;
++    }
++#endif // GGML_USE_KLEIDIAI
++
+     switch (tensor->op) {
+         case GGML_OP_DUP:
+             {
+@@ -13173,6 +13173,13 @@ struct ggml_cplan ggml_graph_plan(
+                 {
+                     const enum ggml_type vec_dot_type = type_traits_cpu[node->src[0]->type].vec_dot_type;
+ 
++#if defined(GGML_USE_KLEIDIAI)
++                    if (ggml_kai_can_accelerate_matmul(node->src[0], node->src[1], node)) {
++                        cur = ggml_kai_get_temp_workspace_size_matmul(node->src[0], node->src[1], node);
++                        break;
++                    }
++#endif
++
+                     if (node->src[1]->type != vec_dot_type) {
+                         cur = ggml_row_size(vec_dot_type, ggml_nelements(node->src[1]));
+                     }
+@@ -13574,6 +13581,12 @@ enum ggml_status ggml_graph_compute(struct ggml_cgraph * cgraph, struct ggml_cpl
+     GGML_ASSERT(cplan->n_threads > 0);
+     GGML_ASSERT(cplan->work_size == 0 || cplan->work_data != NULL);
+ 
++#if GGML_USE_KLEIDIAI
++    for (int i = 0; i < cgraph->n_nodes; i++) {
++        ggml_kai_prepare_const_data(cgraph->nodes[i]);
++    }
++#endif
++
+     int n_threads                               = cplan->n_threads;
+     struct ggml_threadpool * threadpool = cplan->threadpool;
+ 
+diff --git a/ggml/src/ggml-kleidiai.cpp b/ggml/src/ggml-kleidiai.cpp
 new file mode 100644
-index 00000000..53236893
+index 00000000..645f4997
 --- /dev/null
-+++ b/ggml-kleidiai.cpp
-@@ -0,0 +1,746 @@
++++ b/ggml/src/ggml-kleidiai.cpp
+@@ -0,0 +1,930 @@
 +/*
 + * Copyright (c) 2024 Arm Limited.
 + *
@@ -150,11 +299,12 @@ index 00000000..53236893
 + * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 + * SOFTWARE.
 + */
-+
 +#if defined(__aarch64__)
 +#include "ggml-kleidiai.h"
 +
 +#include "ggml.h"
++#include "ggml-cpu.h"
++#include "ggml-impl.h"
 +#include "ggml-quants.h"
 +#include "ggml-backend-impl.h"
 +
@@ -188,9 +338,16 @@ index 00000000..53236893
 +// KleidiAI micro-kernels
 +#include "kai_matmul_clamp_f32_qsi8d32p_qsi4c32p_interface.h"
 +#include "kai_lhs_quant_pack_qsi8d32p_f32.h"
++#include "kai_lhs_quant_pack_qsi8d32p_f32_neon.h"
 +#include "kai_rhs_pack_nxk_qsi4c32pscalef16_qsu4c32s16s0.h"
++#include "kai_rhs_pack_nxk_qsi4c32ps1s0scalef16_qsu4c32s16s0_neon.h"
 +#include "kai_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod.h"
-+#include "kai_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm.h"
++#include "kai_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod.h"
++#include "kai_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod.h"
++#include "kai_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm.h"
++#include "kai_matmul_clamp_f32_qsi8d32p1vlx4_qsi4c32p4vlx4_1vlx4vl_sme2_mopa.h"
++#include "kai_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4vlx4_1x4vl_sme2_sdot.h"
++#include "kai_common.h"
 +
 +#define GGML_KAI_UNUSED(x) (void)(x)
 +#define MAX_EXTRA_BUFFERS 4096
@@ -210,6 +367,8 @@ index 00000000..53236893
 +    size_t kr          = 1;
 +    size_t sr          = 1;
 +    size_t packed_size = 1;
++    void (*pack_func)(size_t m, size_t k, size_t bl, size_t mr, size_t kr, size_t sr, size_t m_idx_start, const float* lhs,
++    size_t lhs_stride, void* lhs_packed) = NULL;
 +};
 +
 +struct ggml_kai_matmul_rhs_packing_params {
@@ -217,6 +376,8 @@ index 00000000..53236893
 +    size_t kr          = 1;
 +    size_t sr          = 1;
 +    size_t packed_size = 1;
++    void (*pack_func)(size_t num_groups, size_t n, size_t k, size_t nr, size_t kr, size_t sr, size_t bl, const uint8_t* rhs, const float* bias, void* rhs_packed, size_t extra_bytes,
++                      const struct kai_rhs_pack_qs4cxs1s0_param* params) = NULL;
 +};
 +
 +struct ggml_kai_matmul_function {
@@ -227,11 +388,13 @@ index 00000000..53236893
 +    bool neon{false};
 +    bool dot{false};
 +    bool i8mm{false};
++    bool sme{false};
 +};
 +
 +#define KAI_FEATURE_HWCAP_ASIMD     (1 << 1)
 +#define KAI_FEATURE_HWCAP_ASIMDDP   (1 << 20)
 +#define KAI_FEATURE_HWCAP2_I8MM     (1 << 13)
++#define KAI_FEATURE_HWCAP2_SME      (1 << 23)
 +
 +#if __ANDROID_API__ >= 18
 +unsigned long int getauxval(unsigned long int __type) __INTRODUCED_IN(18);
@@ -356,6 +519,31 @@ index 00000000..53236893
 +    }
 +    return i8mm_supported;
 +}
++
++bool check_sme_support() {
++    bool sme_supported = true;
++
++    __try {
++        // Initialize two vectors for testing SME operations.
++        int8x16_t matA = vdupq_n_s8(1);
++        int8x16_t matB = vdupq_n_s8(2);
++
++        // Perform an SME-specific matrix multiplication operation (SMMLA).
++        int32x4_t matC = smmlaq_s32(vdupq_n_s32(0), matA, matB);
++
++        // Store and verify the result
++        int32_t array[4];
++        vst1q_s32(array, matC);
++        for (int i = 0; i < 4; ++i) {
++            assert(array[i] == 16);
++        }
++    }
++    __except (GetExceptionCode() == STATUS_ILLEGAL_INSTRUCTION ? 1 : 0) {
++        sme_supported = false;
++    }
++
++    return sme_supported;
++}
 +#pragma optimize("", on)  // Re-enable optimization
 +#endif
 +
@@ -367,17 +555,25 @@ index 00000000..53236893
 +    isa.neon = is_feature_supported(hwcaps, KAI_FEATURE_HWCAP_ASIMD);
 +    isa.dot  = is_feature_supported(hwcaps, KAI_FEATURE_HWCAP_ASIMDDP);
 +    isa.i8mm = is_feature_supported(hwcaps2, KAI_FEATURE_HWCAP2_I8MM);
++    isa.sme  = is_feature_supported(hwcaps2, KAI_FEATURE_HWCAP2_SME);
 +
 +#elif defined(__APPLE__)
 +    isa.neon = get_sysctl_by_name<uint32_t>("hw.optional.AdvSIMD") == 1;
 +    isa.dot = get_sysctl_by_name<uint32_t>("hw.optional.arm.FEAT_DotProd") == 1;
 +    isa.i8mm = get_sysctl_by_name<uint32_t>("hw.optional.arm.FEAT_I8MM") == 1;
++    isa.sme  = get_sysctl_by_name<uint32_t>("hw.optional.arm.FEAT_SME") == 1;
 +
 +#elif defined(_WIN32)
 +    isa.neon = is_feature_supported(PF_ARM_NEON_INSTRUCTIONS_AVAILABLE);
 +    isa.dot  = is_feature_supported(PF_ARM_V8_INSTRUCTIONS_AVAILABLE);
 +    isa.i8mm = check_i8mm_support();
++    isa.sme  = check_sme_support();
 +#endif
++    GGML_LOG_INFO("KleidiAI: CPU features:\n");
++    GGML_LOG_INFO("-- neon: %s\n", isa.neon? "yes" : "no");
++    GGML_LOG_INFO("-- dotprod: %s\n", isa.dot? "yes" : "no");
++    GGML_LOG_INFO("-- i8mm: %s\n", isa.i8mm? "yes" : "no");
++    GGML_LOG_INFO("-- sme: %s\n", isa.sme? "yes" : "no");
 +}
 +
 +static const cpu_features& get_cpu_features() {
@@ -393,11 +589,11 @@ index 00000000..53236893
 +
 +typedef void (*ggml_kai_func_t)(const struct ggml_compute_params * params, const ggml_tensor * src0, const ggml_tensor * src1, ggml_tensor * dst);
 +
-+GGML_CALL bool ggml_kai_loaded(void) {
++bool ggml_kai_loaded(void) {
 +    return g_kai_loaded;
 +}
 +
-+GGML_CALL void ggml_kai_init(void) {
++void ggml_kai_init(void) {
 +    static bool initialized = false;
 +
 +    if (!initialized) {
@@ -412,15 +608,14 @@ index 00000000..53236893
 +    }
 +}
 +
-+GGML_CALL bool ggml_kai_can_accelerate_matmul(const struct ggml_tensor * src0, const struct ggml_tensor * src1, struct ggml_tensor * dst) {
++bool ggml_kai_can_accelerate_matmul(const struct ggml_tensor * src0, const struct ggml_tensor * src1, struct ggml_tensor * dst) {
 +    if(!g_kai_loaded) {
 +        return false;
 +    }
-+
 +    const cpu_features& cpu = get_cpu_features();
 +
-+    // Check whether the target platfom has i8mm and dotprod features
-+    if(!(cpu.i8mm && cpu.dot)) {
++    // Check whether the target platform has i8mm and dotprod and sme features
++    if(!(cpu.i8mm || cpu.dot || cpu.sme)) {
 +        return false;
 +    }
 +
@@ -463,7 +658,7 @@ index 00000000..53236893
 +}
 +
 +static kai_matmul_clamp_f32_qsi8d32p_qsi4c32p_ukernel ggml_kai_select_matmul_ukernel(size_t m, size_t n, size_t k) {
-+    kai_matmul_clamp_f32_qsi8d32p_qsi4c32p_ukernel v;
++    kai_matmul_clamp_f32_qsi8d32p_qsi4c32p_ukernel v {};
 +
 +    GGML_KAI_UNUSED(n);
 +    GGML_KAI_UNUSED(k);
@@ -471,7 +666,92 @@ index 00000000..53236893
 +    // Get CPU features
 +    const cpu_features& cpu = get_cpu_features();
 +
-+#if defined(__ARM_FEATURE_MATMUL_INT8) && defined(__ARM_FEATURE_DOTPROD)
++#if (defined(__ARM_FEATURE_SVE2) || defined(__ARM_FEATURE_SME2)) && defined(__ARM_FEATURE_MATMUL_INT8) && defined(__ARM_FEATURE_DOTPROD)
++    if (cpu.sme) {
++        if(m == 1) {
++            v.get_m_step = kai_get_m_step_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4vlx4_1x4vl_sme2_sdot;
++            v.get_n_step = kai_get_n_step_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4vlx4_1x4vl_sme2_sdot;
++            v.get_mr = kai_get_mr_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4vlx4_1x4vl_sme2_sdot;
++            v.get_nr = kai_get_nr_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4vlx4_1x4vl_sme2_sdot;
++            v.get_kr = kai_get_kr_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4vlx4_1x4vl_sme2_sdot;
++            v.get_sr = kai_get_sr_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4vlx4_1x4vl_sme2_sdot;
++            v.get_lhs_packed_offset = kai_get_lhs_packed_offset_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4vlx4_1x4vl_sme2_sdot;
++            v.get_rhs_packed_offset = kai_get_rhs_packed_offset_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4vlx4_1x4vl_sme2_sdot;
++            v.get_dst_offset = kai_get_dst_offset_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4vlx4_1x4vl_sme2_sdot;
++            v.get_dst_size = kai_get_dst_size_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4vlx4_1x4vl_sme2_sdot;
++            v.run_matmul = kai_run_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4vlx4_1x4vl_sme2_sdot;
++        } else {
++            v.get_m_step = kai_get_m_step_matmul_clamp_f32_qsi8d32p1vlx4_qsi4c32p4vlx4_1vlx4vl_sme2_mopa;
++            v.get_n_step = kai_get_n_step_matmul_clamp_f32_qsi8d32p1vlx4_qsi4c32p4vlx4_1vlx4vl_sme2_mopa;
++            v.get_mr = kai_get_mr_matmul_clamp_f32_qsi8d32p1vlx4_qsi4c32p4vlx4_1vlx4vl_sme2_mopa;
++            v.get_nr = kai_get_nr_matmul_clamp_f32_qsi8d32p1vlx4_qsi4c32p4vlx4_1vlx4vl_sme2_mopa;
++            v.get_kr = kai_get_kr_matmul_clamp_f32_qsi8d32p1vlx4_qsi4c32p4vlx4_1vlx4vl_sme2_mopa;
++            v.get_sr = kai_get_sr_matmul_clamp_f32_qsi8d32p1vlx4_qsi4c32p4vlx4_1vlx4vl_sme2_mopa;
++            v.get_lhs_packed_offset = kai_get_lhs_packed_offset_matmul_clamp_f32_qsi8d32p1vlx4_qsi4c32p4vlx4_1vlx4vl_sme2_mopa;
++            v.get_rhs_packed_offset = kai_get_rhs_packed_offset_matmul_clamp_f32_qsi8d32p1vlx4_qsi4c32p4vlx4_1vlx4vl_sme2_mopa;
++            v.get_dst_offset = kai_get_dst_offset_matmul_clamp_f32_qsi8d32p1vlx4_qsi4c32p4vlx4_1vlx4vl_sme2_mopa;
++            v.get_dst_size = kai_get_dst_size_matmul_clamp_f32_qsi8d32p1vlx4_qsi4c32p4vlx4_1vlx4vl_sme2_mopa;
++            v.run_matmul = kai_run_matmul_clamp_f32_qsi8d32p1vlx4_qsi4c32p4vlx4_1vlx4vl_sme2_mopa;
++        }
++    }
++    else if(cpu.i8mm && cpu.dot) {
++        if(m == 1) {
++            v.get_m_step = kai_get_m_step_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++            v.get_n_step = kai_get_n_step_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++            v.get_mr = kai_get_mr_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++            v.get_nr = kai_get_nr_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++            v.get_kr = kai_get_kr_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++            v.get_sr = kai_get_sr_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++            v.get_lhs_packed_offset = kai_get_lhs_packed_offset_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++            v.get_rhs_packed_offset = kai_get_rhs_packed_offset_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++            v.get_dst_offset = kai_get_dst_offset_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++            v.get_dst_size = kai_get_dst_size_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++            v.run_matmul = kai_run_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++        } else {
++            v.get_m_step = kai_get_m_step_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++            v.get_n_step = kai_get_n_step_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++            v.get_mr = kai_get_mr_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++            v.get_nr = kai_get_nr_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++            v.get_kr = kai_get_kr_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++            v.get_sr = kai_get_sr_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++            v.get_lhs_packed_offset = kai_get_lhs_packed_offset_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++            v.get_rhs_packed_offset = kai_get_rhs_packed_offset_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++            v.get_dst_offset = kai_get_dst_offset_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++            v.get_dst_size = kai_get_dst_size_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++            v.run_matmul = kai_run_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++        }
++    }
++    else if(cpu.dot) {
++        if(m == 1) {
++            v.get_m_step = kai_get_m_step_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_n_step = kai_get_n_step_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_mr = kai_get_mr_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_nr = kai_get_nr_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_kr = kai_get_kr_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_sr = kai_get_sr_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_lhs_packed_offset = kai_get_lhs_packed_offset_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_rhs_packed_offset = kai_get_rhs_packed_offset_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_dst_offset = kai_get_dst_offset_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_dst_size = kai_get_dst_size_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.run_matmul = kai_run_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++        } else {
++            v.get_m_step = kai_get_m_step_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_n_step = kai_get_n_step_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_mr = kai_get_mr_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_nr = kai_get_nr_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_kr = kai_get_kr_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_sr = kai_get_sr_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_lhs_packed_offset = kai_get_lhs_packed_offset_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_rhs_packed_offset = kai_get_rhs_packed_offset_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_dst_offset = kai_get_dst_offset_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_dst_size = kai_get_dst_size_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.run_matmul = kai_run_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++        }
++    }
++    else {
++        GGML_ASSERT(false);
++    }
++#elif defined(__ARM_FEATURE_MATMUL_INT8) && defined(__ARM_FEATURE_DOTPROD)
 +    if(cpu.i8mm && cpu.dot) {
 +        if(m == 1) {
 +            v.get_m_step = kai_get_m_step_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
@@ -486,33 +766,77 @@ index 00000000..53236893
 +            v.get_dst_size = kai_get_dst_size_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
 +            v.run_matmul = kai_run_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
 +        } else {
-+            v.get_m_step = kai_get_m_step_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
-+            v.get_n_step = kai_get_n_step_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
-+            v.get_mr = kai_get_mr_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
-+            v.get_nr = kai_get_nr_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
-+            v.get_kr = kai_get_kr_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
-+            v.get_sr = kai_get_sr_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
-+            v.get_lhs_packed_offset = kai_get_lhs_packed_offset_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
-+            v.get_rhs_packed_offset = kai_get_rhs_packed_offset_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
-+            v.get_dst_offset = kai_get_dst_offset_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
-+            v.get_dst_size = kai_get_dst_size_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
-+            v.run_matmul = kai_run_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_8x4x32_neon_i8mm;
++            v.get_m_step = kai_get_m_step_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++            v.get_n_step = kai_get_n_step_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++            v.get_mr = kai_get_mr_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++            v.get_nr = kai_get_nr_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++            v.get_kr = kai_get_kr_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++            v.get_sr = kai_get_sr_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++            v.get_lhs_packed_offset = kai_get_lhs_packed_offset_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++            v.get_rhs_packed_offset = kai_get_rhs_packed_offset_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++            v.get_dst_offset = kai_get_dst_offset_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++            v.get_dst_size = kai_get_dst_size_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
++            v.run_matmul = kai_run_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm;
 +        }
 +    }
 +    else if(cpu.dot) {
-+        v.get_m_step = kai_get_m_step_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
-+        v.get_n_step = kai_get_n_step_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
-+        v.get_mr = kai_get_mr_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
-+        v.get_nr = kai_get_nr_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
-+        v.get_kr = kai_get_kr_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
-+        v.get_sr = kai_get_sr_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
-+        v.get_lhs_packed_offset = kai_get_lhs_packed_offset_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
-+        v.get_rhs_packed_offset = kai_get_rhs_packed_offset_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
-+        v.get_dst_offset = kai_get_dst_offset_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
-+        v.get_dst_size = kai_get_dst_size_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
-+        v.run_matmul = kai_run_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod;
++        if(m == 1) {
++            v.get_m_step = kai_get_m_step_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_n_step = kai_get_n_step_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_mr = kai_get_mr_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_nr = kai_get_nr_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_kr = kai_get_kr_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_sr = kai_get_sr_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_lhs_packed_offset = kai_get_lhs_packed_offset_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_rhs_packed_offset = kai_get_rhs_packed_offset_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_dst_offset = kai_get_dst_offset_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_dst_size = kai_get_dst_size_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.run_matmul = kai_run_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++        } else {
++            v.get_m_step = kai_get_m_step_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_n_step = kai_get_n_step_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_mr = kai_get_mr_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_nr = kai_get_nr_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_kr = kai_get_kr_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_sr = kai_get_sr_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_lhs_packed_offset = kai_get_lhs_packed_offset_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_rhs_packed_offset = kai_get_rhs_packed_offset_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_dst_offset = kai_get_dst_offset_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_dst_size = kai_get_dst_size_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.run_matmul = kai_run_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++        }
 +    }
 +    else {
++        GGML_ASSERT(false);
++    }
++#elif defined(__ARM_FEATURE_DOTPROD)
++    if(cpu.dot) {
++        if(m == 1) {
++            v.get_m_step = kai_get_m_step_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_n_step = kai_get_n_step_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_mr = kai_get_mr_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_nr = kai_get_nr_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_kr = kai_get_kr_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_sr = kai_get_sr_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_lhs_packed_offset = kai_get_lhs_packed_offset_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_rhs_packed_offset = kai_get_rhs_packed_offset_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_dst_offset = kai_get_dst_offset_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.get_dst_size = kai_get_dst_size_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++            v.run_matmul = kai_run_matmul_clamp_f32_qsi8d32p1x4_qsi4c32p4x4_1x4_neon_dotprod;
++        } else {
++            v.get_m_step = kai_get_m_step_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_n_step = kai_get_n_step_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_mr = kai_get_mr_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_nr = kai_get_nr_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_kr = kai_get_kr_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_sr = kai_get_sr_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_lhs_packed_offset = kai_get_lhs_packed_offset_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_rhs_packed_offset = kai_get_rhs_packed_offset_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_dst_offset = kai_get_dst_offset_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.get_dst_size = kai_get_dst_size_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++            v.run_matmul = kai_run_matmul_clamp_f32_qsi8d32p4x4_qsi4c32p4x4_16x4_neon_dotprod;
++        }
++    } else {
 +        GGML_ASSERT(false);
 +    }
 +#else
@@ -526,12 +850,22 @@ index 00000000..53236893
 +    size_t m,
 +    size_t k) {
 +
++    // Get CPU features
++    const cpu_features& cpu = get_cpu_features();
++
 +    ggml_kai_matmul_lhs_packing_params v;
 +
 +    v.mr          = ukernel->get_mr();
 +    v.kr          = ukernel->get_kr();
 +    v.sr          = ukernel->get_sr();
-+    v.packed_size = kai_get_lhs_packed_size_lhs_quant_pack_qsi8d32p_f32(m, k, k_q4_0_block_size /* 32 */ , v.mr, v.kr, v.sr);
++
++    if (cpu.sme) {
++        v.packed_size = kai_get_lhs_packed_size_lhs_quant_pack_qsi8d32p_f32_neon(m, k, k_q4_0_block_size /* 32 */ , v.mr, v.kr, v.sr);
++        v.pack_func = kai_run_lhs_quant_pack_qsi8d32p_f32_neon;
++    } else {
++        v.packed_size = kai_get_lhs_packed_size_lhs_quant_pack_qsi8d32p_f32(m, k, k_q4_0_block_size /* 32 */ , v.mr, v.kr, v.sr);
++        v.pack_func = kai_run_lhs_quant_pack_qsi8d32p_f32;
++    }
 +
 +    return v;
 +}
@@ -541,11 +875,21 @@ index 00000000..53236893
 +    size_t n,
 +    size_t k) {
 +
++    // Get CPU features
++    const cpu_features& cpu = get_cpu_features();
++
 +    ggml_kai_matmul_rhs_packing_params v;
 +    v.nr          = ukernel->get_nr();
 +    v.kr          = ukernel->get_kr();
 +    v.sr          = ukernel->get_sr();
-+    v.packed_size = kai_get_rhs_packed_size_rhs_pack_nxk_qsi4c32pscalef16_qsu4c32s16s0(n, k, v.nr, v.kr, k_q4_0_block_size /* 32 */);
++
++    if (cpu.sme) {
++        v.packed_size = kai_get_rhs_packed_size_rhs_pack_nxk_qsi4c32ps1s0scalef16_qsu4c32s16s0_neon(n, k, v.nr, v.kr, k_q4_0_block_size /* 32 */);
++        v.pack_func = kai_run_rhs_pack_nxk_qsi4c32ps1s0scalef16_qsu4c32s16s0_neon;
++    } else {
++        v.packed_size = kai_get_rhs_packed_size_rhs_pack_nxk_qsi4c32pscalef16_qsu4c32s16s0(n, k, v.nr, v.kr, k_q4_0_block_size /* 32 */);
++        v.pack_func = kai_run_rhs_pack_nxk_qsi4c32pscalef16_qsu4c32s16s0;
++    }
 +
 +    return v;
 +}
@@ -555,7 +899,6 @@ index 00000000..53236893
 +    const ggml_tensor * src0,
 +    const ggml_tensor * src1,
 +    ggml_tensor * dst) {
-+
 +    GGML_TENSOR_BINARY_OP_LOCALS
 +
 +    const int ith = params->ith;
@@ -593,18 +936,19 @@ index 00000000..53236893
 +    const size_t n_step = ukernel.get_n_step();
 +
 +    // Calculate number of columns to be processed per thread
-+    const size_t num_n_per_thread = n / nth;
++    const size_t num_n_per_thread = kai_roundup(kai_roundup(n, nth) / nth, ukernel.get_n_step());
 +    const size_t n_start = ith * num_n_per_thread;
++
++    size_t n_to_process = num_n_per_thread;
++    if ((n_start + n_to_process) > n) {
++        n_to_process = n - n_start;
++    }
 +
 +    const uint8_t* lhs        = (const uint8_t*)src1->data;
 +    uint8_t* lhs_packed       = (uint8_t*)params->wdata;
 +    const uint8_t* rhs_packed = (const uint8_t*)src0->extra;
 +
-+    if (params->type == GGML_TASK_TYPE_INIT) {
-+        if (ith != 0) {
-+            return;
-+        }
-+
++    if (ith == 0) {
 +        const size_t mr = lhs_packing_params.mr;
 +        const size_t kr = lhs_packing_params.kr;
 +        const size_t sr = lhs_packing_params.sr;
@@ -622,7 +966,7 @@ index 00000000..53236893
 +        const float* src_ptr = (const float*)((const uint8_t*)lhs + lhs_offset);
 +        void*        dst_ptr = (void *)((uint8_t*)lhs_packed + lhs_packed_offset);
 +
-+        kai_run_lhs_quant_pack_qsi8d32p_f32(
++        lhs_packing_params.pack_func(
 +            m, k,               // Dimensions
 +            k_q4_0_block_size,  // Block length (32)
 +            mr, kr, sr,         // Packing arguments
@@ -630,20 +974,11 @@ index 00000000..53236893
 +            src_ptr,            // LHS
 +            src_stride,         // LHS stride
 +            dst_ptr);           // LHS packed
-+
-+        return;
 +    }
 +
-+    if (params->type == GGML_TASK_TYPE_FINALIZE) {
-+        return;
-+    }
++    ggml_barrier(params->threadpool);
 +
 +    const size_t dst_stride = dst->nb[1];
-+
-+    // For now, each thread must perform an equal number of output elements.
-+    // If this is not satisfied, we must trigger an error
-+    GGML_ASSERT(n % nth == 0);
-+    GGML_ASSERT(num_n_per_thread % n_step == 0);
 +
 +    const size_t lhs_packed_offset = ukernel.get_lhs_packed_offset(0, k, k_q4_0_block_size /* 32 */);
 +    const size_t rhs_packed_offset = ukernel.get_rhs_packed_offset(n_start, k, k_q4_0_block_size /* 32 */);
@@ -654,7 +989,7 @@ index 00000000..53236893
 +    float* dst_ptr = (float*)((uint8_t*)dst->data + dst_offset);
 +
 +    ukernel.run_matmul(
-+        m, num_n_per_thread, k,     // Dimensions
++        m, n_to_process, k,         // Dimensions
 +        k_q4_0_block_size,          // Block length (32)
 +        lhs_ptr,                    // LHS packed
 +        rhs_ptr,                    // RHS packed
@@ -689,7 +1024,6 @@ index 00000000..53236893
 +
 +    if (cur->extra == NULL) {
 +        if(cur->type == GGML_TYPE_Q4_0) {
-+
 +#if defined(GGML_KLEIDIAI_USE_CACHE)
 +            if (g_kai_cached_weight.data.size > 0) {
 +                struct binary_data data;
@@ -710,11 +1044,11 @@ index 00000000..53236893
 +            // Temporary memory for the computation.
 +            uint8_t *reshaped_data = (uint8_t*)malloc(reshaped_data_sz);
 +
-+            struct kai_rhs_pack_nxk_qsi4c32pscalef16_qsu4c32s16s0_params params;
++            struct kai_rhs_pack_qs4cxs1s0_param params;
 +            params.lhs_zero_point = 1;
 +            params.rhs_zero_point = 8;
 +
-+            kai_run_rhs_pack_nxk_qsi4c32pscalef16_qsu4c32s16s0(
++            rhs_packing_params.pack_func(
 +                1, n, k,                    // Dimensions
 +                rhs_packing_params.nr,      // Nr
 +                rhs_packing_params.kr,      // Kr
@@ -725,14 +1059,13 @@ index 00000000..53236893
 +                reshaped_data,              // RHS PACKED
 +                0,
 +                &params);
-+
 +#if defined(GGML_KLEIDIAI_USE_CACHE)
 +            ggml_kai_write_cache_weight(g_kai_cached_weight.fd, cur->data, g_cache_key_size, reshaped_data, reshaped_data_sz);
 +#endif
 +
 +#if defined(GGML_KLEIDIAI_REUSE_MEMORY)
 +            GGML_ASSERT(reshaped_data_sz <= original_data_size);
-+            memcpy(cur->data, (void *)reshaped_data, ggml_nbytes(cur));
++            memcpy(cur->data, (void *)reshaped_data, original_data_size);
 +            free(reshaped_data);
 +            cur->extra = cur->data;
 +#else
@@ -745,7 +1078,7 @@ index 00000000..53236893
 +    }
 +}
 +
-+GGML_CALL bool ggml_kai_compute_forward(struct ggml_compute_params * params, struct ggml_tensor * tensor) {
++bool ggml_kai_compute_forward(struct ggml_compute_params * params, struct ggml_tensor * tensor) {
 +    if (!g_kai_loaded) return false;
 +
 +    // tensor refers to the destination tensor and has the "src" member to get the pointers
@@ -780,7 +1113,7 @@ index 00000000..53236893
 +    return true;
 +}
 +
-+GGML_CALL bool ggml_kai_prepare_const_data(struct ggml_tensor * tensor) {
++bool ggml_kai_prepare_const_data(struct ggml_tensor * tensor) {
 +    if (!g_kai_loaded) return false;
 +
 +    // tensor refers to the destination tensor and has the "src" member to get the pointers
@@ -834,8 +1167,8 @@ index 00000000..53236893
 +        // Temporary solution as we should check whether we can run the kleidiai matmul micro-kernels
 +        const cpu_features& cpu = get_cpu_features();
 +
-+        // Check whether the target platfom has i8mm and dotprod features
-+        if(!(cpu.i8mm && cpu.dot)) {
++        // Check whether the target platform has i8mm and dotprod and sme features
++        if(!(cpu.i8mm || cpu.dot || cpu.sme)) {
 +            return false;
 +        }
 +
@@ -859,7 +1192,7 @@ index 00000000..53236893
 +    return 0;
 +}
 +
-+GGML_CALL void ggml_kai_free_extra_mem(void) {
++void ggml_kai_free_extra_mem(void) {
 +    for(int32_t i = g_extra_mem_idx - 1; i >= 0; i--) {
 +        free(g_extra_mem[i]);
 +    }
@@ -873,11 +1206,11 @@ index 00000000..53236893
 +#endif
 +}
 +#endif // defined(__aarch64__)
-diff --git a/ggml-kleidiai.h b/ggml-kleidiai.h
+diff --git a/ggml/src/ggml-kleidiai.h b/ggml/src/ggml-kleidiai.h
 new file mode 100644
-index 00000000..a4cdf1fb
+index 00000000..26d2af8f
 --- /dev/null
-+++ b/ggml-kleidiai.h
++++ b/ggml/src/ggml-kleidiai.h
 @@ -0,0 +1,45 @@
 +/*
 + * Copyright (c) 2024 Arm Limited.
@@ -912,23 +1245,23 @@ index 00000000..a4cdf1fb
 +extern "C" {
 +#endif
 +
-+GGML_CALL bool ggml_kai_loaded(void);
-+GGML_CALL void ggml_kai_init(void);
-+GGML_CALL bool ggml_kai_can_accelerate_matmul(const struct ggml_tensor * src0, const struct ggml_tensor * src1, struct ggml_tensor * dst);
-+GGML_CALL bool ggml_kai_compute_forward(struct ggml_compute_params * params, struct ggml_tensor * tensor);
-+GGML_CALL bool ggml_kai_prepare_const_data(struct ggml_tensor * tensor);
-+GGML_CALL void ggml_kai_free_extra_mem(void);
++bool ggml_kai_loaded(void);
++void ggml_kai_init(void);
++bool ggml_kai_can_accelerate_matmul(const struct ggml_tensor * src0, const struct ggml_tensor * src1, struct ggml_tensor * dst);
++bool ggml_kai_compute_forward(struct ggml_compute_params * params, struct ggml_tensor * tensor);
++bool ggml_kai_prepare_const_data(struct ggml_tensor * tensor);
++void ggml_kai_free_extra_mem(void);
 +size_t ggml_kai_get_temp_workspace_size_matmul(const struct ggml_tensor * src0, const struct ggml_tensor * src1, struct ggml_tensor * dst);
 +size_t ggml_kai_get_const_workspace_size_matmul(const struct ggml_tensor * cur);
 +
 +#ifdef  __cplusplus
 +}
 +#endif
-diff --git a/ggml.c b/ggml.c
-index d5d33c2b..84bfd3b1 100644
---- a/ggml.c
-+++ b/ggml.c
-@@ -29,6 +29,10 @@
+diff --git a/ggml/src/ggml.c b/ggml/src/ggml.c
+index e6a7824b..43ed99e0 100644
+--- a/ggml/src/ggml.c
++++ b/ggml/src/ggml.c
+@@ -31,6 +31,10 @@
  #include <syscall.h>
  #endif
  
@@ -936,74 +1269,52 @@ index d5d33c2b..84bfd3b1 100644
 +#include "ggml-kleidiai.h"
 +#endif
 +
- #ifdef GGML_USE_OPENMP
- #include <omp.h>
- #endif
-@@ -3376,6 +3380,10 @@ struct ggml_context * ggml_init(struct ggml_init_params params) {
-             GGML_PRINT_DEBUG("%s: g_state initialized in %f ms\n", __func__, (t_end - t_start)/1000.0f);
-         }
+ #if defined(__APPLE__)
+ #include <unistd.h>
+ #include <mach/mach.h>
+@@ -1407,6 +1411,11 @@ static inline bool ggml_can_repeat_rows(const struct ggml_tensor * t0, const str
+ ////////////////////////////////////////////////////////////////////////////////
  
+ struct ggml_context * ggml_init(struct ggml_init_params params) {
++
 +#if defined(GGML_USE_KLEIDIAI)
 +        ggml_kai_init();
 +#endif
 +
-         ggml_setup_op_has_task_pass();
+     static bool is_first_call = false;
  
-         is_first_call = false;
-@@ -16929,6 +16937,13 @@ static void ggml_compute_forward(struct ggml_compute_params * params, struct ggm
-         return;
-     }
- 
-+#ifdef GGML_USE_KLEIDIAI
-+    bool can_use_kai = ggml_kai_compute_forward(params, tensor);
-+    if (can_use_kai) {
-+        return;
-+    }
-+#endif // GGML_USE_KLEIDIAI
-+
-     switch (tensor->op) {
-         case GGML_OP_DUP:
-             {
-@@ -19206,6 +19221,12 @@ struct ggml_cplan ggml_graph_plan(const struct ggml_cgraph * cgraph, int n_threa
-                 {
-                     const enum ggml_type vec_dot_type = type_traits[node->src[0]->type].vec_dot_type;
- 
-+#if defined(GGML_USE_KLEIDIAI)
-+                    if (ggml_kai_can_accelerate_matmul(node->src[0], node->src[1], node)) {
-+                        cur = ggml_kai_get_temp_workspace_size_matmul(node->src[0], node->src[1], node);
-+                        break;
-+                    }
-+#endif
-                     if (node->src[1]->type != vec_dot_type) {
-                         cur = ggml_row_size(vec_dot_type, ggml_nelements(node->src[1]));
-                     }
-@@ -19387,6 +19408,12 @@ enum ggml_status ggml_graph_compute(struct ggml_cgraph * cgraph, struct ggml_cpl
-         }
-     }
+     ggml_critical_section_start();
+@@ -6794,6 +6803,10 @@ void ggml_quantize_free(void) {
+     iq2xs_free_impl(GGML_TYPE_IQ1_S);
+     iq3xs_free_impl(256);
  
 +#if GGML_USE_KLEIDIAI
-+    for (int i = 0; i < cgraph->n_nodes; i++) {
-+        ggml_kai_prepare_const_data(cgraph->nodes[i]);
-+    }
++    ggml_kai_free_extra_mem();
 +#endif
 +
-     int n_threads = cplan->n_threads;
+     ggml_critical_section_end();
+ }
  
- #if defined(GGML_USE_OPENMP)
-diff --git a/llama.cpp b/llama.cpp
-index 05591aa4..1c63d5ec 100644
---- a/llama.cpp
-+++ b/llama.cpp
-@@ -19,6 +19,8 @@
- #  include "ggml-sycl.h"
- #elif defined(GGML_USE_KOMPUTE)
- #   include "ggml-kompute.h"
-+#elif defined(GGML_USE_KLEIDIAI)
-+#   include "ggml-kleidiai.h"
- #endif
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 46a6ad56..9e92fb49 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -22,6 +22,10 @@ add_library(llama
+             unicode-data.cpp
+             )
  
- #ifdef GGML_USE_BLAS
-@@ -1360,8 +1362,19 @@ struct llama_mmap {
++if (GGML_KLEIDIAI)
++add_compile_definitions(GGML_USE_KLEIDIAI)
++endif()
++
+ target_include_directories(llama PUBLIC . ../include)
+ target_compile_features   (llama PUBLIC cxx_std_11) # don't bump
+ 
+diff --git a/src/llama.cpp b/src/llama.cpp
+index 0cdf0c07..20397e40 100644
+--- a/src/llama.cpp
++++ b/src/llama.cpp
+@@ -1903,8 +1903,19 @@ struct llama_mmap {
  
      llama_mmap(const llama_mmap &) = delete;
  
@@ -1024,35 +1335,22 @@ index 05591aa4..1c63d5ec 100644
  
      // list of mapped fragments (first_offset, last_offset)
      std::vector<std::pair<size_t, size_t>> mapped_fragments;
-@@ -1473,8 +1486,6 @@ struct llama_mmap {
+@@ -2016,7 +2027,6 @@ struct llama_mmap {
          }
      }
  #elif defined(_WIN32)
 -    static constexpr bool SUPPORTED = true;
--
+ 
      llama_mmap(struct llama_file * file, size_t prefetch = (size_t) -1, bool numa = false) {
          GGML_UNUSED(numa);
- 
-@@ -1535,8 +1546,6 @@ struct llama_mmap {
+@@ -2078,7 +2088,6 @@ struct llama_mmap {
          }
      }
  #else
 -    static constexpr bool SUPPORTED = false;
--
+ 
      llama_mmap(struct llama_file * file, size_t prefetch = -1, bool numa = false) {
          GGML_UNUSED(file);
-         GGML_UNUSED(prefetch);
-@@ -15987,6 +15996,10 @@ void llama_numa_init(enum ggml_numa_strategy numa) {
- 
- void llama_backend_free(void) {
-     ggml_quantize_free();
-+
-+#if GGML_USE_KLEIDIAI
-+    ggml_kai_free_extra_mem();
-+#endif
- }
- 
- int64_t llama_time_us(void) {
 -- 
 2.39.5 (Apple Git-154)
 
