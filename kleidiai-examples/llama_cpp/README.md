@@ -22,22 +22,26 @@
     SOFTWARE.
 -->
 
-<h1><b>Running llama.cpp with KleidiAI Int4 matrix-multiplication (matmul) micro-kernels </b></h1>
+<h1><b>Running llama.cpp with KleidiAI </b></h1>
 
 ## Prerequisities
 
-- Experience with Arm® cross-compilation on Android™
+- Experience with Arm® cross-compilation on Android™ or Linux®
 - Proficiency with Android™ shell commands
-- An Android™ device with an Arm® CPU with <strong>FEAT_DotProd</strong> (dotprod) and <strong>FEAT_I8MM</strong> (i8mm) features
+- An Android™ or Linux® device with an Arm® CPU with at least <strong>FEAT_DotProd</strong> (dotprod) and optionally <strong>FEAT_I8MM</strong> (i8mm) feature or the <strong>SME2</strong> technology.
+- Minimum RAM requirement: 4GB.
+- Minimum storage requirement: 4GB
+
 
 ## Dependencies
 - A laptop/PC with a Linux®-based operating system (tested on Ubuntu® 20.04.4 LTS)
-- The Android™ NDK (minimum version: r25), which can be downloaded from [here](https://developer.android.com/ndk/downloads).
+- The Android™ NDK (minimum version: r27), which can be downloaded from [here](https://developer.android.com/ndk/downloads).
 - The Android™ SDK Platform command-line tools, which can be downloaded from [here](https://developer.android.com/tools/releases/platform-tools)
+- CMake version: 3.27.0 or above, which can be downloaded from [here](https://cmake.org/download/)
 
 ## Goal
 
-In this guide, we will show you how to apply a patch on top of llama.cpp to enable the <strong>[KleidiAI](https://gitlab.arm.com/kleidi/kleidiai)</strong> int4 matmul micro-kernels with per-block quantization (c32).
+In this guide, we will show you how to apply a patch on top of llama.cpp to enable the <strong>[KleidiAI](https://gitlab.arm.com/kleidi/kleidiai)</strong> int4 matmul micro-kernels with per-block quantization (c32), and build llama.cpp for different Arm® targets.
 
 > ℹ️ In the context of llama.cpp, this int4 format is called <strong>Q4_0</strong>.
 
@@ -51,11 +55,11 @@ These KleidiAI micro-kernels were fundamental to the Cookie and Ada chatbot, whi
 
 ## Target Arm® CPUs
 
-Arm® CPUs with <strong>FEAT_DotProd</strong> (dotprod) and <strong>FEAT_I8MM</strong> (i8mm) features.
+Arm® CPUs with <strong>FEAT_DotProd</strong> (dotprod), <strong>FEAT_I8MM</strong> (i8mm) features, or <strong>SME2</strong> technology.
+<br>
+<br>
 
-## Running llama.cpp with KleidiAI on Android™
-
-Connect your Android™ device to your computer and open Terminal. Then, follow the following steps to apply the patch with the KleidiAI backend on top of llama.cpp.
+# Applying the patch on top of llama.cpp to enable KleidiAI
 
 ### Step 1:
 
@@ -66,18 +70,18 @@ git clone https://github.com/ggerganov/llama.cpp.git
 ```
 ### Step 2:
 
-Enter the `llama.cpp/` directory, and checkout the `6fcd1331efbfbb89c8c96eba2321bb7b4d0c40e4` commit:
+Enter the `llama.cpp/` directory, and checkout the `b8deef0ec0af5febac1d2cfd9119ff330ed0b762` commit:
 
 ```bash
 cd llama.cpp
-git checkout 6fcd1331efbfbb89c8c96eba2321bb7b4d0c40e4
+git checkout b8deef0ec0af5febac1d2cfd9119ff330ed0b762
 ```
 
-The reason for checking out the `6fcd1331efbfbb89c8c96eba2321bb7b4d0c40e4` commit is that it provides a stable base for applying the patch with the KleidiAI backend for llama.cpp.
+The reason for checking out the `b8deef0ec0af5febac1d2cfd9119ff330ed0b762` commit is that it provides a stable base for applying the patch with the KleidiAI backend for llama.cpp.
 
 ### Step 3:
 
-In the `llama.cpp/` directory, copy [this](0001-Use-KleidiAI-Int4-Matmul-micro-kernels-in-llama.cpp.patch) patch, which includes the code changes for llama.cpp to enable the KleidiAI optimizations.
+In the `llama.cpp/` directory, copy [this](0001-Updates-to-kleidiai-examples-llama_cpp.patch) patch, which includes the code changes for llama.cpp to enable the KleidiAI optimizations.
 
 
 ### Step 4:
@@ -85,84 +89,91 @@ In the `llama.cpp/` directory, copy [this](0001-Use-KleidiAI-Int4-Matmul-micro-k
 Apply the patch with the KleidiAI backend:
 
 ```bash
-git apply 0001-Use-KleidiAI-Int4-Matmul-micro-kernels-in-llama.cpp.patch
+git apply 0001-Updates-to-kleidiai-examples-llama_cpp.patch
 ```
+<br>
+<br>
 
-### Step 5:
+# Building llama.cpp with KleidiAI
 
-Build the llama.cpp project for Android™:
+## Building for Android™ - Cross-compiling
+
+### Step 1:
+
+Build the llama.cpp project for Android™. To do so, set the Native Development Kit (NDK) path in an environment variable (for example, `NDK_PATH`):
 
 ```bash
-mkdir build && cd build
-
 export NDK_PATH="your-android-ndk-path"
-
-cmake -DLLAMA_KLEIDIAI=ON -DLLAMA_KLEIDIAI_CACHE=ON -DCMAKE_TOOLCHAIN_FILE=${NDK_PATH}/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-23 -DCMAKE_C_FLAGS=-march=armv8.2a+i8mm+dotprod -DCMAKE_CXX_FLAGS=-march=armv8.2a+i8mm+dotprod ..
-
-make -j4
-```
-The  -DLLAMA_KLEIDIAI_CACHE=ON  is used to enable the weights caching. Weights caching is a feature available in the KleidiAI backend to improve the model loading time. Since the layout of the original model weights is transformed by KleidiAI to improve the performance of the matrix-multiplication routines, this option ensures that the weights transformation only happens the first time you run the model.
-To disable this option, you simply remove the flag from the cmake command.
-
-### Step 6:
-
-Download the Large Language Model (LLM) in `.gguf` format with `Q4_0` weights. For example, you can download the <strong>Phi-2</strong> model from [here](https://huggingface.co/TheBloke/phi-2-GGUF/blob/main/phi-2.Q4_0.gguf).
-
-
-### Step 7:
-
-Push the `llama-cli` binary and the `.gguf` file to `/data/local/tmp` on your Android™ device:
-
-```bash
-adb push bin/llama-cli /data/local/tmp
-adb push phi-2.Q4_0.gguf /data/local/tmp
 ```
 
-### Step 8:
+> ℹ️ You can download the Android™ NDK package from <strong>[here](https://developer.android.com/ndk/downloads)</strong>. We recommend Android™ NDK version r27 or above.
 
-Enter your Android™ device:
-
-```bash
-adb shell
-```
-Then, go to `/data/local/tmp`:
-
-```bash
-cd /data/local/tmp
-```
-
-### Step 9:
-
-Run the model inference using the `llama-cli` binary using 4 CPU cores:
-
-```bash
-./llama-cli -m phi-2.Q4_0.gguf -p "Write a code in C for bubble sorting" -n 32 -t 4
-```
-
-## Building llama.cpp with KleidiAI for other platforms
-KleidiAI can also be enabled on macOS® and Windows® on Arm® with FEAT_DotProd (dotprod) and FEAT_I8MM (i8mm) features.
-
-### Linux®:
+Then, create a folder called `build`. Inside this folder, run the cmake command, and build the project:
 
 ```bash
 mkdir build && cd build
 
-cmake -DLLAMA_KLEIDIAI=ON -DLLAMA_KLEIDIAI_CACHE=ON -DCMAKE_C_FLAGS=-march=armv8.2-a+dotprod+i8mm -DCMAKE_CXX_FLAGS=-march=armv8.2-a+dotprod+i8mm ..
+cmake -DCMAKE_TOOLCHAIN_FILE=${NDK_PATH}/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-23 ..
 
 make -j4
 ```
 
-### macOS®:
+> ℹ️ You can optionally enable the weights caching with -DGGML_KLEIDIAI_CACHE=ON. Weights caching is a feature available in the KleidiAI backend to improve the model loading time. Since the layout of the original model weights is transformed by KleidiAI to improve the performance of the matrix-multiplication routines, this option ensures that the weights transformation only happens the first time you run the model.
+
+> ⚠️ If you enable weights caching, make sure to have enough storage memory as this feature stores another copy of the model, named `kai_transformed_weights.cache`, in the same location of your executable binaries.
+
+## Building for Linux® - Cross-compiling
+
+### Step 1:
+Build the llama.cpp project for Linux®. To do so, set the Arm® GNU Toolchain path in an environment variable (for example, `GNU_TOOLCHAIN_PATH`):
+
+```bash
+export GNU_TOOLCHAIN_PATH="your-gnu-toolchain-path"
+```
+
+> ℹ️ You can download the Arm® GNU Toolchain from <strong>[here](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads)</strong>. We recommend Arm® GNU Toolchain 13.3.rel1 or above.
+
+Then, create a folder called `build`. Inside this folder, run the cmake command, and build the project:
+
 ```bash
 mkdir build && cd build
 
-# The -DLLAMA_METAL=OFF is used to disable running on Metal GPU
-cmake -DLLAMA_KLEIDIAI=ON -DCMAKE_C_FLAGS=-march=armv8.2-a+i8mm+dotprod -DCMAKE_CXX_FLAGS=-march=armv8.2-a+i8mm+dotprod -DLLAMA_METAL=OFF ..
+cmake -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=arm -DCMAKE_CXX_COMPILER=$GNU_TOOLCHAIN_PATH/bin/aarch64-none-linux-gnu-g++ -DCMAKE_C_COMPILER=$GNU_TOOLCHAIN_PATH/bin/aarch64-none-linux-gnu-gcc ..
 
 make -j4
 ```
 
-### Windows® on Arm®:
+> ℹ️ You can optionally enable the weights caching with -DGGML_KLEIDIAI_CACHE=ON. Weights caching is a feature available in the KleidiAI backend to improve the model loading time. Since the layout of the original model weights is transformed by KleidiAI to improve the performance of the matrix-multiplication routines, this option ensures that the weights transformation only happens the first time you run the model.
+
+> ⚠️ If you enable weights caching, make sure to have enough storage memory as this feature stores another copy of the model, named `kai_transformed_weights.cache`, in the same location of your executable binaries.
+
+## Building for Linux® - Native
+
+Build the llama.cpp project natively for Linux®. To do so, create a folder called `build`. Inside this folder, run the cmake command, and build the project:
+
+```bash
+mkdir build && cd build
+
+cmake ..
+
+make -j4
+```
+
+> ℹ️ You can optionally enable the weights caching with -DGGML_KLEIDIAI_CACHE=ON. Weights caching is a feature available in the KleidiAI backend to improve the model loading time. Since the layout of the original model weights is transformed by KleidiAI to improve the performance of the matrix-multiplication routines, this option ensures that the weights transformation only happens the first time you run the model.
+
+> ⚠️ If you enable weights caching, make sure to have enough storage memory as this feature stores another copy of the model, named `kai_transformed_weights.cache`, in the same location of your executable binaries.
+
+## Building for macOS® - Native
+
+```bash
+mkdir build && cd build
+
+cmake -DGGML_METAL=OFF -DGGML_BLAS=OFF ..
+
+make -j4
+```
+
+## Building for Windows® on Arm®
 
 - Install [Visual Studio 2022](https://visualstudio.microsoft.com/de/vs/community/)
 - Install Required Components in Visual Studio Installer
@@ -172,10 +183,97 @@ make -j4
   - If the host machine is x86-based, please use the integrated Developer Command Prompt / PowerShell in VS2022 for building and testing.
   - If the host machine is Arm64-based, please use the system's cmd and set environment variables by running `"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" arm64`as the integrated Developer Command Prompt / PowerShell in VS2022 is meant for x86
 ```cmd
-cmake --preset arm64-windows-llvm-release -D LLAMA_KLEIDIAI=ON -D KLEIDIAI_BUILD_TESTS=OFF -D LLAMA_OPENMP=OFF
+cmake --preset arm64-windows-llvm-release -D KLEIDIAI_BUILD_TESTS=OFF -D GGML_OPENMP=OFF
 cmake --build build-arm64-windows-llvm-release
 ```
 
-The options LLAMA_KLEIDIAI_CACHE and KLEIDIAI_BUILD_TESTS are disabled on Windows®, as they are currently not supported. And please use llvm preset as MSVC is not supported either.
+The options GGML_KLEIDIAI_CACHE and KLEIDIAI_BUILD_TESTS are disabled on Windows®, as they are currently not supported. And please use llvm preset as MSVC is not supported either.
+
+<br>
+<br>
+
+# Running and profiling llama.cpp with KleidiAI
+
+### Step 1: (Optional)
+
+Remove the relative path to `libllama.so` and `libggml.so` in the built binaries with `patchelf`:
+
+```bash
+patchelf --replace-needed ../../src/libllama.so libllama.so bin/llama-cli
+patchelf --replace-needed ../../ggml/src/libggml.so libggml.so bin/llama-cli
+patchelf --replace-needed ../ggml/src/libggml.so libggml.so src/libllama.so
+patchelf --replace-needed ../../src/libllama.so libllama.so bin/llama-bench
+patchelf --replace-needed ../../ggml/src/libggml.so libggml.so bin/llama-bench
+```
+
+### Step 2:
+
+Download the Large Language Model (LLM) in `.gguf` format with `Q4_0` weights. For example, you can download the <strong>Phi-2</strong> model from [here](https://huggingface.co/TheBloke/phi-2-GGUF/blob/main/phi-2.Q4_0.gguf).
+
+### Step 3:
+
+Copy the `llama-cli` and `llama-bench` binaries with their required dynamic libraries to your target device. For example, if your target device is an Android™-based platform, you can push the binaries to `/data/local/tmp` using the following `adb` command:
+
+```bash
+adb push src/libllama.so /data/local/tmp/
+adb push bin/llama-cli /data/local/tmp/
+adb push bin/llama-bench /data/local/tmp/
+adb push ggml/src/libggml.so /data/local/tmp/
+```
+
+If you are targeting a Linux®-based system, you could use `scp`.
+
+### Step 4:
+
+Copy the LLM model to your target device. For example, if your target device is an Android™-based platform, you can push the model to `/data/local/tmp` using the following `adb` command:
+
+```bash
+adb push phi-2.Q4_0.gguf /data/local/tmp
+```
+
+### Step 5:
+
+Enter your target device. If your target device is an Android™-based platform, you can enter the device using the following `adb` command:
+
+```bash
+adb shell
+```
+
+If you are targeting a Linux®-based system, you could login using `ssh`.
+
+### Step 6:
+
+Enter the folder where you copied the llama.cpp binaries. For example, if your target device is an Android™-based platform, your directory might be `/data/local/tmp`:
+
+```bash
+cd /data/local/tmp
+```
+
+### Step 7:
+
+Run the model inference using the `llama-cli` binary using 4 CPU cores:
+
+```bash
+export LD_LIBRARY_PATH=.
+
+./llama-cli -m phi-2.Q4_0.gguf -p "Write a code in C for bubble sorting" -n 32 -t 4
+```
+
+### Step 8:
+
+To profile the model inference we recommend using the `llama-bench` binary.
+
+For example, to profile the performance on 4 CPU cores, you can use the following command:
+
+```bash
+export LD_LIBRARY_PATH=.
+
+./llama-bench -t 4 -m phi-2.Q4_0.gguf -n 32 -p 64
+```
+
+The KleidiAI backend will automatically detect the available features at runtime and dispatch the suitable optimizations for the target device.
+
+
+The performance results will be reported for the encoder (test = `pp64`) and decoder (test = `tg32`) phases in `tokens / second` (`t/s`). The higher the `t/s`, the better.
 
 That’s all for this guide!
