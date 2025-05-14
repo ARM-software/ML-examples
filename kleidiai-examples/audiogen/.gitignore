@@ -1,0 +1,26 @@
+#
+# SPDX-FileCopyrightText: Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# vs-code
+.vscode/*
+
+# python
+__pycache__/
+
+# env
+env
+venv
+
+# build
+build/**
+app/build/**
+
+# models
+*.tflite
+*.onnx
+*.pb
+*variable*
+saved_model/**
