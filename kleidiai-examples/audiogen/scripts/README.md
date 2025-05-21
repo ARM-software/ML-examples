@@ -4,33 +4,34 @@
     SPDX-License-Identifier: Apache-2.0
 -->
 
-# Building and Running the Audio Generation Application on Arm® CPUs with the Stable Open Audio Small Model
+# Building and Running the Audio Generation Application on Arm® CPUs with the Stable Audio Open Small Model
 
 ## Goal
-This guide will show you how to convert the Stable Open Audio Small Model to LiteRT-compatible form to run on Arm® CPUs with the LiteRT runtime.
+This guide will show you how to convert the Stable Audio Open Small Model to LiteRT-compatible form to run on Arm® CPUs with the LiteRT runtime.
 
-### Converting the Stable Open Audio Small Model to LiteRT format
-The Stable Open Audio Small Model is made of three submodules:
+### Converting the Stable Audio Open Small Model to LiteRT format
+The Stable Audio Open Small Model is made of three submodules:
 - Conditioners (Text conditioner and number conditioners)
-- Dffusion Transformer (DiT)
+- Diffusion Transformer (DiT)
 - AutoEncoder.
 
-We will explore two different conversion routes, to convert the submodules to LiteRT format.
+You will explore two different conversion routes, to convert the submodules to LiteRT format.
 
-1. __ONNX → LiteRT__ using the [onnx2tf](https://github.com/PINTO0309/onnx2tf) tool. This is the traditional two-step approach (<strong>PyTorch</strong> → <strong>ONNX</strong> → <strong>LiteRT</strong>). We will use it to convert the Conditioners submodule.
+1. __ONNX → LiteRT__ using the [onnx2tf](https://github.com/PINTO0309/onnx2tf) tool. This is the traditional two-step approach (<strong>PyTorch</strong> → <strong>ONNX</strong> → <strong>LiteRT</strong>). You will use it to convert the Conditioners submodule.
 
-2. __PyTorch → LiteRT__ using the [Google AI Edge Torch](https://developers.googleblog.com/en/ai-edge-torch-high-performance-inference-of-pytorch-models-on-mobile-devices/) tool. This method, currently under active development, aims to simplify the conversion by performing it in a single step. We will use this tool to convert the DiT and AutoEncoder submodules.
+2. __PyTorch → LiteRT__ using the [Google AI Edge Torch](https://developers.googleblog.com/en/ai-edge-torch-high-performance-inference-of-pytorch-models-on-mobile-devices/) tool. This method, currently under active development, aims to simplify the conversion by performing it in a single step. You will use this tool to convert the DiT and AutoEncoder submodules.
 
-### Create a virtual enviroment and install dependencies.
+### Create a virtual environment and install dependencies.
 
 #### Step 1
 Create and activate a virtual environment (it is recommended to use Python 3.10 for compatibility with the specified packages):
 ```bash
+cd $WORKSPACE
 python3.10 -m venv .venv
 source .venv/bin/activate
 ```
 #### Step 2
-Install the required dependencies. These dependencies are specified in [`install_requirements.sh`](/install_requirements.sh). You can install them by using a bash script (option A) or manually using pip install (option B).
+Install the required dependencies. These dependencies are specified in [`install_requirements.sh`](../install_requirements.sh). You can install them by using a bash script (option A) or manually using pip install (option B).
 
 <strong> Option A</strong>
 ```bash
@@ -102,9 +103,9 @@ pip install --no-deps onnx \
 
 
 ### Convert Conditioners Submodule
-The Conditioners submodule is based on the <strong>T5Encoder</strong> model. We convert it first to <strong>ONNX</strong>, then to <strong>LiteRT</strong> format. All details are implemented in [`scripts/export_conditioners.py`](/scripts/export_conditioners.py), which includes the following steps:
+The Conditioners submodule is based on the <strong>T5Encoder</strong> model. Convert it first to <strong>ONNX</strong>, then to <strong>LiteRT</strong> format. All details are implemented in [`scripts/export_conditioners.py`](./export_conditioners.py), which includes the following steps:
 
-  1. Load the Conditioners submodule from the Stable Open Audio Small Model configuration and checkpoint.
+  1. Load the Conditioners submodule from the Stable Audio Open Small Model configuration and checkpoint.
   2. Export the Conditioners submodule to ONNX via `torch.onnx.export()`.
   3. Convert the resulting `.onnx` file to LiteRT using `onnx2tf`.
 
@@ -140,12 +141,12 @@ onnx2tf_command = [
 # Call the command line tool
 subprocess.run(onnx2tf_command, check=True)
 ```
-Converting an `.onnx` model to `.tflite`, creates a folder containing models with different precisions (e.g., float16, float32). We will be using the float32.tflite model for on-device inference.
+Converting an `.onnx` model to `.tflite`, creates a folder containing models with different precisions (e.g., float16, float32). You will be using the float32.tflite model for on-device inference.
 
-To run the [`scripts/export_conditioners.py`](/scripts/export_conditioners.py) script, use the following command (ensure your .venv is still active):
+To run the [`scripts/export_conditioners.py`](./export_conditioners.py) script, use the following command (ensure your .venv is still active):
 
 ```bash
-python3 ./scripts/export_conditioners.py --model_config "../sao_small_distilled/sao_small_distilled_1_0_config.json" --ckpt_path "../sao_small_distilled/sao_small_distilled_1_0.ckpt"
+python3 ./scripts/export_conditioners.py --model_config "$WORKSPACE/model_config.json" --ckpt_path "$WORKSPACE/model.ckpt"
 ```
 
 ###  Convert DiT and AutoEncoder Submodules
@@ -158,7 +159,7 @@ from ai_edge_torch.generative.quantize import quant_recipe
 
 # Specify the quantization format
 quant_config = quant_recipes.full_int8_dynamic_recipe()
-# Iniitate the conversion
+# Initiate the conversion
 edge_model = ai_edge_torch.convert(
     model, example_inputs, quant_config=quant_config
 )
@@ -167,11 +168,11 @@ Notes on the arguments for `ai_edge_torch.convert()`:
 - __model__: The PyTorch model to be converted. This should be the pre-trained model loaded from the `.config` and `.ckpt` files, and set to evaluation mode (model.eval()).
 - __example_inputs__: A tuple of torch.Tensor objects. These are dummy input tensors that match the expected shape and type of your model's forward pass arguments. For models with multiple inputs, provide them as a tuple in the correct order.
 
-To convert the DiT and AutoEncoder submodules, run the [`export_dit_autoencoder.py`](/scripts/export_dit_autoencoder.py) script using the following command (ensure your .venv is still active):
+To convert the DiT and AutoEncoder submodules, run the [`export_dit_autoencoder.py`](./export_dit_autoencoder.py) script using the following command (ensure your .venv is still active):
 
 ```bash
-python3 ./scripts/export_dit_autoencoder.py --model_config "../sao_small_distilled/sao_small_distilled_1_0_config.json" --ckpt_path "../sao_small_distilled/sao_small_distilled_1_0.ckpt"
-# Optional Paramters --output_path "./"
+python3 ./scripts/export_dit_autoencoder.py --model_config "$WORKSPACE/model_config.json" --ckpt_path "$WORKSPACE/model.ckpt"
+# Optional Parameters --output_path "./"
 ```
 
 The three LiteRT format models will be required to run the audiogen application on Android™ device.
