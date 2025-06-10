@@ -194,8 +194,8 @@ struct TfLiteDelegateDeleter {
 
 int main(int32_t argc, char** argv) {
 
-    if (argc != 4) {
-        printf("ERROR: Usage ./audiogen <models_base_path> <prompt> <num_threads>\n");
+    if (argc != 5) {
+        printf("ERROR: Usage ./audiogen <models_base_path> <prompt> <num_threads> <seed>\n");
         return 1;
     }
 
@@ -204,13 +204,13 @@ int main(int32_t argc, char** argv) {
     const std::string models_base_path = argv[1];
     const std::string prompt = argv[2];
     const size_t num_threads = std::stoull(argv[3]);
+    const size_t seed = std::stoull(argv[4]);
 
     std::string t5_tflite = models_base_path + "/conditioners_float32.tflite";
     std::string dit_tflite = models_base_path + "/dit_model.tflite";
     std::string autoencoder_tflite = models_base_path + "/autoencoder_model.tflite";
     std::string output_path = "output.wav";
     std::string sentence_model_path = models_base_path + "/spiece.model";
-    const size_t seed = 99;
 
     // ----- Load the models
     // ----------------------------------
@@ -255,23 +255,23 @@ int main(int32_t argc, char** argv) {
     xnnpack_options.flags |= TFLITE_XNNPACK_DELEGATE_FLAG_VARIABLE_OPERATORS;
 
     // XNNPack delegate options for the T5 and DiT models
-    std::unique_ptr<TfLiteDelegate, TfLiteDelegateDeleter> xnnpack_delegate_t5_dit(TfLiteXNNPackDelegateCreate(&xnnpack_options));
+    std::unique_ptr<TfLiteDelegate, TfLiteDelegateDeleter> xnnpack_delegate_fp32(TfLiteXNNPackDelegateCreate(&xnnpack_options));
 
     // XNNPack delegate options for the autoencoder model.
     // We force the FP16 computation just to the most computatioannly expensive model
     xnnpack_options.flags |= TFLITE_XNNPACK_DELEGATE_FLAG_FORCE_FP16;
-    std::unique_ptr<TfLiteDelegate, TfLiteDelegateDeleter> xnnpack_delegate_autoenc(TfLiteXNNPackDelegateCreate(&xnnpack_options));
+    std::unique_ptr<TfLiteDelegate, TfLiteDelegateDeleter> xnnpack_delegate_fp16(TfLiteXNNPackDelegateCreate(&xnnpack_options));
 
     // Add the delegate to the interpreter
-    if (t5_interpreter->ModifyGraphWithDelegate(xnnpack_delegate_t5_dit.get()) != kTfLiteOk) {
+    if (t5_interpreter->ModifyGraphWithDelegate(xnnpack_delegate_fp32.get()) != kTfLiteOk) {
         AUDIOGEN_CHECK(false && "Failed to apply XNNPACK delegate");
     }
 
-    if (dit_interpreter->ModifyGraphWithDelegate(xnnpack_delegate_t5_dit.get()) != kTfLiteOk) {
+    if (dit_interpreter->ModifyGraphWithDelegate(xnnpack_delegate_fp32.get()) != kTfLiteOk) {
         AUDIOGEN_CHECK(false && "Failed to apply XNNPACK delegate");
     }
 
-    if (autoencoder_interpreter->ModifyGraphWithDelegate(xnnpack_delegate_autoenc.get()) != kTfLiteOk) {
+    if (autoencoder_interpreter->ModifyGraphWithDelegate(xnnpack_delegate_fp16.get()) != kTfLiteOk) {
         AUDIOGEN_CHECK(false && "Failed to apply XNNPACK delegate");
     }
 

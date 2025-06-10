@@ -28,15 +28,18 @@ The Stable Audio Open Small Model is made of three submodules: Conditioners (Tex
 
 ## Setup
 
-### Create a workspace directory
-Create a separate directory for managing the dependencies and repositories. Export the WORKSPACE variable to point to this directory, which you will use in the following steps:
+### Step 1
+Clone this repository in your terminal, then navigate to `kleidiai-examples/audiogen/` directory.
+
+### Step 2
+Create a workspace directory for managing the dependencies and repositories. Export the WORKSPACE variable to point to this directory, which you will use in the following steps:
 ```bash
 mkdir my-workspace
 export WORKSPACE=$PWD/my-workspace
 ```
 
-### Download the Stable Audio Open Small Model
-Stable Audio Open Small is an open-source model optimized for generating short audio samples, sound effects, and production elements using text prompts.
+### Step 3
+Download the Stable Audio Open Small Model. The model is open-source and optimized for generating short audio samples, sound effects, and production elements using text prompts.
 
 Login to HuggingFace and navigate to the model landing page: [https://huggingface.co/stabilityai/stable-audio-open-small/tree/main](https://huggingface.co/stabilityai/stable-audio-open-small/tree/main)
 
