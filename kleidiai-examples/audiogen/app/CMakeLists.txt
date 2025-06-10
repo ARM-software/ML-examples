@@ -5,72 +5,116 @@
 #
 
 cmake_minimum_required(VERSION 3.16)
+
 project(audiogen_runner)
 
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 17)
+include(ExternalProject)
+
+message(STATUS "CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
+message(STATUS "CMAKE_HOST_SYSTEM_NAME: ${CMAKE_HOST_SYSTEM_NAME}")
+
+set(CMAKE_CXX_STANDARD 17)
+
+if(CMAKE_TOOLCHAIN_FILE)
+  list(APPEND TOOLCHAIN_CMAKE_ARGS -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE})
 endif()
 
-if(NOT ROOT_PATH)
-  set(ROOT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/..)
+if(ANDROID_ABI)
+  list(APPEND TOOLCHAIN_CMAKE_ARGS -DANDROID_ABI=${ANDROID_ABI})
 endif()
 
-set(srcs audiogen.cpp)
+if(NOT TF_SRC_PATH)
+  include(FetchContent)
 
-# TFLite
-if(NOT TF_LIB_PATH)
-  message( FATAL_ERROR "TenserFlow library path is required, Flag TF_LIB_PATH must be set" )
+  FetchContent_Declare( 
+    tensorflow_src
+    GIT_REPOSITORY https://github.com/tensorflow/tensorflow.git
+    GIT_TAG 84dd28bbc29d75e6a6d917eb2998e4e8ea90ec56
+  )
+
+  FetchContent_MakeAvailable(tensorflow_src)
+
+  set(TENSORFLOW_SOURCE_DIR ${tensorflow_src_SOURCE_DIR})
+
+else()
+  set(TENSORFLOW_SOURCE_DIR ${TF_SRC_PATH})
 endif()
 
-if(NOT TF_INCLUDE_PATH)
-  message( FATAL_ERROR "TenserFlow include path is required, Flag TF_INCLUDE_PATH must be set" )
-endif()
+set(FLATBUFFERS_SOURCE_DIR ${TENSORFLOW_SOURCE_DIR}/tensorflow/lite/tools/cmake/native_tools/flatbuffers)
+set(FLATBUFFERS_BIN_DIR ${CMAKE_BINARY_DIR}/flatbuffers-host-bin)
+set(SENTENCEPIECE_SOURCE_DIR ${CMAKE_BINARY_DIR}/sentencepiece)
 
-# Flatbuffer
-if(NOT FLATBUFFER_INCLUDE_PATH)
-  message( FATAL_ERROR "Flatbuffer include path is required, Flag FLATBUFFER_INCLUDE_PATH must be set" )
-endif()
+# Step 1: Build flatc ---
+ExternalProject_Add(
+  flatc_build
+  PREFIX flatc
+  DOWNLOAD_COMMAND ""
+  SOURCE_DIR ${FLATBUFFERS_SOURCE_DIR}
+  BINARY_DIR ${FLATBUFFERS_BIN_DIR}
+  INSTALL_COMMAND ""
+)
 
-include(FetchContent)
-
-FetchContent_Declare(
+# Step 2: Build SentencePiece ---
+ExternalProject_Add(
   sentencepiece_src
   GIT_REPOSITORY https://github.com/google/sentencepiece.git
   GIT_TAG        v0.2.0
+  SOURCE_DIR ${SENTENCEPIECE_SOURCE_DIR}
+  CMAKE_ARGS
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+    ${TOOLCHAIN_CMAKE_ARGS}
+  INSTALL_COMMAND ""
 )
 
-FetchContent_Populate(sentencepiece_src)
-add_subdirectory(${sentencepiece_src_SOURCE_DIR} ${sentencepiece_src_BINARY_DIR})
+#Get the path to the sentencepiece lib
+ExternalProject_Get_Property(sentencepiece_src BINARY_DIR)
+set(SENTENCEPIECE_LIB ${BINARY_DIR}/src/libsentencepiece.a)
 
-list(APPEND common_link_directories
-  ${TF_LIB_PATH}/)
-
-list(APPEND common_include_directories
-  ${ROOT_PATH}/runner
-  ${TF_INCLUDE_PATH}
-  ${FLATBUFFER_INCLUDE_PATH} )
-
-list(APPEND audiogen_runner_deps tensorflowlite)
+## Step 4: Build the audiogen app ---
+# Define source
+set(SRCS audiogen.cpp)
 
 add_executable(audiogen ${srcs})
 
-target_include_directories(audiogen PUBLIC
-  ${common_include_directories}
-  ${sentencepiece_SOURCE_DIR}/src)
+set(XNNPACK_ENABLE_ARM_SME2 OFF CACHE BOOL "" FORCE)
+set(TFLITE_HOST_TOOLS_DIR "${FLATBUFFERS_BIN_DIR}/_deps/flatbuffers-build" CACHE PATH "Host tools directory")
 
-target_link_directories(audiogen PUBLIC ${common_link_directories})
+# Because flatc is not available at configure time,
+# this workaround places a placeholder (an empty file called flatc) at the expected install location.
+file(WRITE ${FLATBUFFERS_BIN_DIR}/_deps/flatbuffers-build/flatc "")
 
-add_dependencies(audiogen sentencepiece)
-
-# It is required to avoid the linking with libsentencepiece.so
-list(APPEND audiogen_runner_deps ${sentencepiece_src_BINARY_DIR}/src/libsentencepiece.a)
-
-if(ANDROID)
-  list(APPEND audiogen_runner_deps log)
-endif()
-
-target_link_libraries(audiogen
-  ${audiogen_runner_deps}
+# LiteRT CMake configure stage
+add_subdirectory(
+  "${TENSORFLOW_SOURCE_DIR}/tensorflow/lite"
+  "${CMAKE_CURRENT_BINARY_DIR}/tensorflow-lite"
+  EXCLUDE_FROM_ALL
 )
 
-target_compile_options(audiogen PUBLIC)
+# Delete the placeholder flatc file after the LiteRT CMake configuration stage is complete.
+file(REMOVE ${FLATBUFFERS_BIN_DIR}/_deps/flatbuffers-build/flatc "")
+
+add_dependencies(tensorflow-lite flatc_build)
+
+target_compile_definitions(tensorflow-lite PRIVATE
+  TF_MAJOR_VERSION=0
+  TF_MINOR_VERSION=0
+  TF_PATCH_VERSION=0
+  TF_VERSION_SUFFIX=""
+)
+
+# Include headers
+target_include_directories(audiogen PRIVATE
+  ${TENSORFLOW_SOURCE_DIR}/tensorflow/lite
+  ${SENTENCEPIECE_SOURCE_DIR}/src
+)
+
+# Link with dependencies
+target_link_libraries(audiogen
+  tensorflow-lite
+  ${SENTENCEPIECE_LIB}
+)
+
+# Ensure dependency build order
+add_dependencies(audiogen flatc_build sentencepiece_src)
+
+
