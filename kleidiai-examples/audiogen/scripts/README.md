@@ -24,9 +24,8 @@ You will explore two different conversion routes, to convert the submodules to L
 ### Create a virtual environment and install dependencies.
 
 #### Step 1
-Create and activate a virtual environment (it is recommended to use Python 3.10 for compatibility with the specified packages):
+In the `/audiogen` folder, create and activate a virtual environment (it is recommended to use Python 3.10 for compatibility with the specified packages)
 ```bash
-cd $WORKSPACE
 python3.10 -m venv .venv
 source .venv/bin/activate
 ```
@@ -172,9 +171,8 @@ To convert the DiT and AutoEncoder submodules, run the [`export_dit_autoencoder.
 
 ```bash
 python3 ./scripts/export_dit_autoencoder.py --model_config "$WORKSPACE/model_config.json" --ckpt_path "$WORKSPACE/model.ckpt"
-# Optional Parameters --output_path "./"
 ```
 
 The three LiteRT format models will be required to run the audiogen application on Android™ device.
 
-You can now follow the instructions located in the `app/` directory to build the audio generation application.
+You can now follow the instructions located in the [`app/`](../app/README.md) directory to build the audio generation application.
