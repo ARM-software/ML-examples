@@ -15,7 +15,7 @@
 
 ## Goal
 
-This guide will show you how to build the <strong>audio generation (audiogen)</strong> app contained in the single <strong>audiogen.cpp</strong> file. Instructions in this guide are provided for running the audiogen app either on an  Android™ device or on a reasonably modern platform with macOS®.
+This guide will show you how to build the <strong>audio generation (audiogen)</strong> app contained in the single <strong>audiogen.cpp</strong> file. Instructions in this guide are provided for running the audiogen app either on an Android™ device or on a reasonably modern platform with macOS®.
 
 ## Building the Audio Generation App
 
