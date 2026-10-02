@@ -1,0 +1,55 @@
+<!--
+    SPDX-FileCopyrightText: Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+
+    SPDX-License-Identifier: Apache-2.0
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="260" viewBox="0 0 1200 312" role="img" aria-labelledby="title desc">
+  <title id="title">Storage cost at two scale granularities</title>
+  <desc id="desc">Two compact storage strips show 2-bit weight indices followed by one FP32 scale. A scale shared by a 256-weight channel costs less per weight than a scale repeated every 32 weights.</desc>
+  <defs>
+    <style>
+      .title { font: 700 23px sans-serif; fill: #172033; }
+      .heading { font: 700 18px sans-serif; fill: #172033; }
+      .label { font: 14px sans-serif; fill: #334155; }
+      .small { font: 13px sans-serif; fill: #526176; }
+      .ellipsis { font: 700 24px sans-serif; fill: #526176; }
+      .result { font: 700 16px sans-serif; fill: #172033; }
+      .cell { stroke: #64748b; stroke-width: 1.5; }
+      .outline { fill: none; stroke: #475569; stroke-width: 2.5; rx: 8; }
+    </style>
+  </defs>
+  <rect width="1200" height="312" fill="#ffffff"/>
+  <text class="title" x="600" y="32" text-anchor="middle">Same LUT, different scale granularity</text>
+
+  <text class="heading" x="170" y="76">Per channel · 256 weights share one scale</text>
+  <g>
+    <rect class="cell" x="170" y="92" width="82" height="46" fill="#dbeaf4"/>
+    <rect class="cell" x="252" y="92" width="82" height="46" fill="#c9e0ef"/>
+    <rect class="cell" x="334" y="92" width="82" height="46" fill="#b7d6e9"/>
+    <rect class="cell" x="416" y="92" width="414" height="46" fill="#eaf2f8"/>
+    <text class="ellipsis" x="623" y="121" text-anchor="middle">…</text>
+    <rect class="cell" x="830" y="92" width="82" height="46" fill="#b7d6e9"/>
+    <rect class="cell" x="912" y="92" width="118" height="46" fill="#f7dfc7"/>
+    <rect class="outline" x="170" y="92" width="860" height="46"/>
+  </g>
+  <text class="small" x="600" y="158" text-anchor="middle">256 × 2-bit indices · 512 bits</text>
+  <text class="label" x="971" y="121" text-anchor="middle">FP32 scale</text>
+  <text class="small" x="170" y="183">(512 + 32) / 256</text>
+  <text class="result" x="1030" y="183" text-anchor="end">2.125 bpw</text>
+
+  <text class="heading" x="170" y="225">Per block · 32 weights share one scale</text>
+  <g>
+    <rect class="cell" x="170" y="241" width="82" height="40" fill="#dbeaf4"/>
+    <rect class="cell" x="252" y="241" width="82" height="40" fill="#c9e0ef"/>
+    <rect class="cell" x="334" y="241" width="82" height="40" fill="#b7d6e9"/>
+    <rect class="cell" x="416" y="241" width="414" height="40" fill="#eaf2f8"/>
+    <text class="ellipsis" x="623" y="267" text-anchor="middle">…</text>
+    <rect class="cell" x="830" y="241" width="82" height="40" fill="#b7d6e9"/>
+    <rect class="cell" x="912" y="241" width="118" height="40" fill="#f7dfc7"/>
+    <rect class="outline" x="170" y="241" width="860" height="40"/>
+  </g>
+  <text class="small" x="600" y="302" text-anchor="middle">32 × 2-bit indices · 64 bits</text>
+  <text class="label" x="971" y="267" text-anchor="middle">FP32 scale</text>
+  <text class="small" x="170" y="302">(64 + 32) / 32</text>
+  <text class="result" x="1030" y="302" text-anchor="end">3 bpw</text>
+</svg>

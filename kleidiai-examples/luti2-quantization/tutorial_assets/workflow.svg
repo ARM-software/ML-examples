@@ -1,0 +1,58 @@
+<!--
+    SPDX-FileCopyrightText: Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+
+    SPDX-License-Identifier: Apache-2.0
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="title desc">
+  <title id="title">lut2quant recommendation workflow</title>
+  <desc id="desc">A floating-point tensor is divided into scale groups, candidate LUTs and scales are fitted, reconstruction error is compared, and indices and scales are exported.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#475569"/>
+    </marker>
+    <style>
+      .heading { font: 700 22px sans-serif; fill: #172033; }
+      .body { font: 17px sans-serif; fill: #334155; }
+      .step { font: 700 15px sans-serif; fill: #526176; letter-spacing: 1px; }
+      .box { stroke: #64748b; stroke-width: 2; rx: 14; }
+      .arrow { stroke: #475569; stroke-width: 3; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1200" height="300" fill="#ffffff"/>
+
+  <rect class="box" x="30" y="55" width="245" height="180" fill="#eaf2f8"/>
+  <text class="step" x="55" y="88">STEP 1</text>
+  <text class="heading" x="55" y="125">Group the weights</text>
+  <text class="body" x="55" y="160">Choose scale granularity.</text>
+  <text class="body" x="55" y="188">Each scale group shares</text>
+  <text class="body" x="55" y="214">one fitted scale.</text>
+
+  <line class="arrow" x1="285" y1="145" x2="320" y2="145"/>
+
+  <rect class="box" x="330" y="55" width="245" height="180" fill="#fdf2e9"/>
+  <text class="step" x="355" y="88">STEP 2</text>
+  <text class="heading" x="355" y="125">Try candidate LUTs</text>
+  <text class="body" x="355" y="160">Fit a scale and assign</text>
+  <text class="body" x="355" y="188">a 2-bit index to every</text>
+  <text class="body" x="355" y="214">weight.</text>
+
+  <line class="arrow" x1="585" y1="145" x2="620" y2="145"/>
+
+  <rect class="box" x="630" y="55" width="245" height="180" fill="#eaf7ee"/>
+  <text class="step" x="655" y="88">STEP 3</text>
+  <text class="heading" x="655" y="125">Measure error</text>
+  <text class="body" x="655" y="160">Reconstruct the weights.</text>
+  <text class="body" x="655" y="188">Keep the candidate with</text>
+  <text class="body" x="655" y="214">the lowest MSE.</text>
+
+  <line class="arrow" x1="885" y1="145" x2="920" y2="145"/>
+
+  <rect class="box" x="930" y="55" width="240" height="180" fill="#f4ecf7"/>
+  <text class="step" x="955" y="88">STEP 4</text>
+  <text class="heading" x="955" y="125">Store the result</text>
+  <text class="body" x="955" y="160">One shared int8 LUT</text>
+  <text class="body" x="955" y="188">+ 2-bit indices</text>
+  <text class="body" x="955" y="214">+ weight scales.</text>
+
+  <text class="body" x="600" y="275" text-anchor="middle">LUT choice and scale granularity are separate decisions.</text>
+</svg>
